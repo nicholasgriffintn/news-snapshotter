@@ -4,9 +4,6 @@ compatibility_date = "2023-09-04"
 compatibility_flags = [ "nodejs_compat"]
 account_id = ""
 
-[triggers]
-crons = [ "*/5 * * * *" ]
-
 [browser]
 binding = "MYBROWSER"
 
