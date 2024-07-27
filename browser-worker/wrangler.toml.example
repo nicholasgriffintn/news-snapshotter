@@ -2,19 +2,19 @@ name = "news-snapshotter-browser-worker"
 main = "src/index.js"
 compatibility_date = "2023-09-04"
 compatibility_flags = [ "nodejs_compat"]
-account_id = <ACCOUNT_ID>
+account_id = ""
 
+[triggers]
+crons = [ "*/5 * * * *" ]
 
-# Browser Rendering API binding
-browser = { binding = "MYBROWSER" }
+[browser]
+binding = "MYBROWSER"
 
-# Bind an R2 Bucket
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "news-screenshots"
 preview_bucket_name = "news-screenshots-test"
 
-# Binding to a Durable Object
 [[durable_objects.bindings]]
 name = "BROWSER"
 class_name = "Browser"
