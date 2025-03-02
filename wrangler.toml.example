@@ -1,0 +1,11 @@
+name = "news-snapshotter"
+main = "src/index.ts"
+compatibility_date = "2023-10-30"
+
+[vars]
+ASSISTANT_API_URL = "https://assistant.api.com"
+
+[workflows]
+name = "news-snapshotter"
+binding = "NEWS_SNAPSHOTTER"
+class_name = "NewsSnapshotterWorkflow"
