@@ -14,10 +14,10 @@ type Params = {
 };
 
 export class NewsSnapshotterWorkflow extends WorkflowEntrypoint<Env, Params> {
-  async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
+	async run(event: WorkflowEvent<Params>, step: WorkflowStep) {
 		const sitesToSnapshot = event.payload?.sites || SITES;
 		const apiUrl = event.payload?.apiUrl;
-    const apiKey = event.payload?.apiKey;
+		const apiKey = event.payload?.apiKey;
 
 		if (!apiUrl || !apiKey) {
 			throw new Error('API URL and API Key are required');
@@ -50,11 +50,14 @@ export class NewsSnapshotterWorkflow extends WorkflowEntrypoint<Env, Params> {
 					const batchPromises = batch.map(async (site) => {
 						try {
 							const siteUrl = typeof site === 'string' ? site : site.url;
-              const customStyle = typeof site === 'string' ? undefined : [
-                {
-                  content: site.requestBody?.addStyleTag
-                }
-              ];
+							const customStyle =
+								typeof site === 'string'
+									? undefined
+									: [
+											{
+												content: site.requestBody?.addStyleTag,
+											},
+										];
 
 							const requestBody: any = {
 								url: siteUrl,
@@ -138,19 +141,17 @@ export class NewsSnapshotterWorkflow extends WorkflowEntrypoint<Env, Params> {
 
 export default {
 	async fetch(request: Request, env: Env) {
-    try {
-      const headers = request.headers;
+		try {
+			const headers = request.headers;
 
-      if (headers.get('Authorization') !== `Bearer ${env.ASSISTANT_API_KEY}`) {
-        return Response.json(
-          {
-            status: 'error',
-            message: 'Invalid API key',
-          },
-        );
-      }
+			if (headers.get('Authorization') !== `Bearer ${env.ASSISTANT_API_KEY}`) {
+				return Response.json({
+					status: 'error',
+					message: 'Invalid API key',
+				});
+			}
 
-      const instanceId = new URL(request.url).searchParams.get('workflowId');
+			const instanceId = new URL(request.url).searchParams.get('workflowId');
 
 			if (!env.NEWS_SNAPSHOTTER) {
 				return Response.json(
@@ -184,12 +185,12 @@ export default {
 				console.error('Error parsing request body:', e);
 			}
 
-      const workflowInstance = await env.NEWS_SNAPSHOTTER.create({
-        params: {
-          sites,
-          apiUrl: env.ASSISTANT_API_URL,
-          apiKey: env.ASSISTANT_API_KEY,
-        }
+			const workflowInstance = await env.NEWS_SNAPSHOTTER.create({
+				params: {
+					sites,
+					apiUrl: env.ASSISTANT_API_URL,
+					apiKey: env.ASSISTANT_API_KEY,
+				},
 			});
 
 			return Response.json({
