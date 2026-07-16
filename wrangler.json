@@ -1,0 +1,57 @@
+{
+	"name": "news-snapshotter",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-06-16",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"workers_dev": false,
+	"preview_urls": false,
+	"placement": {
+		"mode": "smart"
+	},
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 0.1,
+		"logs": {
+			"enabled": true,
+			"head_sampling_rate": 0.1,
+			"invocation_logs": false
+		}
+	},
+	"dev": {
+		"port": 8787
+	},
+	"routes": [
+		{
+			"pattern": "news-snapshotter.pashi.app",
+			"custom_domain": true
+		}
+	],
+	"browser": {
+		"binding": "BROWSER"
+	},
+	"workflows": [
+		{
+			"name": "news-snapshotter",
+			"binding": "NEWS_SNAPSHOTTER",
+			"class_name": "NewsSnapshotterWorkflow"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "SCREENSHOTS",
+			"bucket_name": "news-snapshotter",
+			"preview_bucket_name": "news-snapshotter-preview"
+		},
+		{
+			"bucket_name": "news-snapshotter",
+			"binding": "news_snapshotter",
+			"remote": true
+		},
+		{
+			"bucket_name": "news-snapshotter-preview",
+			"binding": "news_snapshotter_preview"
+		}
+	]
+}

@@ -1,3 +1,99 @@
 # News Snapshotter
 
-This is a Cloudflare Worker that uses my Assistant API to automate the process of taking screenshots of various news sites using Cloudflare's Browser Rendering API.
+News Snapshotter is a Cloudflare Worker that captures full-page screenshots of configured websites.
+
+## Architecture
+
+Screenshots use deterministic Hive-style R2 partitions:
+
+```text
+brand=bbc/category=sport/date=2026-07-16/bbc-football-2026-07-16T12-34-56-789Z.png
+```
+
+Using the workflow start time in the key makes retries idempotent. R2 object metadata includes the site name, source URL, brand, category, and capture time.
+
+## API
+
+Every request requires `Authorization: Bearer <API_KEY>`.
+
+The examples below target the local Wrangler server configured on port `8787`:
+
+```sh
+BASE_URL=http://localhost:8787
+```
+
+For a deployed Worker, set `BASE_URL` to the route configured in `wrangler.json`.
+
+Start a workflow for every configured site:
+
+```sh
+curl -X POST "$BASE_URL" \
+  -H "Authorization: Bearer $API_KEY"
+```
+
+Capture every site for a brand:
+
+```sh
+curl -X POST "$BASE_URL" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"brand":"bbc"}'
+```
+
+Capture one named site:
+
+```sh
+curl -X POST "$BASE_URL" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"bbc-football"}'
+```
+
+`brand` and `name` are mutually exclusive. Unknown values return `400`; successful workflow creation returns `202` with the workflow ID and selected sites.
+
+Check workflow status:
+
+```sh
+curl "$BASE_URL?workflowId=<WORKFLOW_ID>" \
+  -H "Authorization: Bearer $API_KEY"
+```
+
+## Catalogue
+
+Site definitions live in `src/sites`. `src/constants.ts` composes every provider list into the active catalogue and assigns each site a `brand`; each definition supplies a unique `name`, a `category` of `news` or `sport`, and a fixed HTTPS URL.
+
+Provider-backed local sites use their parent brand, such as `bbc`, `itv`, `reach`, or `newsquest`. Standalone sites in `other.ts` use their site name as the brand.
+
+## Configuration
+
+The Worker requires these bindings:
+
+- `BROWSER`: Cloudflare Browser Rendering
+- `NEWS_SNAPSHOTTER`: Cloudflare Workflow
+- `SCREENSHOTS`: R2 bucket
+- `API_KEY`: secret used to authenticate requests
+
+Create the production and preview R2 buckets, then set the API secret:
+
+```sh
+pnpm wrangler r2 bucket create news-snapshotter
+pnpm wrangler r2 bucket create news-snapshotter-preview
+pnpm wrangler secret put API_KEY
+```
+
+`wrangler.json` contains the deployable binding configuration. `wrangler.toml.example` shows the equivalent TOML shape.
+
+## Development
+
+Install dependencies and generate binding types after changing Wrangler configuration:
+
+```sh
+pnpm install
+pnpm run cf-typegen
+```
+
+Run static validation and the catalogue tests before deployment. Deploy with:
+
+```sh
+pnpm run deploy
+```

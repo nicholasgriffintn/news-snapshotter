@@ -1,11 +1,17 @@
 name = "news-snapshotter"
 main = "src/index.ts"
-compatibility_date = "2023-10-30"
+compatibility_date = "2026-06-16"
+compatibility_flags = ["nodejs_compat"]
 
-[vars]
-ASSISTANT_API_URL = "https://assistant.api.com"
+[browser]
+binding = "BROWSER"
 
-[workflows]
+[[workflows]]
 name = "news-snapshotter"
 binding = "NEWS_SNAPSHOTTER"
 class_name = "NewsSnapshotterWorkflow"
+
+[[r2_buckets]]
+binding = "SCREENSHOTS"
+bucket_name = "news-snapshotter"
+preview_bucket_name = "news-snapshotter-preview"

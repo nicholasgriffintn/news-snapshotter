@@ -3,16 +3,19 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
+		"check": "tsc",
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
-		"cf-typegen": "wrangler types",
-		"format": "prettier --write ."
+		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20250224.0",
-		"prettier": "^3.5.2",
-		"typescript": "^5.8.2",
-		"wrangler": "^3.111.0"
+		"@cloudflare/workers-types": "^5.20260716.1",
+		"@types/node": "^26.1.1",
+		"typescript": "^7.0.2",
+		"wrangler": "^4.111.0"
+	},
+	"dependencies": {
+		"@cloudflare/puppeteer": "^1.1.0"
 	}
 }
