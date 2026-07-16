@@ -14,8 +14,10 @@ export type DeviceCaptureConfig = {
 	blockSelectors?: BlockSelector[];
 	cookies?: Array<{ name: string; url: string; value: string }>;
 	deviceScaleFactor?: number;
+	extraHTTPHeaders?: Record<string, string>;
 	hasTouch?: boolean;
 	hideSelectors?: string[];
+	hideWebdriver?: boolean;
 	isMobile?: boolean;
 	javaScriptEnabled?: boolean;
 	navigationTimeoutMs?: number;
@@ -23,6 +25,15 @@ export type DeviceCaptureConfig = {
 	screenshot?: { fullPage: boolean; type: 'jpeg' | 'png' | 'webp'; quality?: number };
 	thumbnail?: { quality: number; type: 'jpeg' | 'webp' };
 	userAgent?: string;
+	userAgentMetadata?: {
+		architecture: string;
+		brands: Array<{ brand: string; version: string }>;
+		fullVersionList: Array<{ brand: string; version: string }>;
+		mobile: boolean;
+		model: string;
+		platform: string;
+		platformVersion: string;
+	};
 	viewport: { height: number; width: number };
 	waitAfterLoadMs?: number;
 	waitForImagesMs?: number;
@@ -42,9 +53,20 @@ export type ResolvedCaptureProfile = {
 };
 
 const DESKTOP_USER_AGENT =
-	'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36';
+	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36';
 const MOBILE_USER_AGENT =
 	'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36';
+
+const CHROME_BRANDS = [
+	{ brand: 'Google Chrome', version: '131' },
+	{ brand: 'Chromium', version: '131' },
+	{ brand: 'Not_A Brand', version: '24' },
+];
+
+const CHROME_FULL_VERSIONS = CHROME_BRANDS.map(({ brand, version }) => ({
+	brand,
+	version: version === '24' ? version : `${version}.0.0.0`,
+}));
 
 const FAILURE_INDICATORS: FailureIndicator[] = [
 	{ reason: 'access-denied', text: 'access denied' },
@@ -68,25 +90,47 @@ const GENERIC_CONSENT_SELECTORS = [
 
 const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 	desktop: {
+		extraHTTPHeaders: { 'accept-language': 'en-GB,en;q=0.9' },
+		hideWebdriver: true,
 		viewport: { width: 1740, height: 1008 },
 		javaScriptEnabled: true,
 		navigationTimeoutMs: 60_000,
 		screenshot: { type: 'png', fullPage: true },
 		thumbnail: { type: 'jpeg', quality: 72 },
 		userAgent: DESKTOP_USER_AGENT,
+		userAgentMetadata: {
+			architecture: 'x86',
+			brands: CHROME_BRANDS,
+			fullVersionList: CHROME_FULL_VERSIONS,
+			mobile: false,
+			model: '',
+			platform: 'macOS',
+			platformVersion: '15.0.0',
+		},
 		waitForImagesMs: 5_000,
 		hideSelectors: GENERIC_CONSENT_SELECTORS,
 	},
 	mobile: {
+		extraHTTPHeaders: { 'accept-language': 'en-GB,en;q=0.9' },
 		viewport: { width: 412, height: 915 },
 		deviceScaleFactor: 2.625,
 		hasTouch: true,
+		hideWebdriver: true,
 		isMobile: true,
 		javaScriptEnabled: true,
 		navigationTimeoutMs: 60_000,
 		screenshot: { type: 'png', fullPage: true },
 		thumbnail: { type: 'jpeg', quality: 72 },
 		userAgent: MOBILE_USER_AGENT,
+		userAgentMetadata: {
+			architecture: 'arm',
+			brands: CHROME_BRANDS,
+			fullVersionList: CHROME_FULL_VERSIONS,
+			mobile: true,
+			model: 'Pixel 8',
+			platform: 'Android',
+			platformVersion: '14.0.0',
+		},
 		waitForImagesMs: 5_000,
 		hideSelectors: GENERIC_CONSENT_SELECTORS,
 	},
@@ -190,6 +234,7 @@ function mergeDeviceConfig(
 		...overrides,
 		blockSelectors: [...(base.blockSelectors ?? []), ...(overrides?.blockSelectors ?? [])],
 		cookies: [...(base.cookies ?? []), ...(overrides?.cookies ?? [])],
+		extraHTTPHeaders: { ...base.extraHTTPHeaders, ...overrides?.extraHTTPHeaders },
 		hideSelectors: [...(base.hideSelectors ?? []), ...(overrides?.hideSelectors ?? [])],
 		viewport: overrides?.viewport ?? base.viewport,
 	};

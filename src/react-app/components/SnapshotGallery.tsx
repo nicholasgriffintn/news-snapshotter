@@ -5,7 +5,7 @@ import {
 	DEFAULT_ARCHIVE_PERIOD,
 	periodDescription,
 } from '../lib/archive-period';
-import { groupLabel } from '../lib/format';
+import { captureWindowKey, groupLabel } from '../lib/format';
 import { filterSnapshots } from '../lib/snapshot-filter';
 import type { Snapshot } from '../types';
 import { SnapshotCard } from './SnapshotCard';
@@ -46,7 +46,7 @@ export function SnapshotGallery() {
 	const brands = useMemo(() => {
 		return [...new Set(snapshots.map(({ brand }) => brand))].sort();
 	}, [snapshots]);
-	const groups = Map.groupBy(filtered, ({ capturedAt }) => capturedAt);
+	const groups = Map.groupBy(filtered, ({ capturedAt }) => captureWindowKey(capturedAt));
 
 	return (
 		<>

@@ -15,9 +15,11 @@ const capturedAt = '2026-07-16T10:20:30.123Z';
 
 function successfulPage(overrides = {}) {
 	let evaluation = 0;
+	const profileCalls = [];
 	return {
 		$: async () => null,
 		addStyleTag: async () => undefined,
+		evaluateOnNewDocument: async (...args) => profileCalls.push(['evaluateOnNewDocument', ...args]),
 		evaluate: async () => {
 			evaluation += 1;
 			return evaluation === 1
@@ -27,9 +29,11 @@ function successfulPage(overrides = {}) {
 		goto: async () => ({ status: () => 200 }),
 		screenshot: async (options) =>
 			options.fullPage ? Buffer.from('full screenshot') : Buffer.from('thumbnail'),
+		profileCalls,
 		setCookie: async () => undefined,
+		setExtraHTTPHeaders: async (...args) => profileCalls.push(['setExtraHTTPHeaders', ...args]),
 		setJavaScriptEnabled: async () => undefined,
-		setUserAgent: async () => undefined,
+		setUserAgent: async (...args) => profileCalls.push(['setUserAgent', ...args]),
 		setViewport: async () => undefined,
 		waitForFunction: async () => undefined,
 		...overrides,
@@ -71,6 +75,11 @@ test('captures full and thumbnail images with metadata and closes the browser', 
 	assert.equal(screenshots[1][2].customMetadata.visibility, 'public');
 	assert.equal(failures.length, 0);
 	assert.equal(closed, true);
+	assert.ok(page.profileCalls.some(([method]) => method === 'setExtraHTTPHeaders'));
+	assert.ok(page.profileCalls.some(([method]) => method === 'evaluateOnNewDocument'));
+	const userAgentCall = page.profileCalls.find(([method]) => method === 'setUserAgent');
+	assert.match(userAgentCall[1], /Macintosh/);
+	assert.equal(userAgentCall[2].platform, 'macOS');
 });
 
 test('records HTTP capture failures without retrying or writing screenshots', async (context) => {
@@ -80,7 +89,9 @@ test('records HTTP capture failures without retrying or writing screenshots', as
 			closed = true;
 		},
 		newPage: async () => ({
+			evaluateOnNewDocument: async () => undefined,
 			goto: async () => ({ status: () => 503 }),
+			setExtraHTTPHeaders: async () => undefined,
 			setJavaScriptEnabled: async () => undefined,
 			setUserAgent: async () => undefined,
 			setViewport: async () => undefined,

@@ -20,6 +20,11 @@ test('resolves safe desktop and mobile defaults', () => {
 	assert.deepEqual(profile.deviceConfig.desktop.viewport, { height: 1008, width: 1740 });
 	assert.deepEqual(profile.deviceConfig.mobile.viewport, { height: 915, width: 412 });
 	assert.equal(profile.deviceConfig.desktop.screenshot.fullPage, true);
+	assert.match(profile.deviceConfig.desktop.userAgent, /Macintosh/);
+	assert.equal(profile.deviceConfig.desktop.userAgentMetadata.platform, 'macOS');
+	assert.equal(profile.deviceConfig.desktop.userAgentMetadata.mobile, false);
+	assert.equal(profile.deviceConfig.desktop.extraHTTPHeaders['accept-language'], 'en-GB,en;q=0.9');
+	assert.equal(profile.deviceConfig.desktop.hideWebdriver, true);
 	assert.ok(profile.deviceConfig.desktop.hideSelectors.includes('#onetrust-banner-sdk'));
 	assert.ok(profile.failureIndicators.some(({ reason }) => reason === 'captcha'));
 });

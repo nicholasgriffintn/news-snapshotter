@@ -108,9 +108,29 @@ async function applyPageProfile(page: Page, config: DeviceCaptureConfig): Promis
 		hasTouch: config.hasTouch,
 		isMobile: config.isMobile,
 	});
+
 	await page.setJavaScriptEnabled(config.javaScriptEnabled ?? true);
-	if (config.userAgent) await page.setUserAgent(config.userAgent);
-	if (config.cookies?.length) await page.setCookie(...config.cookies);
+
+	if (config.extraHTTPHeaders) {
+		await page.setExtraHTTPHeaders(config.extraHTTPHeaders);
+	}
+
+	if (config.userAgent) {
+		await page.setUserAgent(config.userAgent, config.userAgentMetadata);
+	}
+
+	if (config.hideWebdriver) {
+		await page.evaluateOnNewDocument(() => {
+			const browser = globalThis as unknown as { navigator: object };
+			const navigatorPrototype = Object.getPrototypeOf(browser.navigator) as object | null;
+			if (navigatorPrototype) {
+				Reflect.deleteProperty(navigatorPrototype, 'webdriver');
+			}
+		});
+	}
+	if (config.cookies?.length) {
+		await page.setCookie(...config.cookies);
+	}
 }
 
 async function waitForCompletion(page: Page, completion: NonNullable<SiteDefinition['completion']>) {
