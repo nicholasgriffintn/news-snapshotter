@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { runSnapshotWorkflow } from './workflow-runner.ts';
 
-const capturedAt = '2026-07-16T10:20:30.123Z';
+const triggeredAt = '2026-07-16T10:20:30.123Z';
 const sites = [
 	{ brand: 'bbc', category: 'news', name: 'bbc-home', url: 'https://bbc.co.uk' },
 	{ brand: 'sky', category: 'sport', name: 'sky-sports', url: 'https://skysports.com' },
@@ -21,11 +21,25 @@ test('runs one durable step per site and device and aggregates results', async (
 	const capture = async (_env, site, device, timestamp) => {
 		captures.push({ device, name: site.name, timestamp });
 		return device === 'desktop'
-			? { device, key: `${site.name}-${device}.png`, name: site.name, status: 'success' }
-			: { device, error: 'mobile failed', name: site.name, status: 'error' };
+			? {
+				capturedAt: timestamp,
+				device,
+				key: `${site.name}-${device}.png`,
+				name: site.name,
+				status: 'success',
+				triggeredAt: timestamp,
+			}
+			: {
+				capturedAt: timestamp,
+				device,
+				error: 'mobile failed',
+				name: site.name,
+				status: 'error',
+				triggeredAt: timestamp,
+			};
 	};
 
-	const result = await runSnapshotWorkflow({}, { capturedAt, sites }, step, capture);
+	const result = await runSnapshotWorkflow({}, { triggeredAt, sites }, step, capture);
 
 	assert.equal(result.totalSites, 2);
 	assert.equal(result.totalCaptures, 4);
@@ -37,22 +51,22 @@ test('runs one durable step per site and device and aggregates results', async (
 		'screenshot-sky-sports-desktop',
 		'screenshot-sky-sports-mobile',
 	]);
-	assert.ok(captures.every(({ timestamp }) => timestamp === capturedAt));
+	assert.ok(captures.every(({ timestamp }) => timestamp === triggeredAt));
 });
 
 test('returns an empty summary when no sites are selected', async () => {
 	const step = { do: async (_name, callback) => callback() };
-	const result = await runSnapshotWorkflow({}, { capturedAt, sites: [] }, step, async () => {
+	const result = await runSnapshotWorkflow({}, { triggeredAt, sites: [] }, step, async () => {
 		throw new Error('capture should not run');
 	});
 
 	assert.deepEqual(result, {
-		capturedAt,
 		failed: 0,
 		results: [],
 		successful: 0,
 		totalCaptures: 0,
 		totalSites: 0,
+		triggeredAt,
 	});
 });
 
@@ -76,7 +90,7 @@ test('delays a child runner before starting its first capture', async () => {
 
 	await runSnapshotWorkflow(
 		{},
-		{ capturedAt, sites: [sites[0]], startDelaySeconds: 3 },
+		{ triggeredAt, sites: [sites[0]], startDelaySeconds: 3 },
 		step,
 		capture,
 	);
@@ -95,7 +109,7 @@ test('does not retry or swallow a durable step failure', async () => {
 	};
 
 	await assert.rejects(
-		() => runSnapshotWorkflow({}, { capturedAt, sites: [sites[0]] }, step, async () => undefined),
+		() => runSnapshotWorkflow({}, { triggeredAt, sites: [sites[0]] }, step, async () => undefined),
 		/step unavailable/,
 	);
 	assert.equal(attempts, 1);

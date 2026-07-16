@@ -172,7 +172,7 @@ async function capture(
 	env: Pick<Env, 'BROWSER' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
 	device: Device,
-	capturedAt: string,
+	triggeredAt: string,
 ): Promise<ScreenshotResult> {
 	const profile = resolveCaptureProfile(site);
 	const config = profile.deviceConfig[device];
@@ -219,10 +219,11 @@ async function capture(
 			await page.addStyleTag({ content: styles });
 		}
 
+		const capturedAt = new Date().toISOString();
 		const screenshot = await takeFullScreenshot(page, config);
 
 		const extension = config.screenshot?.type ?? 'png';
-		const key = screenshotKey(site, capturedAt, device, extension);
+		const key = screenshotKey(site, triggeredAt, device, extension);
 
 		const thumbnailConfig = config.thumbnail ?? { type: 'jpeg' as const, quality: 72 };
 		const thumbnail = await page.screenshot({
@@ -238,6 +239,7 @@ async function capture(
 			category: site.category,
 			device,
 			name: site.name,
+			triggeredAt,
 			url: site.url,
 			visibility: site.visibility ?? 'public',
 		};
@@ -251,7 +253,7 @@ async function capture(
 			customMetadata,
 		});
 
-		return { device, key, name: site.name, status: 'success' };
+		return { capturedAt, device, key, name: site.name, status: 'success', triggeredAt };
 	} finally {
 		try {
 			await browser.close();
@@ -269,20 +271,30 @@ export async function captureDevice(
 	env: Pick<Env, 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
 	device: Device,
-	capturedAt: string,
+	triggeredAt: string,
 ): Promise<ScreenshotResult> {
 	try {
-		return await capture(env, site, device, capturedAt);
+		return await capture(env, site, device, triggeredAt);
 	} catch (error) {
 		const reason = error instanceof DetectedCaptureError ? error.reason : 'capture-error';
 		const message = errorMessage(error);
+		const capturedAt = new Date().toISOString();
 		const failureKey = await storeCaptureFailure(env, {
 			capturedAt,
 			device,
 			message,
 			reason,
 			site,
+			triggeredAt,
 		});
-		return { device, error: message, failureKey, name: site.name, status: 'error' };
+		return {
+			capturedAt,
+			device,
+			error: message,
+			failureKey,
+			name: site.name,
+			status: 'error',
+			triggeredAt,
+		};
 	}
 }

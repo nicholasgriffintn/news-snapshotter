@@ -11,6 +11,7 @@ export type CaptureFailure = {
 	message: string;
 	reason: string;
 	site: SiteDefinition;
+	triggeredAt: string;
 };
 
 export type StoredCaptureFailure = {
@@ -23,6 +24,7 @@ export type StoredCaptureFailure = {
 	reason: string;
 	storedAt: string;
 	url: string;
+	triggeredAt: string;
 };
 
 export type CaptureFailurePage = {
@@ -47,6 +49,7 @@ function parseStoredFailure(value: string | null): StoredCaptureFailure | undefi
 			'name',
 			'reason',
 			'storedAt',
+			'triggeredAt',
 			'url',
 		];
 		if (!requiredStrings.every((field) => typeof failure[field] === 'string')) return undefined;
@@ -101,6 +104,7 @@ export async function storeCaptureFailure(
 		reason: failure.reason,
 		storedAt: new Date().toISOString(),
 		url: failure.site.url,
+		triggeredAt: failure.triggeredAt,
 	};
 
 	try {

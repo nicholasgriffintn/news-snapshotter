@@ -6,12 +6,12 @@ export function safeSegment(value: string): string {
 
 export function screenshotKey(
 	site: SiteDefinition,
-	capturedAt: string,
+	triggeredAt: string,
 	device: Device,
 	extension: 'jpeg' | 'png' | 'webp',
 ): string {
-	const date = capturedAt.slice(0, 10);
-	const timestamp = capturedAt.replace(/[:.]/g, '-');
+	const date = triggeredAt.slice(0, 10);
+	const timestamp = triggeredAt.replace(/[:.]/g, '-');
 
 	return [
 		`brand=${safeSegment(site.brand)}`,

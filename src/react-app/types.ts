@@ -7,7 +7,15 @@ export type Snapshot = {
 	key: string;
 	name: string;
 	thumbnailUrl: string;
+	triggeredAt: string;
 	url: string;
+};
+
+export type SnapshotGroup = Pick<
+	Snapshot,
+	'brand' | 'capturedAt' | 'category' | 'name' | 'triggeredAt' | 'url'
+> & {
+	variants: Partial<Record<Snapshot['device'], Snapshot>>;
 };
 
 export type CatalogueSite = Pick<Snapshot, 'brand' | 'category' | 'name'>;

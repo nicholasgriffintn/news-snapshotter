@@ -12,7 +12,7 @@ const site = {
 	runtimeQuietMs: 0,
 	url: 'https://example.com',
 };
-const capturedAt = '2026-07-16T10:20:30.123Z';
+const triggeredAt = '2026-07-16T10:20:30.123Z';
 
 function successfulPage(overrides = {}) {
 	let evaluation = 0;
@@ -77,7 +77,7 @@ test('captures full and thumbnail images with metadata and closes the browser', 
 	}));
 	const { env, failures, screenshots } = environment();
 
-	const result = await captureDevice(env, site, 'desktop', capturedAt);
+	const result = await captureDevice(env, site, 'desktop', triggeredAt);
 
 	assert.equal(result.status, 'success');
 	assert.match(result.key, /brand=example\/category=news\/date=2026-07-16/);
@@ -85,6 +85,9 @@ test('captures full and thumbnail images with metadata and closes the browser', 
 	assert.match(screenshots[0][0], /-thumbnail\.jpg$/);
 	assert.equal(screenshots[1][2].customMetadata.name, 'example-home');
 	assert.equal(screenshots[1][2].customMetadata.visibility, 'public');
+	assert.equal(screenshots[1][2].customMetadata.triggeredAt, triggeredAt);
+	assert.notEqual(screenshots[1][2].customMetadata.capturedAt, triggeredAt);
+	assert.equal(result.capturedAt, screenshots[1][2].customMetadata.capturedAt);
 	assert.equal(failures.length, 0);
 	assert.equal(closed, true);
 	assert.ok(page.profileCalls.some(([method]) => method === 'setExtraHTTPHeaders'));
@@ -113,13 +116,16 @@ test('records HTTP capture failures without retrying or writing screenshots', as
 	}));
 	const { env, failures, screenshots } = environment();
 
-	const result = await captureDevice(env, site, 'desktop', capturedAt);
+	const result = await captureDevice(env, site, 'desktop', triggeredAt);
 
 	assert.equal(result.status, 'error');
 	assert.equal(result.error, 'Navigation returned HTTP 503');
-	assert.match(result.failureKey, /^failures\/date=2026-07-16\//);
+	assert.match(result.failureKey, /^failures\/date=\d{4}-\d{2}-\d{2}\//);
 	assert.equal(failures.length, 1);
-	assert.equal(JSON.parse(failures[0][1]).reason, 'http-error');
+	const failure = JSON.parse(failures[0][1]);
+	assert.equal(failure.reason, 'http-error');
+	assert.equal(failure.triggeredAt, triggeredAt);
+	assert.notEqual(failure.capturedAt, triggeredAt);
 	assert.equal(screenshots.length, 0);
 	assert.equal(closed, true);
 });
@@ -128,7 +134,7 @@ test('records launch errors as capture failures', async (context) => {
 	context.mock.method(puppeteer, 'launch', async () => Promise.reject(new Error('browser unavailable')));
 	const { env, failures } = environment();
 
-	const result = await captureDevice(env, site, 'mobile', capturedAt);
+	const result = await captureDevice(env, site, 'mobile', triggeredAt);
 
 	assert.equal(result.status, 'error');
 	assert.equal(result.error, 'browser unavailable');
@@ -153,7 +159,7 @@ test('waits for configured completion text before storing a capture', async (con
 		timeoutMs: 30_000,
 	};
 
-	const result = await captureDevice(env, { ...site, completion }, 'desktop', capturedAt);
+	const result = await captureDevice(env, { ...site, completion }, 'desktop', triggeredAt);
 
 	assert.equal(result.status, 'success');
 	assert.deepEqual(completionWaits, [
@@ -179,7 +185,7 @@ test('records a completion timeout without storing a partial screenshot', async 
 		timeoutMs: 30_000,
 	};
 
-	const result = await captureDevice(env, { ...site, completion }, 'desktop', capturedAt);
+	const result = await captureDevice(env, { ...site, completion }, 'desktop', triggeredAt);
 
 	assert.equal(result.status, 'error');
 	assert.equal(result.error, 'Page did not complete within 30000ms');

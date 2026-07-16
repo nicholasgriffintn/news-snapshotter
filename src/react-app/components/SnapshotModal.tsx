@@ -1,9 +1,18 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { displayName, timeLabel } from '../lib/format';
-import type { Snapshot } from '../types';
+import { preferredVariant } from '../lib/snapshot-groups';
+import type { Snapshot, SnapshotGroup } from '../types';
+import { DeviceIcon } from './DeviceIcon';
 
-export function SnapshotModal({ onClose, snapshot }: { onClose: () => void; snapshot: Snapshot }) {
+export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClose: () => void }) {
+	const initialDevice = preferredVariant(group).device;
+	const [device, setDevice] = useState<Snapshot['device']>(initialDevice);
+	const devices = (['desktop', 'mobile'] as const).filter(
+		(candidate) => group.variants[candidate],
+	);
+	const snapshot = group.variants[device] ?? preferredVariant(group);
+
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
 			if (event.key === 'Escape') onClose();
@@ -16,6 +25,14 @@ export function SnapshotModal({ onClose, snapshot }: { onClose: () => void; snap
 		};
 	}, [onClose]);
 
+	function selectAdjacentDevice(event: React.KeyboardEvent, currentIndex: number) {
+		if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+		event.preventDefault();
+		const direction = event.key === 'ArrowRight' ? 1 : -1;
+		const nextIndex = (currentIndex + direction + devices.length) % devices.length;
+		setDevice(devices[nextIndex]);
+	}
+
 	return (
 		<div
 			aria-modal="true"
@@ -23,24 +40,19 @@ export function SnapshotModal({ onClose, snapshot }: { onClose: () => void; snap
 			onMouseDown={(event) => event.target === event.currentTarget && onClose()}
 			role="dialog"
 		>
-			<div className="modal__panel">
+			<div className={`modal__panel${devices.length > 1 ? ' modal__panel--variants' : ''}`}>
 				<header className="modal__header">
 					<div>
 						<p>
-							{displayName(snapshot.brand)} / {snapshot.category} / {snapshot.device}
+							{displayName(group.brand)} / {group.category}
 						</p>
-						<h2>{displayName(snapshot.name)}</h2>
-						<time dateTime={snapshot.capturedAt}>
-							{timeLabel(snapshot.capturedAt)} ·{' '}
-							{new Date(snapshot.capturedAt).toLocaleDateString('en-GB')}
+						<h2>{displayName(group.name)}</h2>
+						<time dateTime={group.capturedAt}>
+							{timeLabel(group.capturedAt)} ·{' '}
+							{new Date(group.capturedAt).toLocaleDateString('en-GB')}
 						</time>
-						<a
-							className="modal__source"
-							href={snapshot.url}
-							rel="noreferrer"
-							target="_blank"
-						>
-							<span>{snapshot.url}</span>
+						<a className="modal__source" href={group.url} rel="noreferrer" target="_blank">
+							<span>{group.url}</span>
 							<strong>Visit the original publisher ↗</strong>
 						</a>
 					</div>
@@ -53,9 +65,29 @@ export function SnapshotModal({ onClose, snapshot }: { onClose: () => void; snap
 						×
 					</button>
 				</header>
-				<div className="modal__image">
+
+				{devices.length > 1 ? (
+					<div aria-label="Screenshot variant" className="modal__variants" role="tablist">
+						{devices.map((candidate, index) => (
+							<button
+								aria-selected={snapshot.device === candidate}
+								key={candidate}
+								onClick={() => setDevice(candidate)}
+								onKeyDown={(event) => selectAdjacentDevice(event, index)}
+								role="tab"
+								type="button"
+							>
+								<DeviceIcon device={candidate} />
+								{displayName(candidate)}
+							</button>
+						))}
+					</div>
+				) : null}
+
+				<div className="modal__image" role="tabpanel">
 					<img
-						alt={`Full screenshot of ${displayName(snapshot.name)}`}
+						alt={`Full ${snapshot.device} screenshot of ${displayName(group.name)}`}
+						key={snapshot.key}
 						src={snapshot.fullImageUrl}
 					/>
 				</div>

@@ -10,7 +10,7 @@ type CaptureDevice = (
 	env: Pick<Env, 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
 	device: Device,
-	capturedAt: string,
+	triggeredAt: string,
 ) => Promise<ScreenshotResult>;
 
 export async function runBotCheck(
@@ -18,7 +18,7 @@ export async function runBotCheck(
 	profile: string,
 	capture: CaptureDevice = captureDevice,
 ) {
-	const capturedAt = new Date().toISOString();
+	const triggeredAt = new Date().toISOString();
 	const site: SiteDefinition = {
 		brand: 'amiabot',
 		category: 'news',
@@ -37,8 +37,8 @@ export async function runBotCheck(
 	const results: ScreenshotResult[] = [];
 
 	for (const device of devices) {
-		results.push(await capture(env, site, device, capturedAt));
+		results.push(await capture(env, site, device, triggeredAt));
 	}
 
-	return { capturedAt, profile, results, url: AM_I_A_BOT_URL };
+	return { profile, results, triggeredAt, url: AM_I_A_BOT_URL };
 }

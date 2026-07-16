@@ -100,6 +100,7 @@ test('lists bounded capture failures for admins', async () => {
 		name: 'bbc-home',
 		reason: 'http-error',
 		storedAt: '2026-07-16T10:20:31.123Z',
+		triggeredAt: '2026-07-16T10:00:00.000Z',
 		url: 'https://www.bbc.co.uk/',
 	};
 	const response = await handleRequest(
@@ -204,7 +205,8 @@ test('fans a full capture out across six balanced runners with one timestamp', a
 	]);
 	assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1);
 	assert.equal(sizes.reduce((total, size) => total + size, 0), body.selectedSites.length);
-	assert.equal(new Set(creations.map(({ params }) => params.capturedAt)).size, 1);
+	assert.equal(new Set(creations.map(({ params }) => params.triggeredAt)).size, 1);
+	assert.equal(body.triggeredAt, creations[0].params.triggeredAt);
 	assert.deepEqual(creations.map(({ params }) => params.startDelaySeconds), [0, 1, 2, 3, 4, 5]);
 });
 

@@ -7,7 +7,8 @@ import {
 } from '../lib/archive-period';
 import { captureWindowKey, groupLabel } from '../lib/format';
 import { filterSnapshots } from '../lib/snapshot-filter';
-import type { Snapshot } from '../types';
+import { groupSnapshotVariants } from '../lib/snapshot-groups';
+import type { Snapshot, SnapshotGroup } from '../types';
 import { SnapshotCard } from './SnapshotCard';
 import { SnapshotFilters, type Filters } from './SnapshotFilters';
 import { SnapshotModal } from './SnapshotModal';
@@ -22,7 +23,7 @@ const EMPTY_FILTERS: Filters = {
 export function SnapshotGallery() {
 	const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
 	const [filters, setFilters] = useState(EMPTY_FILTERS);
-	const [selected, setSelected] = useState<Snapshot>();
+	const [selected, setSelected] = useState<SnapshotGroup>();
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(true);
 	const [now, setNow] = useState(() => new Date());
@@ -46,7 +47,8 @@ export function SnapshotGallery() {
 	const brands = useMemo(() => {
 		return [...new Set(snapshots.map(({ brand }) => brand))].sort();
 	}, [snapshots]);
-	const groups = Map.groupBy(filtered, ({ capturedAt }) => captureWindowKey(capturedAt));
+	const groupedSnapshots = groupSnapshotVariants(filtered);
+	const groups = Map.groupBy(groupedSnapshots, ({ capturedAt }) => captureWindowKey(capturedAt));
 
 	return (
 		<>
@@ -54,7 +56,7 @@ export function SnapshotGallery() {
 			<div className="gallery-status">
 				<span>
 					<strong>{periodDescription(filters)}</strong>
-					{filtered.length} captures
+					{groupedSnapshots.length} pages · {filtered.length} variants
 				</span>
 				<button onClick={() => setFilters(EMPTY_FILTERS)} type="button">
 					Clear filters
@@ -65,7 +67,7 @@ export function SnapshotGallery() {
 			{error ? (
 				<div className="empty-state empty-state--error">Could not load snapshots. {error}</div>
 			) : null}
-			{!loading && !error && filtered.length === 0 ? (
+			{!loading && !error && groupedSnapshots.length === 0 ? (
 				<div className="empty-state">No snapshots match those filters.</div>
 			) : null}
 
@@ -73,18 +75,18 @@ export function SnapshotGallery() {
 				<section
 					className="capture-group"
 					key={capturedAt}
-					style={{ '--group-index': groupIndex } as React.CSSProperties}
+					style={{ '--group-index': Math.min(groupIndex, 4) } as React.CSSProperties}
 				>
 					<div className="capture-group__heading">
 						<h2>{groupLabel(capturedAt)}</h2>
-						<span>{items.length} captures</span>
+						<span>{items.length} pages</span>
 					</div>
 					<div className="snapshot-grid">
-						{items.map((snapshot) => (
+						{items.map((group) => (
 							<SnapshotCard
-								key={snapshot.key}
-								onSelect={() => setSelected(snapshot)}
-								snapshot={snapshot}
+								group={group}
+								key={`${group.name}-${group.capturedAt}`}
+								onSelect={() => setSelected(group)}
 							/>
 						))}
 					</div>
@@ -92,7 +94,7 @@ export function SnapshotGallery() {
 			))}
 
 			{selected ? (
-				<SnapshotModal onClose={() => setSelected(undefined)} snapshot={selected} />
+				<SnapshotModal group={selected} onClose={() => setSelected(undefined)} />
 			) : null}
 		</>
 	);

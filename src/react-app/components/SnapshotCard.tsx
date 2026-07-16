@@ -1,27 +1,38 @@
 import { displayName, timeLabel } from '../lib/format';
-import type { Snapshot } from '../types';
+import { preferredVariant } from '../lib/snapshot-groups';
+import type { SnapshotGroup } from '../types';
+import { DeviceIcon } from './DeviceIcon';
 
-export function SnapshotCard({ onSelect, snapshot }: { onSelect: () => void; snapshot: Snapshot }) {
+
+export function SnapshotCard({ group, onSelect }: { group: SnapshotGroup; onSelect: () => void }) {
+	const preview = preferredVariant(group);
+	const devices = (['desktop', 'mobile'] as const).filter((device) => group.variants[device]);
+
 	return (
 		<button className="snapshot-card" onClick={onSelect} type="button">
 			<div className="snapshot-card__image">
 				<img
-					alt={`Thumbnail of ${displayName(snapshot.name)}`}
+					alt={`Thumbnail of ${displayName(group.name)}`}
 					loading="lazy"
 					onError={(event) => {
-						event.currentTarget.src = snapshot.fullImageUrl;
+						event.currentTarget.src = preview.fullImageUrl;
 					}}
-					src={snapshot.thumbnailUrl}
+					src={preview.thumbnailUrl}
 				/>
-				<span className={`category category--${snapshot.category}`}>{snapshot.category}</span>
+				<div aria-label="Captured variants" className="snapshot-card__variants">
+					{devices.map((device) => (
+						<span aria-label={`${displayName(device)} captured`} key={device}>
+							<DeviceIcon device={device} />
+						</span>
+					))}
+				</div>
+				<span className={`category category--${group.category}`}>{group.category}</span>
 			</div>
 			<div className="snapshot-card__copy">
-				<span className="snapshot-card__brand">
-					{displayName(snapshot.brand)} · {snapshot.device}
-				</span>
-				<h3>{displayName(snapshot.name)}</h3>
-				<span className="snapshot-card__url">{snapshot.url}</span>
-				<time dateTime={snapshot.capturedAt}>{timeLabel(snapshot.capturedAt)}</time>
+				<span className="snapshot-card__brand">{displayName(group.brand)}</span>
+				<h3>{displayName(group.name)}</h3>
+				<span className="snapshot-card__url">{group.url}</span>
+				<time dateTime={group.capturedAt}>{timeLabel(group.capturedAt)}</time>
 			</div>
 		</button>
 	);

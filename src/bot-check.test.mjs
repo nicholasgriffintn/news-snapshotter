@@ -5,8 +5,8 @@ import { runBotCheck } from './bot-check.ts';
 
 test('captures amiabot with every device from the selected profile', async () => {
 	const captures = [];
-	const capture = async (_env, site, device, capturedAt) => {
-		captures.push({ capturedAt, device, site });
+	const capture = async (_env, site, device, triggeredAt) => {
+		captures.push({ device, site, triggeredAt });
 		return { device, key: `${device}.png`, name: site.name, status: 'success' };
 	};
 
@@ -22,6 +22,7 @@ test('captures amiabot with every device from the selected profile', async () =>
 	assert.ok(captures.every(({ site }) => site.completion.selector === '#status'));
 	assert.ok(captures.every(({ site }) => site.runtimeQuietMs === 12_000));
 	assert.ok(captures.every(({ site }) => site.completion.textStartsWith === 'Classification:'));
+	assert.ok(captures.every(({ triggeredAt }) => triggeredAt === result.triggeredAt));
 });
 
 test('returns failed device results without retrying them', async () => {

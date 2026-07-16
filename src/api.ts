@@ -40,15 +40,15 @@ async function parseSelection(request: Request): Promise<SiteSelection> {
 
 async function startWorkflow(request: Request, env: Env): Promise<Response> {
 	const sites = selectSites(SITES, await parseSelection(request));
-	const capturedAt = new Date().toISOString();
+	const triggeredAt = new Date().toISOString();
 	const shards = createWorkflowShards(sites);
 	const workflows = await Promise.all(
 		shards.map(async (shard) => {
 			const instance = await env.NEWS_SNAPSHOTTER.create({
 				params: {
-					capturedAt,
 					sites: shard.sites,
 					startDelaySeconds: shard.startDelaySeconds,
+					triggeredAt,
 				},
 			});
 			return {
@@ -62,14 +62,14 @@ async function startWorkflow(request: Request, env: Env): Promise<Response> {
 
 	return Response.json(
 		{
-			batchId: `capture-${capturedAt.replace(/[:.]/g, '-')}`,
-			capturedAt,
+			batchId: `capture-${triggeredAt.replace(/[:.]/g, '-')}`,
 			runnerCount: workflows.length,
 			status: 'success',
 			selectedSites: sites.map(({ brand, category, name }) => ({ brand, category, name })),
 			workflowId: workflowIds[0],
 			workflowIds,
 			workflows,
+			triggeredAt,
 		},
 		{ status: 202 },
 	);

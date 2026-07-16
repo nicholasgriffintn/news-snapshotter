@@ -8,6 +8,7 @@ const failure = {
 	device: 'mobile',
 	message: 'x'.repeat(600),
 	reason: 'captcha',
+	triggeredAt: '2026-07-16T10:00:00.000Z',
 	site: {
 		brand: 'bbc',
 		category: 'news',
@@ -30,6 +31,7 @@ test('stores a partitioned, expiring failure record with bounded messages', asyn
 	const [storedKey, value, options] = writes[0];
 	assert.equal(storedKey, key);
 	assert.equal(JSON.parse(value).message.length, 500);
+	assert.equal(JSON.parse(value).triggeredAt, failure.triggeredAt);
 	assert.equal(options.expirationTtl, 90 * 24 * 60 * 60);
 	assert.deepEqual(options.metadata, { brand: 'bbc', device: 'mobile', reason: 'captcha' });
 });
@@ -56,6 +58,7 @@ test('lists valid failures newest first and ignores corrupt KV values', async ()
 			name: 'bbc-home',
 			reason: 'http-error',
 			storedAt: '2026-07-16T10:00:01.000Z',
+			triggeredAt: '2026-07-16T09:55:00.000Z',
 			url: 'https://bbc.co.uk',
 		})],
 		['newer', JSON.stringify({
@@ -67,6 +70,7 @@ test('lists valid failures newest first and ignores corrupt KV values', async ()
 			name: 'sky-home',
 			reason: 'captcha',
 			storedAt: '2026-07-16T11:00:01.000Z',
+			triggeredAt: '2026-07-16T10:55:00.000Z',
 			url: 'https://news.sky.com',
 		})],
 		['corrupt', '{nope'],

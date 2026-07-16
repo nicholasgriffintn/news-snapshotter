@@ -16,6 +16,7 @@ const newerMetadata = {
 	category: 'news',
 	device: 'mobile',
 	name: 'bbc-home',
+	triggeredAt: '2026-07-16T09:30:00.000Z',
 	url: 'https://bbc.co.uk',
 };
 
@@ -24,6 +25,7 @@ const olderMetadata = {
 	capturedAt: '2026-07-16T10:00:00.000Z',
 	category: 'sport',
 	name: 'sky-sports',
+	triggeredAt: '2026-07-16T09:30:00.000Z',
 	url: 'https://skysports.com',
 };
 
@@ -42,6 +44,8 @@ test('lists valid full screenshots newest first with image URLs', async () => {
 
 	assert.deepEqual(result.screenshots.map(({ brand }) => brand), ['bbc', 'sky']);
 	assert.equal(result.screenshots[0].device, 'mobile');
+	assert.equal(result.screenshots[0].triggeredAt, newerMetadata.triggeredAt);
+	assert.equal(result.screenshots[1].triggeredAt, olderMetadata.triggeredAt);
 	assert.match(result.screenshots[0].fullImageUrl, /\/api\/screenshots\/image\?key=/);
 	assert.match(result.screenshots[0].thumbnailUrl, /-thumbnail\.jpg/);
 	assert.equal(result.truncated, false);
@@ -54,6 +58,7 @@ test('ignores thumbnails, unsupported files, and incomplete metadata', async () 
 				object('capture-thumbnail.jpg', newerMetadata),
 				object('capture.pdf', newerMetadata),
 				object('capture.png', { ...newerMetadata, url: undefined }),
+				object('missing-trigger.png', { ...newerMetadata, triggeredAt: undefined }),
 			],
 			truncated: false,
 		}),

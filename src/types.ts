@@ -22,9 +22,11 @@ export type SiteDefinition = {
 export type SiteSource = Omit<SiteDefinition, 'brand'>;
 
 export type ScreenshotResult = {
+	capturedAt: string;
 	device: Device;
 	name: string;
 	status: 'success' | 'error';
+	triggeredAt: string;
 	key?: string;
 	error?: string;
 	failureKey?: string;
@@ -39,5 +41,6 @@ export type ScreenshotSummary = {
 	key: string;
 	name: string;
 	thumbnailUrl: string;
+	triggeredAt: string;
 	url: string;
 };

@@ -10,7 +10,7 @@ Screenshots use deterministic Hive-style R2 partitions:
 brand=bbc/category=sport/date=2026-07-16/bbc-football-2026-07-16T12-34-56-789Z.png
 ```
 
-Using the workflow start time in the key makes captures idempotent. R2 object metadata includes the site name, source URL, brand, category, device, and capture time.
+Using the workflow trigger time in the key makes captures idempotent. R2 object metadata records that `triggeredAt` time separately from `capturedAt`, which is set immediately before each device screenshot is taken. The gallery sorts, filters, and displays the actual capture time while using the trigger time to associate desktop and mobile variants from the same run.
 
 ## Capture profiles
 

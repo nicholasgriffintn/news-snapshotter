@@ -25,6 +25,7 @@ export async function startSnapshotWorkflow(
 	batchId: string;
 	runnerCount: number;
 	selectedSites: CatalogueSite[];
+	triggeredAt: string;
 	workflowId: string;
 	workflowIds: string[];
 }> {
@@ -54,16 +55,18 @@ export async function fetchCaptureFailures(
 }
 
 export type BotCheckResult = {
-	capturedAt: string;
 	profile: string;
 	results: Array<{
+		capturedAt: string;
 		device: 'desktop' | 'mobile';
 		error?: string;
 		fullImageUrl?: string;
 		key?: string;
 		status: 'error' | 'success';
 		thumbnailUrl?: string;
+		triggeredAt: string;
 	}>;
+	triggeredAt: string;
 	url: string;
 };
 

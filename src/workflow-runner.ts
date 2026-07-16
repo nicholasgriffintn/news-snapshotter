@@ -4,9 +4,9 @@ import { captureDevice } from './browser-rendering.ts';
 import type { Device, ScreenshotResult, SiteDefinition } from './types';
 
 export type SnapshotWorkflowParams = {
-	capturedAt: string;
 	sites: SiteDefinition[];
 	startDelaySeconds?: number;
+	triggeredAt: string;
 };
 
 type WorkflowStepLike = {
@@ -18,7 +18,7 @@ type CaptureDevice = (
 	env: Pick<Env, 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
 	device: Device,
-	capturedAt: string,
+	triggeredAt: string,
 ) => Promise<ScreenshotResult>;
 
 export async function runSnapshotWorkflow(
@@ -27,7 +27,7 @@ export async function runSnapshotWorkflow(
 	step: WorkflowStepLike,
 	capture: CaptureDevice = captureDevice,
 ) {
-	const { capturedAt, sites } = params;
+	const { sites, triggeredAt } = params;
 	const results: ScreenshotResult[] = [];
 	if (params.startDelaySeconds && step.sleep) {
 		const duration: `${number} seconds` = `${params.startDelaySeconds} seconds`;
@@ -38,18 +38,18 @@ export async function runSnapshotWorkflow(
 		const profile = resolveCaptureProfile(site);
 		for (const device of profile.devices) {
 			const result = await step.do(`screenshot-${site.name}-${device}`, () => {
-				return capture(env, site, device, capturedAt);
+				return capture(env, site, device, triggeredAt);
 			});
 			results.push(result);
 		}
 	}
 
 	return {
-		capturedAt,
 		failed: results.filter((result) => result.status === 'error').length,
 		results,
 		successful: results.filter((result) => result.status === 'success').length,
 		totalCaptures: results.length,
 		totalSites: sites.length,
+		triggeredAt,
 	};
 }

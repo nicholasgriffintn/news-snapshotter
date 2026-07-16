@@ -36,6 +36,7 @@ export async function listScreenshots(bucket: R2Bucket): Promise<{
 			!metadata.capturedAt ||
 			!metadata.category ||
 			!metadata.name ||
+			!metadata.triggeredAt ||
 			!metadata.url ||
 			!['news', 'sport'].includes(metadata.category)
 		) {
@@ -52,6 +53,7 @@ export async function listScreenshots(bucket: R2Bucket): Promise<{
 				key: object.key,
 				name: metadata.name,
 				thumbnailUrl: screenshotImageUrl(thumbnailKey(object.key)),
+				triggeredAt: metadata.triggeredAt,
 				url: metadata.url,
 			},
 		];

@@ -403,6 +403,8 @@ select:focus-visible {
 	padding: 2.5rem 0 2rem;
 	animation: group-in 500ms both;
 	animation-delay: calc(var(--group-index) * 90ms);
+	content-visibility: auto;
+	contain-intrinsic-block-size: auto 36rem;
 }
 
 .capture-group__heading {
@@ -478,6 +480,35 @@ select:focus-visible {
 
 .snapshot-card:hover img {
 	transform: scale(1.035);
+}
+
+.snapshot-card__variants {
+	position: absolute;
+	top: 0.6rem;
+	left: 0.6rem;
+	display: flex;
+	gap: 0.35rem;
+}
+
+.snapshot-card__variants span {
+	display: grid;
+	place-items: center;
+	width: 2rem;
+	height: 2rem;
+	color: var(--cream);
+	background: rgba(5, 7, 20, 0.9);
+	border: 1px solid var(--cyan);
+}
+
+.snapshot-card__variants svg,
+.modal__variants svg {
+	width: 1.15rem;
+	height: 1.15rem;
+	fill: none;
+	stroke: currentColor;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	stroke-width: 1.8;
 }
 
 .category {
@@ -583,6 +614,10 @@ select:focus-visible {
 	box-shadow: 12px 12px 0 var(--pink);
 }
 
+.modal__panel--variants {
+	grid-template-rows: auto auto minmax(0, 1fr);
+}
+
 .modal__header {
 	display: flex;
 	align-items: flex-start;
@@ -643,6 +678,37 @@ select:focus-visible {
 	background: var(--yellow);
 	border: 0;
 	cursor: pointer;
+}
+
+.modal__variants {
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.65rem 1.25rem;
+	background: #090c20;
+	border-bottom: 2px solid var(--cyan);
+}
+
+.modal__variants button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-height: 2.5rem;
+	padding: 0.45rem 0.8rem;
+	color: var(--muted);
+	font-size: 0.72rem;
+	font-weight: 900;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	background: transparent;
+	border: 1px solid rgba(255, 247, 215, 0.3);
+	cursor: pointer;
+}
+
+.modal__variants button:hover,
+.modal__variants button[aria-selected='true'] {
+	color: var(--ink);
+	background: var(--cyan);
+	border-color: var(--cyan);
 }
 
 .modal__image {

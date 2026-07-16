@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 
 import { startBotCheck, type BotCheckResult } from '../lib/api';
 import { displayName } from '../lib/format';
-import type { Snapshot } from '../types';
+import { groupSnapshotVariants } from '../lib/snapshot-groups';
+import type { Snapshot, SnapshotGroup } from '../types';
 import { SnapshotCard } from './SnapshotCard';
 import { SnapshotModal } from './SnapshotModal';
 
@@ -10,17 +11,26 @@ function botCheckSnapshot(
 	result: BotCheckResult,
 	capture: BotCheckResult['results'][number],
 ): Snapshot | undefined {
-	if (!capture.key || !capture.fullImageUrl || !capture.thumbnailUrl) return undefined;
+	if (
+		!capture.capturedAt ||
+		!capture.key ||
+		!capture.fullImageUrl ||
+		!capture.thumbnailUrl ||
+		!capture.triggeredAt
+	) {
+		return undefined;
+	}
 
 	return {
 		brand: 'amiabot',
-		capturedAt: result.capturedAt,
+		capturedAt: capture.capturedAt,
 		category: 'news',
 		device: capture.device,
 		fullImageUrl: capture.fullImageUrl,
 		key: capture.key,
 		name: `amiabot-${result.profile}`,
 		thumbnailUrl: capture.thumbnailUrl,
+		triggeredAt: capture.triggeredAt,
 		url: result.url,
 	};
 }
@@ -28,7 +38,7 @@ function botCheckSnapshot(
 export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: string[] }) {
 	const [profile, setProfile] = useState('default');
 	const [result, setResult] = useState<BotCheckResult>();
-	const [selected, setSelected] = useState<Snapshot>();
+	const [selected, setSelected] = useState<SnapshotGroup>();
 	const [status, setStatus] = useState('');
 	const [submitting, setSubmitting] = useState(false);
 
@@ -59,6 +69,7 @@ export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: s
 			return snapshot ? [snapshot] : [];
 		})
 		: [];
+	const captureGroups = groupSnapshotVariants(captures);
 	const failures = result?.results.filter((capture) => capture.status === 'error') ?? [];
 
 	return (
@@ -95,13 +106,13 @@ export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: s
 					{!apiKey && !status ? 'Enter the API key above to run this tool.' : status}
 				</p>
 
-				{captures.length > 0 ? (
+				{captureGroups.length > 0 ? (
 					<div className="snapshot-grid bot-check__captures">
-						{captures.map((snapshot) => (
+						{captureGroups.map((group) => (
 							<SnapshotCard
-								key={snapshot.key}
-								onSelect={() => setSelected(snapshot)}
-								snapshot={snapshot}
+								group={group}
+								key={`${group.name}-${group.capturedAt}`}
+								onSelect={() => setSelected(group)}
 							/>
 						))}
 					</div>
@@ -123,7 +134,7 @@ export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: s
 			</form>
 
 			{selected ? (
-				<SnapshotModal onClose={() => setSelected(undefined)} snapshot={selected} />
+				<SnapshotModal group={selected} onClose={() => setSelected(undefined)} />
 			) : null}
 		</>
 	);
