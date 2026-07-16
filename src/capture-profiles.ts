@@ -21,6 +21,7 @@ export type DeviceCaptureConfig = {
 	isMobile?: boolean;
 	javaScriptEnabled?: boolean;
 	navigationTimeoutMs?: number;
+	runtimeQuietMs?: number;
 	scroll?: { distance: number; waitMs: number };
 	screenshot?: { fullPage: boolean; type: 'jpeg' | 'png' | 'webp'; quality?: number };
 	thumbnail?: { quality: number; type: 'jpeg' | 'webp' };
@@ -95,6 +96,7 @@ const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 		viewport: { width: 1740, height: 1008 },
 		javaScriptEnabled: true,
 		navigationTimeoutMs: 60_000,
+		runtimeQuietMs: 2_000,
 		screenshot: { type: 'png', fullPage: true },
 		thumbnail: { type: 'jpeg', quality: 72 },
 		userAgent: DESKTOP_USER_AGENT,
@@ -119,6 +121,7 @@ const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 		isMobile: true,
 		javaScriptEnabled: true,
 		navigationTimeoutMs: 60_000,
+		runtimeQuietMs: 2_000,
 		screenshot: { type: 'png', fullPage: true },
 		thumbnail: { type: 'jpeg', quality: 72 },
 		userAgent: MOBILE_USER_AGENT,

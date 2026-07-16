@@ -11,6 +11,7 @@ export type SiteDefinition = {
 		timeoutMs: number;
 	};
 	profile?: string;
+	runtimeQuietMs?: number;
 	url: string;
 	requestBody?: {
 		addStyleTag?: string;

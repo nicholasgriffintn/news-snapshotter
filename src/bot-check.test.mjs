@@ -20,6 +20,7 @@ test('captures amiabot with every device from the selected profile', async () =>
 	assert.ok(captures.every(({ site }) => site.name === 'amiabot-bbc'));
 	assert.ok(captures.every(({ site }) => site.visibility === 'admin'));
 	assert.ok(captures.every(({ site }) => site.completion.selector === '#status'));
+	assert.ok(captures.every(({ site }) => site.runtimeQuietMs === 12_000));
 	assert.ok(captures.every(({ site }) => site.completion.textStartsWith === 'Classification:'));
 });
 

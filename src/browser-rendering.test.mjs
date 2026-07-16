@@ -9,6 +9,7 @@ const site = {
 	brand: 'example',
 	category: 'news',
 	name: 'example-home',
+	runtimeQuietMs: 0,
 	url: 'https://example.com',
 };
 const capturedAt = '2026-07-16T10:20:30.123Z';
@@ -16,8 +17,10 @@ const capturedAt = '2026-07-16T10:20:30.123Z';
 function successfulPage(overrides = {}) {
 	let evaluation = 0;
 	const profileCalls = [];
+	const runtimeCalls = [];
 	return {
 		$: async () => null,
+		_client: () => ({ send: async (method) => runtimeCalls.push(method) }),
 		addStyleTag: async () => undefined,
 		evaluateOnNewDocument: async (...args) => profileCalls.push(['evaluateOnNewDocument', ...args]),
 		evaluate: async () => {
@@ -30,6 +33,7 @@ function successfulPage(overrides = {}) {
 		screenshot: async (options) =>
 			options.fullPage ? Buffer.from('full screenshot') : Buffer.from('thumbnail'),
 		profileCalls,
+		runtimeCalls,
 		setCookie: async () => undefined,
 		setExtraHTTPHeaders: async (...args) => profileCalls.push(['setExtraHTTPHeaders', ...args]),
 		setJavaScriptEnabled: async () => undefined,
@@ -80,6 +84,7 @@ test('captures full and thumbnail images with metadata and closes the browser', 
 	const userAgentCall = page.profileCalls.find(([method]) => method === 'setUserAgent');
 	assert.match(userAgentCall[1], /Macintosh/);
 	assert.equal(userAgentCall[2].platform, 'macOS');
+	assert.deepEqual(page.runtimeCalls, ['Runtime.disable', 'Runtime.enable']);
 });
 
 test('records HTTP capture failures without retrying or writing screenshots', async (context) => {
@@ -89,6 +94,7 @@ test('records HTTP capture failures without retrying or writing screenshots', as
 			closed = true;
 		},
 		newPage: async () => ({
+			_client: () => ({ send: async () => undefined }),
 			evaluateOnNewDocument: async () => undefined,
 			goto: async () => ({ status: () => 503 }),
 			setExtraHTTPHeaders: async () => undefined,

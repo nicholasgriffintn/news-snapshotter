@@ -29,6 +29,7 @@ export async function runBotCheck(
 		},
 		name: `amiabot-${safeSegment(profile)}`,
 		profile,
+		runtimeQuietMs: 12_000,
 		url: AM_I_A_BOT_URL,
 		visibility: 'admin',
 	};

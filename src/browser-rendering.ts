@@ -155,6 +155,29 @@ async function waitForCompletion(page: Page, completion: NonNullable<SiteDefinit
 	}
 }
 
+async function navigateWithQuietRuntime(
+	page: Page,
+	site: SiteDefinition,
+	config: DeviceCaptureConfig,
+) {
+	const runtime = (page as unknown as {
+		_client: () => { send: (method: string) => Promise<unknown> };
+	})._client();
+	const quietMs = site.runtimeQuietMs ?? config.runtimeQuietMs ?? 0;
+
+	await runtime.send('Runtime.disable');
+	try {
+		const response = await page.goto(site.url, {
+			waitUntil: 'domcontentloaded',
+			timeout: config.navigationTimeoutMs,
+		});
+		if (quietMs > 0) await new Promise((resolve) => setTimeout(resolve, quietMs));
+		return response;
+	} finally {
+		await runtime.send('Runtime.enable');
+	}
+}
+
 async function takeFullScreenshot(page: Page, config: DeviceCaptureConfig) {
 	const screenshot = config.screenshot ?? { type: 'png' as const, fullPage: true };
 	if (screenshot.type === 'png') {
@@ -180,40 +203,56 @@ async function capture(
 	try {
 		const page = await browser.newPage();
 		await applyPageProfile(page, config);
-		const response = await page.goto(site.url, {
-			waitUntil: 'domcontentloaded',
-			timeout: config.navigationTimeoutMs,
-		});
+		const response = await navigateWithQuietRuntime(page, site, config);
+
 		if (response && response.status() >= 400) {
 			throw new DetectedCaptureError('http-error', `Navigation returned HTTP ${response.status()}`);
 		}
+
 		if (config.waitForSelector) {
 			await page.waitForSelector(config.waitForSelector.selector, {
 				timeout: config.waitForSelector.timeoutMs,
 			});
 		}
+
 		if (config.waitAfterLoadMs) {
 			await new Promise((resolve) => setTimeout(resolve, config.waitAfterLoadMs));
 		}
-		if (config.waitForImagesMs) await waitForImages(page, config.waitForImagesMs);
-		if (config.scroll) await scrollPage(page, config.scroll.distance, config.scroll.waitMs);
-		if (site.completion) await waitForCompletion(page, site.completion);
+
+		if (config.waitForImagesMs) {
+			await waitForImages(page, config.waitForImagesMs);
+		}
+
+		if (config.scroll) {
+			await scrollPage(page, config.scroll.distance, config.scroll.waitMs);
+		}
+
+		if (site.completion) {
+			await waitForCompletion(page, site.completion);
+		}
+
 		await detectFailure(page, config, profile.failureIndicators);
 
 		const hideSelectors = config.hideSelectors ?? [];
 		const profileStyles = hideSelectors.map((selector) => `${selector} { display: none !important; }`).join('\n');
 		const styles = [profileStyles, site.requestBody?.addStyleTag].filter(Boolean).join('\n');
-		if (styles) await page.addStyleTag({ content: styles });
+		if (styles) {
+			await page.addStyleTag({ content: styles });
+		}
 
 		const screenshot = await takeFullScreenshot(page, config);
+
 		const extension = config.screenshot?.type ?? 'png';
 		const key = screenshotKey(site, capturedAt, device, extension);
+
 		const thumbnailConfig = config.thumbnail ?? { type: 'jpeg' as const, quality: 72 };
 		const thumbnail = await page.screenshot({
 			quality: thumbnailConfig.quality,
 			type: thumbnailConfig.type,
 		});
+
 		const previewKey = thumbnailKey(key);
+
 		const customMetadata = {
 			brand: site.brand,
 			capturedAt,
@@ -232,6 +271,7 @@ async function capture(
 			httpMetadata: { contentType: `image/${extension}` },
 			customMetadata,
 		});
+
 		return { device, key, name: site.name, status: 'success' };
 	} finally {
 		try {
