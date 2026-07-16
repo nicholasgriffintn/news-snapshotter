@@ -25,13 +25,17 @@ export function selectSites(sites: SiteDefinition[], selection: SiteSelection): 
 
 	if (selection.name) {
 		const site = sites.find((candidate) => candidate.name === selection.name);
-		if (!site) throw new Error(`Unknown site name: ${selection.name}`);
+		if (!site) {
+			throw new Error(`Unknown site name: ${selection.name}`);
+		}
 		return [site];
 	}
 
 	if (selection.brand) {
 		const matchingSites = sites.filter((site) => site.brand === selection.brand);
-		if (matchingSites.length === 0) throw new Error(`Unknown brand: ${selection.brand}`);
+		if (matchingSites.length === 0) {
+			throw new Error(`Unknown brand: ${selection.brand}`);
+		}
 		return matchingSites;
 	}
 

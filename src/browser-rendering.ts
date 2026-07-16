@@ -1,7 +1,7 @@
 import puppeteer from '@cloudflare/puppeteer';
 
 import type { Env } from './env';
-import { screenshotKey } from './lib/storage-key';
+import { screenshotKey, thumbnailKey } from './lib/storage-key';
 import type { ScreenshotResult, SiteDefinition } from './types';
 
 export async function captureSite(
@@ -23,15 +23,24 @@ export async function captureSite(
 		const screenshot = await page.screenshot({ fullPage: true, type: 'png' });
 		const key = screenshotKey(site, capturedAt);
 
+		const thumbnail = await page.screenshot({ type: 'jpeg', quality: 72 });
+		const previewKey = thumbnailKey(key);
+
+		const customMetadata = {
+			brand: site.brand,
+			category: site.category,
+			capturedAt,
+			name: site.name,
+			url: site.url,
+		};
+
 		await env.SCREENSHOTS.put(key, screenshot, {
 			httpMetadata: { contentType: 'image/png' },
-			customMetadata: {
-				brand: site.brand,
-				category: site.category,
-				capturedAt,
-				name: site.name,
-				url: site.url,
-			},
+			customMetadata,
+		});
+		await env.SCREENSHOTS.put(previewKey, thumbnail, {
+			httpMetadata: { contentType: 'image/jpeg' },
+			customMetadata,
 		});
 
 		return { name: site.name, status: 'success', key };

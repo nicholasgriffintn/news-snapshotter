@@ -43,15 +43,11 @@
 			"binding": "SCREENSHOTS",
 			"bucket_name": "news-snapshotter",
 			"preview_bucket_name": "news-snapshotter-preview"
-		},
-		{
-			"bucket_name": "news-snapshotter",
-			"binding": "news_snapshotter",
-			"remote": true
-		},
-		{
-			"bucket_name": "news-snapshotter-preview",
-			"binding": "news_snapshotter_preview"
 		}
-	]
+	],
+	"assets": {
+		"directory": "./dist/client",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": ["/api/*"]
+	}
 }

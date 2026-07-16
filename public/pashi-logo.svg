@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" role="img" aria-label="Pashi mascot">
+	<defs>
+		<linearGradient id="fur" x1="34" x2="222" y1="30" y2="224">
+			<stop stop-color="#fff5d6" />
+			<stop offset="0.55" stop-color="#f3a93f" />
+			<stop offset="1" stop-color="#ec2f72" />
+		</linearGradient>
+		<linearGradient id="shadow" x1="68" x2="225" y1="61" y2="210">
+			<stop stop-color="#24ffe8" />
+			<stop offset="1" stop-color="#6a38ff" />
+		</linearGradient>
+	</defs>
+	<path d="M29 58h74M18 91h57M35 215h94M175 32h44" fill="none" stroke="#ffd14c" stroke-linecap="square" stroke-width="8" opacity="0.8" />
+	<path d="M65 82c8-37 41-58 73-37l13 9 34-30c8-7 20 0 18 11l-9 51c16 16 25 38 22 63-5 46-46 83-94 81-48-3-83-42-79-89 1-14 6-28 14-40L45 65c-4-11 8-21 18-15l36 23c-12 4-24 8-34 9Z" fill="url(#shadow)" opacity="0.7" transform="translate(9 11)" />
+	<path d="M58 80c8-37 41-58 73-37l14 9 34-30c8-7 20 0 18 11l-9 51c16 16 25 38 22 63-5 46-46 83-94 81-48-3-83-42-79-89 1-14 6-28 14-40L39 63c-4-11 8-21 18-15l36 23c-12 4-24 8-35 9Z" fill="url(#fur)" stroke="#11142e" stroke-linejoin="round" stroke-width="7" />
+	<path d="M75 116c18-24 62-30 97-11 18 10 22 31 9 48-19 24-64 31-98 12-18-10-21-31-8-49Z" fill="#11142e" stroke="#fff7d7" stroke-width="4" />
+	<path d="M91 126c8-10 29-11 38-1-12 18-29 19-38 1ZM145 123c10-8 29-5 36 7-14 15-31 13-36-7Z" fill="#25ffe6" />
+	<path d="M114 165c16 10 37 9 53-5" fill="none" stroke="#ffd14c" stroke-linecap="square" stroke-width="8" />
+</svg>

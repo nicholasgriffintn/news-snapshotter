@@ -2,20 +2,29 @@
 	"name": "news-snapshotter",
 	"version": "0.0.0",
 	"private": true,
+	"type": "module",
 	"scripts": {
-		"check": "tsc",
+		"build": "tsc -b && vite build",
+		"check": "tsc -b && vite build && wrangler deploy --dry-run",
 		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
+		"dev": "vite",
+		"start": "vite",
 		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {
+		"@cloudflare/vite-plugin": "1.45.0",
 		"@cloudflare/workers-types": "^5.20260716.1",
 		"@types/node": "^26.1.1",
+		"@types/react": "19.2.17",
+		"@types/react-dom": "19.2.3",
+		"@vitejs/plugin-react": "6.0.3",
 		"typescript": "^7.0.2",
+		"vite": "8.1.5",
 		"wrangler": "^4.111.0"
 	},
 	"dependencies": {
-		"@cloudflare/puppeteer": "^1.1.0"
+		"@cloudflare/puppeteer": "^1.1.0",
+		"react": "19.2.7",
+		"react-dom": "19.2.7"
 	}
 }

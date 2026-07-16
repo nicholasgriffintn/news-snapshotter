@@ -1,7 +1,9 @@
 const encoder = new TextEncoder();
 
 export function isAuthorised(authorization: string | null, apiKey: string): boolean {
-	if (!authorization?.startsWith('Bearer ') || !apiKey) return false;
+	if (!authorization?.startsWith('Bearer ') || !apiKey) {
+		return false;
+	}
 
 	const supplied = encoder.encode(authorization.slice('Bearer '.length));
 	const expected = encoder.encode(apiKey);

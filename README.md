@@ -1,6 +1,6 @@
 # News Snapshotter
 
-News Snapshotter is a Cloudflare Worker that captures full-page screenshots of configured websites.
+News Snapshotter is a React SPA and Cloudflare Worker that captures and displays full-page screenshots of configured websites. Browser Rendering stores a full PNG and JPEG thumbnail for each capture in R2.
 
 ## Architecture
 
@@ -27,14 +27,14 @@ For a deployed Worker, set `BASE_URL` to the route configured in `wrangler.json`
 Start a workflow for every configured site:
 
 ```sh
-curl -X POST "$BASE_URL" \
+curl -X POST "$BASE_URL/api/workflows" \
   -H "Authorization: Bearer $API_KEY"
 ```
 
 Capture every site for a brand:
 
 ```sh
-curl -X POST "$BASE_URL" \
+curl -X POST "$BASE_URL/api/workflows" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"brand":"bbc"}'
@@ -43,7 +43,7 @@ curl -X POST "$BASE_URL" \
 Capture one named site:
 
 ```sh
-curl -X POST "$BASE_URL" \
+curl -X POST "$BASE_URL/api/workflows" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"name":"bbc-football"}'
@@ -54,9 +54,17 @@ curl -X POST "$BASE_URL" \
 Check workflow status:
 
 ```sh
-curl "$BASE_URL?workflowId=<WORKFLOW_ID>" \
+curl "$BASE_URL/api/workflows/<WORKFLOW_ID>" \
   -H "Authorization: Bearer $API_KEY"
 ```
+
+The public gallery uses `GET /api/screenshots`, `GET /api/screenshots/image`, and `GET /api/catalogue`.
+
+## Website
+
+The archive at `/` groups captures by date and filters them by search text, brand, and category. Selecting a thumbnail opens the full-page screenshot in a modal.
+
+The `/admin` page starts a workflow for all sites, one brand, or one named site. The API key remains in memory for the current page session and is not written to browser storage.
 
 ## Catalogue
 
@@ -92,7 +100,13 @@ pnpm install
 pnpm run cf-typegen
 ```
 
-Run static validation and the catalogue tests before deployment. Deploy with:
+Run static validation before deployment:
+
+```sh
+pnpm run check
+```
+
+Deploy with:
 
 ```sh
 pnpm run deploy

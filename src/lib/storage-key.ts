@@ -15,3 +15,7 @@ export function screenshotKey(site: SiteDefinition, capturedAt: string): string 
 		`${safeSegment(site.name)}-${timestamp}.png`,
 	].join('/');
 }
+
+export function thumbnailKey(fullScreenshotKey: string): string {
+	return fullScreenshotKey.replace(/\.png$/, '-thumbnail.jpg');
+}
