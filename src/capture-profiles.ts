@@ -175,6 +175,12 @@ const PROFILES: Record<string, CaptureProfile> = {
 	},
 };
 
+export const CAPTURE_PROFILE_NAMES = Object.keys(PROFILES).sort();
+
+export function hasCaptureProfile(name: string): boolean {
+	return Object.hasOwn(PROFILES, name);
+}
+
 function mergeDeviceConfig(
 	base: DeviceCaptureConfig,
 	overrides?: Partial<DeviceCaptureConfig>,

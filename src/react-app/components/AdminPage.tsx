@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchCatalogue, startSnapshotWorkflow } from '../lib/api';
 import { displayName } from '../lib/format';
 import type { CatalogueSite } from '../types';
+import { BotCheckTool } from './BotCheckTool';
 
 type Scope = 'all' | 'brand' | 'site';
 
@@ -109,6 +110,8 @@ export function AdminPage() {
 					{status}
 				</p>
 			</form>
+
+			<BotCheckTool apiKey={apiKey} />
 		</section>
 	);
 }

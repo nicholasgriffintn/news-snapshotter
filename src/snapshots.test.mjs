@@ -62,6 +62,17 @@ test('ignores thumbnails, unsupported files, and incomplete metadata', async () 
 	assert.deepEqual((await listScreenshots(bucket)).screenshots, []);
 });
 
+test('excludes admin diagnostic captures from the public archive', async () => {
+	const bucket = {
+		list: async () => ({
+			objects: [object('amiabot.png', { ...newerMetadata, visibility: 'admin' })],
+			truncated: false,
+		}),
+	};
+
+	assert.deepEqual((await listScreenshots(bucket)).screenshots, []);
+});
+
 test('follows paginated bucket listings', async () => {
 	const cursors = [];
 	const bucket = {

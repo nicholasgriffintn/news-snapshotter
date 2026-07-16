@@ -38,6 +38,43 @@ test('serves the public screenshot listing', async () => {
 	assert.deepEqual(body, { screenshots: [], truncated: false });
 });
 
+test('lists the supported capture profiles', async () => {
+	const response = await handleRequest(apiRequest('/api/capture-profiles'), environment());
+	const body = await response.json();
+
+	assert.equal(response.status, 200);
+	assert.ok(body.profiles.includes('default'));
+	assert.ok(body.profiles.includes('bbc'));
+});
+
+test('protects bot checks with the configured API key', async () => {
+	const response = await handleRequest(
+		apiRequest('/api/admin/bot-checks', {
+			body: JSON.stringify({ profile: 'default' }),
+			headers: { 'content-type': 'application/json' },
+			method: 'POST',
+		}),
+		environment(),
+	);
+
+	assert.equal(response.status, 401);
+});
+
+test('rejects unknown bot-check profiles before opening a browser', async (context) => {
+	context.mock.method(console, 'error', () => undefined);
+	const response = await handleRequest(
+		apiRequest('/api/admin/bot-checks', {
+			body: JSON.stringify({ profile: 'untrusted' }),
+			headers: { authorization: 'Bearer secret', 'content-type': 'application/json' },
+			method: 'POST',
+		}),
+		environment(),
+	);
+
+	assert.equal(response.status, 400);
+	assert.equal((await response.json()).message, 'Choose a valid capture profile');
+});
+
 test('protects workflow routes with the configured API key', async () => {
 	const response = await handleRequest(apiRequest('/api/workflows', { method: 'POST' }), environment());
 

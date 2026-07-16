@@ -1,10 +1,13 @@
 import { SITES } from './constants.ts';
+import { runBotCheck } from './bot-check.ts';
+import { CAPTURE_PROFILE_NAMES, hasCaptureProfile } from './capture-profiles.ts';
 import { sendContactMessage } from './contact.ts';
 import type { Env } from './env';
 import { isAuthorised } from './lib/auth.ts';
 import { errorMessage } from './lib/errors.ts';
 import { selectSites, type SiteSelection } from './lib/site-catalogue.ts';
-import { listScreenshots, serveScreenshot } from './snapshots.ts';
+import { thumbnailKey } from './lib/storage-key.ts';
+import { listScreenshots, screenshotImageUrl, serveScreenshot } from './snapshots.ts';
 
 function jsonError(message: string, status: number): Response {
 	return Response.json({ status: 'error', message }, { status });
@@ -48,6 +51,33 @@ async function startWorkflow(request: Request, env: Env): Promise<Response> {
 	);
 }
 
+async function startBotCheck(request: Request, env: Env): Promise<Response> {
+	const body: unknown = await request.json();
+	if (!body || typeof body !== 'object' || Array.isArray(body)) {
+		throw new Error('Bot check request must be a JSON object');
+	}
+
+	const { profile } = body as Record<string, unknown>;
+	if (typeof profile !== 'string' || !hasCaptureProfile(profile)) {
+		throw new Error('Choose a valid capture profile');
+	}
+
+	const result = await runBotCheck(env, profile);
+	return Response.json({
+		status: 'success',
+		...result,
+		results: result.results.map((capture) => {
+			return capture.key
+				? {
+						...capture,
+						fullImageUrl: screenshotImageUrl(capture.key),
+						thumbnailUrl: screenshotImageUrl(thumbnailKey(capture.key)),
+					}
+				: capture;
+		}),
+	});
+}
+
 async function routeRequest(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url);
 
@@ -63,6 +93,10 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 		return Response.json({ sites: SITES.map(({ brand, category, name }) => ({ brand, category, name })) });
 	}
 
+	if (request.method === 'GET' && url.pathname === '/api/capture-profiles') {
+		return Response.json({ profiles: CAPTURE_PROFILE_NAMES });
+	}
+
 	if (request.method === 'POST' && url.pathname === '/api/contact') {
 		return sendContactMessage(request, env);
 	}
@@ -73,6 +107,10 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
 	if (request.method === 'POST' && url.pathname === '/api/workflows') {
 		return startWorkflow(request, env);
+	}
+
+	if (request.method === 'POST' && url.pathname === '/api/admin/bot-checks') {
+		return startBotCheck(request, env);
 	}
 
 	if (request.method === 'GET' && url.pathname.startsWith('/api/workflows/')) {

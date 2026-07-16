@@ -1,0 +1,145 @@
+import { useEffect, useState } from 'react';
+
+import {
+	fetchCaptureProfiles,
+	startBotCheck,
+	type BotCheckResult,
+} from '../lib/api';
+import { displayName } from '../lib/format';
+import type { Snapshot } from '../types';
+import { SnapshotCard } from './SnapshotCard';
+import { SnapshotModal } from './SnapshotModal';
+
+function botCheckSnapshot(
+	result: BotCheckResult,
+	capture: BotCheckResult['results'][number],
+): Snapshot | undefined {
+	if (!capture.key || !capture.fullImageUrl || !capture.thumbnailUrl) return undefined;
+
+	return {
+		brand: 'amiabot',
+		capturedAt: result.capturedAt,
+		category: 'news',
+		device: capture.device,
+		fullImageUrl: capture.fullImageUrl,
+		key: capture.key,
+		name: `amiabot-${result.profile}`,
+		thumbnailUrl: capture.thumbnailUrl,
+		url: result.url,
+	};
+}
+
+export function BotCheckTool({ apiKey }: { apiKey: string }) {
+	const [profiles, setProfiles] = useState<string[]>([]);
+	const [profile, setProfile] = useState('default');
+	const [result, setResult] = useState<BotCheckResult>();
+	const [selected, setSelected] = useState<Snapshot>();
+	const [status, setStatus] = useState('');
+	const [submitting, setSubmitting] = useState(false);
+
+	useEffect(() => {
+		fetchCaptureProfiles()
+			.then((values) => {
+				setProfiles(values);
+				setProfile((current) => (values.includes(current) ? current : (values[0] ?? 'default')));
+			})
+			.catch(() => setStatus('Could not load capture profiles.'));
+	}, []);
+
+	async function submit(event: React.FormEvent) {
+		event.preventDefault();
+		setSubmitting(true);
+		setResult(undefined);
+		setStatus('Running bot detection capture…');
+
+		try {
+			const nextResult = await startBotCheck(apiKey, profile);
+			setResult(nextResult);
+			setStatus('Bot detection capture finished.');
+		} catch (reason) {
+			setStatus(reason instanceof Error ? reason.message : 'Could not run bot detection capture.');
+		} finally {
+			setSubmitting(false);
+		}
+	}
+
+	const captures = result
+		? result.results.flatMap((capture) => {
+			const snapshot = botCheckSnapshot(result, capture);
+			return snapshot ? [snapshot] : [];
+		})
+		: [];
+	const failures = result?.results.filter((capture) => capture.status === 'error') ?? [];
+
+	return (
+		<>
+			<form className="bot-check" onSubmit={submit}>
+				<header className="admin-tool__header">
+					<p className="eyebrow">Admin diagnostic</p>
+					<h2>Bot detection check</h2>
+					<p>
+						Capture <a href="https://amiabot.app/">amiabot.app</a> using a selected browser
+						profile.
+					</p>
+				</header>
+
+				<label>
+					<span>Capture profile</span>
+					<select
+						disabled={profiles.length === 0 || submitting}
+						onChange={(event) => setProfile(event.target.value)}
+						value={profile}
+					>
+						{profiles.map((value) => (
+							<option key={value} value={value}>
+								{displayName(value)}
+							</option>
+						))}
+					</select>
+				</label>
+
+				<button
+					className="impact-button"
+					disabled={!apiKey || profiles.length === 0 || submitting}
+					type="submit"
+				>
+					{submitting ? 'Capturing…' : 'Run bot check'}
+				</button>
+
+				<p aria-live="polite" className="admin-status">
+					{!apiKey && !status ? 'Enter the API key above to run this tool.' : status}
+				</p>
+
+				{captures.length > 0 ? (
+					<div className="snapshot-grid bot-check__captures">
+						{captures.map((snapshot) => (
+							<SnapshotCard
+								key={snapshot.key}
+								onSelect={() => setSelected(snapshot)}
+								snapshot={snapshot}
+							/>
+						))}
+					</div>
+				) : null}
+
+				{failures.length > 0 ? (
+					<ul className="bot-check__results">
+						{failures.map((capture) => (
+							<li key={capture.device}>
+								<strong>{displayName(capture.device)}</strong>
+								<span className={`bot-check__status bot-check__status--${capture.status}`}>
+									{capture.status}
+								</span>
+								<span>{capture.error}</span>
+							</li>
+						))}
+					</ul>
+				) : null}
+			</form>
+
+			{selected ? (
+				<SnapshotModal onClose={() => setSelected(undefined)} snapshot={selected} />
+			) : null}
+		</>
+	);
+}

@@ -45,7 +45,7 @@ test('valid contact requests are rate-limited and delivered', async (context) =>
 
 	assert.equal(response.status, 200);
 	assert.equal(sent.length, 1);
-	assert.equal(sent[0].to, 'contact@email.pashi.app');
+	assert.equal(sent[0].to, 'pashi@nicholasgriffin.dev');
 	assert.match(sent[0].text, /Email: reader@example\.com/);
 	assert.match(sent[0].text, /sufficiently detailed archive enquiry/);
 });

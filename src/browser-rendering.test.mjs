@@ -13,7 +13,7 @@ const site = {
 };
 const capturedAt = '2026-07-16T10:20:30.123Z';
 
-function successfulPage() {
+function successfulPage(overrides = {}) {
 	let evaluation = 0;
 	return {
 		$: async () => null,
@@ -32,6 +32,7 @@ function successfulPage() {
 		setUserAgent: async () => undefined,
 		setViewport: async () => undefined,
 		waitForFunction: async () => undefined,
+		...overrides,
 	};
 }
 
@@ -67,6 +68,7 @@ test('captures full and thumbnail images with metadata and closes the browser', 
 	assert.equal(screenshots.length, 2);
 	assert.match(screenshots[0][0], /-thumbnail\.jpg$/);
 	assert.equal(screenshots[1][2].customMetadata.name, 'example-home');
+	assert.equal(screenshots[1][2].customMetadata.visibility, 'public');
 	assert.equal(failures.length, 0);
 	assert.equal(closed, true);
 });
@@ -106,4 +108,56 @@ test('records launch errors as capture failures', async (context) => {
 	assert.equal(result.status, 'error');
 	assert.equal(result.error, 'browser unavailable');
 	assert.equal(JSON.parse(failures[0][1]).reason, 'capture-error');
+});
+
+test('waits for configured completion text before storing a capture', async (context) => {
+	const completionWaits = [];
+	const page = successfulPage({
+		waitForFunction: async (_predicate, options, ...args) => {
+			if (args.length > 0) completionWaits.push({ args, options });
+		},
+	});
+	context.mock.method(puppeteer, 'launch', async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { env, screenshots } = environment();
+	const completion = {
+		selector: '#status',
+		textStartsWith: 'Classification:',
+		timeoutMs: 30_000,
+	};
+
+	const result = await captureDevice(env, { ...site, completion }, 'desktop', capturedAt);
+
+	assert.equal(result.status, 'success');
+	assert.deepEqual(completionWaits, [
+		{ args: ['#status', 'Classification:'], options: { timeout: 30_000 } },
+	]);
+	assert.equal(screenshots.length, 2);
+});
+
+test('records a completion timeout without storing a partial screenshot', async (context) => {
+	const page = successfulPage({
+		waitForFunction: async (_predicate, _options, ...args) => {
+			if (args.length > 0) throw new Error('timeout');
+		},
+	});
+	context.mock.method(puppeteer, 'launch', async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { env, failures, screenshots } = environment();
+	const completion = {
+		selector: '#status',
+		textStartsWith: 'Classification:',
+		timeoutMs: 30_000,
+	};
+
+	const result = await captureDevice(env, { ...site, completion }, 'desktop', capturedAt);
+
+	assert.equal(result.status, 'error');
+	assert.equal(result.error, 'Page did not complete within 30000ms');
+	assert.equal(JSON.parse(failures[0][1]).reason, 'completion-timeout');
+	assert.equal(screenshots.length, 0);
 });

@@ -113,6 +113,28 @@ async function applyPageProfile(page: Page, config: DeviceCaptureConfig): Promis
 	if (config.cookies?.length) await page.setCookie(...config.cookies);
 }
 
+async function waitForCompletion(page: Page, completion: NonNullable<SiteDefinition['completion']>) {
+	try {
+		await page.waitForFunction(
+			(selector, textStartsWith) => {
+				const browser = globalThis as unknown as {
+					document: { querySelector: (value: string) => { textContent?: string } | null };
+				};
+				const text = browser.document.querySelector(selector)?.textContent?.trim() ?? '';
+				return text.startsWith(textStartsWith);
+			},
+			{ timeout: completion.timeoutMs },
+			completion.selector,
+			completion.textStartsWith,
+		);
+	} catch {
+		throw new DetectedCaptureError(
+			'completion-timeout',
+			`Page did not complete within ${completion.timeoutMs}ms`,
+		);
+	}
+}
+
 async function takeFullScreenshot(page: Page, config: DeviceCaptureConfig) {
 	const screenshot = config.screenshot ?? { type: 'png' as const, fullPage: true };
 	if (screenshot.type === 'png') {
@@ -155,6 +177,7 @@ async function capture(
 		}
 		if (config.waitForImagesMs) await waitForImages(page, config.waitForImagesMs);
 		if (config.scroll) await scrollPage(page, config.scroll.distance, config.scroll.waitMs);
+		if (site.completion) await waitForCompletion(page, site.completion);
 		await detectFailure(page, config, profile.failureIndicators);
 
 		const hideSelectors = config.hideSelectors ?? [];
@@ -178,6 +201,7 @@ async function capture(
 			device,
 			name: site.name,
 			url: site.url,
+			visibility: site.visibility ?? 'public',
 		};
 
 		await env.SCREENSHOTS.put(previewKey, thumbnail, {

@@ -5,7 +5,7 @@ import type { Device, ScreenshotSummary, SiteCategory } from './types';
 const MAX_SCREENSHOTS = 2_000;
 const SCREENSHOT_KEY = /^brand=[a-z0-9-]+\/category=(news|sport)\/date=\d{4}-\d{2}-\d{2}\/[a-z0-9-]+-(?:(?:desktop|mobile)-)?\d{4}-\d{2}-\d{2}T[\d-]+Z(?:-thumbnail\.jpg|\.(?:jpe?g|png|webp))$/;
 
-function imageUrl(key: string): string {
+export function screenshotImageUrl(key: string): string {
 	return `/api/screenshots/image?key=${encodeURIComponent(key)}`;
 }
 
@@ -31,6 +31,7 @@ export async function listScreenshots(bucket: R2Bucket): Promise<{
 	const screenshots = objects.flatMap((object): ScreenshotSummary[] => {
 		const metadata = object.customMetadata;
 		if (
+			metadata?.visibility === 'admin' ||
 			!metadata?.brand ||
 			!metadata.capturedAt ||
 			!metadata.category ||
@@ -47,10 +48,10 @@ export async function listScreenshots(bucket: R2Bucket): Promise<{
 				capturedAt: metadata.capturedAt,
 				category: metadata.category as SiteCategory,
 				device: (metadata.device as Device | undefined) ?? 'desktop',
-				fullImageUrl: imageUrl(object.key),
+				fullImageUrl: screenshotImageUrl(object.key),
 				key: object.key,
 				name: metadata.name,
-				thumbnailUrl: imageUrl(thumbnailKey(object.key)),
+				thumbnailUrl: screenshotImageUrl(thumbnailKey(object.key)),
 				url: metadata.url,
 			},
 		];

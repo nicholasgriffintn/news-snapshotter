@@ -30,6 +30,34 @@ export async function startSnapshotWorkflow(
 	return readJson(response);
 }
 
+export async function fetchCaptureProfiles(): Promise<string[]> {
+	const response = await fetch('/api/capture-profiles');
+	return (await readJson<{ profiles: string[] }>(response)).profiles;
+}
+
+export type BotCheckResult = {
+	capturedAt: string;
+	profile: string;
+	results: Array<{
+		device: 'desktop' | 'mobile';
+		error?: string;
+		fullImageUrl?: string;
+		key?: string;
+		status: 'error' | 'success';
+		thumbnailUrl?: string;
+	}>;
+	url: string;
+};
+
+export async function startBotCheck(apiKey: string, profile: string): Promise<BotCheckResult> {
+	const response = await fetch('/api/admin/bot-checks', {
+		body: JSON.stringify({ profile }),
+		headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
+		method: 'POST',
+	});
+	return readJson(response);
+}
+
 export async function sendContactMessage(message: {
 	email: string;
 	message: string;

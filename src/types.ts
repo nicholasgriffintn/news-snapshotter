@@ -5,11 +5,17 @@ export type SiteDefinition = {
 	name: string;
 	brand: string;
 	category: SiteCategory;
+	completion?: {
+		selector: string;
+		textStartsWith: string;
+		timeoutMs: number;
+	};
 	profile?: string;
 	url: string;
 	requestBody?: {
 		addStyleTag?: string;
 	};
+	visibility?: 'admin' | 'public';
 };
 
 export type SiteSource = Omit<SiteDefinition, 'brand'>;
