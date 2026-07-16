@@ -38,6 +38,11 @@
 			"class_name": "NewsSnapshotterWorkflow"
 		}
 	],
+	"kv_namespaces": [
+		{
+			"binding": "CAPTURE_FAILURES"
+		}
+	],
 	"r2_buckets": [
 		{
 			"binding": "SCREENSHOTS",

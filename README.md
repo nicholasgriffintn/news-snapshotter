@@ -10,7 +10,15 @@ Screenshots use deterministic Hive-style R2 partitions:
 brand=bbc/category=sport/date=2026-07-16/bbc-football-2026-07-16T12-34-56-789Z.png
 ```
 
-Using the workflow start time in the key makes retries idempotent. R2 object metadata includes the site name, source URL, brand, category, and capture time.
+Using the workflow start time in the key makes captures idempotent. R2 object metadata includes the site name, source URL, brand, category, device, and capture time.
+
+## Capture profiles
+
+Brand profiles in `src/capture-profiles.ts` control desktop and mobile viewports, user agents, JavaScript, cookies, navigation timeouts, image waits, scrolling, screenshot formats, thumbnails, consent selectors, and failure indicators. Sites use their brand profile by default and can name another profile explicitly.
+
+Every configured device is captured once per workflow run. There are no same-run retries. HTTP errors, known challenge selectors, captcha or access-denied text, and blank pages are treated as failed captures before screenshots are stored.
+
+Failures are written to the `CAPTURE_FAILURES` KV namespace under a date partition and retained for 90 days. Records contain the site, brand, category, device, reason, source URL, and capture timestamps. Wrangler automatically provisions the namespace when it is first deployed.
 
 ## API
 
@@ -79,6 +87,7 @@ The Worker requires these bindings:
 - `BROWSER`: Cloudflare Browser Rendering
 - `NEWS_SNAPSHOTTER`: Cloudflare Workflow
 - `SCREENSHOTS`: R2 bucket
+- `CAPTURE_FAILURES`: Workers KV namespace for failed captures
 - `API_KEY`: secret used to authenticate requests
 
 Create the production and preview R2 buckets, then set the API secret:

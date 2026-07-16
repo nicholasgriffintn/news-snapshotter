@@ -1,8 +1,8 @@
 import { WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep } from 'cloudflare:workers';
 
 import type { Env } from './env';
-import { errorMessage } from './lib/errors';
-import { captureSite } from './browser-rendering';
+import { resolveCaptureProfile } from './capture-profiles';
+import { captureDevice } from './browser-rendering';
 import type { ScreenshotResult, SiteDefinition } from './types';
 
 export type SnapshotWorkflowParams = {
@@ -16,15 +16,12 @@ export class NewsSnapshotterWorkflow extends WorkflowEntrypoint<Env, SnapshotWor
 		const results: ScreenshotResult[] = [];
 
 		for (const site of sites) {
-			try {
-				const result = await step.do(
-					`screenshot-${site.name}`,
-					{ retries: { limit: 3, delay: '10 seconds', backoff: 'exponential' } },
-					() => captureSite(this.env, site, capturedAt),
-				);
+			const profile = resolveCaptureProfile(site);
+			for (const device of profile.devices) {
+				const result = await step.do(`screenshot-${site.name}-${device}`, () => {
+					return captureDevice(this.env, site, device, capturedAt);
+				});
 				results.push(result);
-			} catch (error) {
-				results.push({ name: site.name, status: 'error', error: errorMessage(error) });
 			}
 		}
 
@@ -33,6 +30,7 @@ export class NewsSnapshotterWorkflow extends WorkflowEntrypoint<Env, SnapshotWor
 			failed: results.filter((result) => result.status === 'error').length,
 			results,
 			successful: results.filter((result) => result.status === 'success').length,
+			totalCaptures: results.length,
 			totalSites: sites.length,
 		};
 	}

@@ -1,9 +1,9 @@
 import type { Env } from './env';
 import { thumbnailKey } from './lib/storage-key';
-import type { ScreenshotSummary, SiteCategory } from './types';
+import type { Device, ScreenshotSummary, SiteCategory } from './types';
 
 const MAX_SCREENSHOTS = 2_000;
-const SCREENSHOT_KEY = /^brand=[a-z0-9-]+\/category=(news|sport)\/date=\d{4}-\d{2}-\d{2}\/[a-z0-9-]+-\d{4}-\d{2}-\d{2}T[\d-]+Z(?:-thumbnail\.jpg|\.png)$/;
+const SCREENSHOT_KEY = /^brand=[a-z0-9-]+\/category=(news|sport)\/date=\d{4}-\d{2}-\d{2}\/[a-z0-9-]+-(?:(?:desktop|mobile)-)?\d{4}-\d{2}-\d{2}T[\d-]+Z(?:-thumbnail\.jpg|\.(?:jpe?g|png|webp))$/;
 
 function imageUrl(key: string): string {
 	return `/api/screenshots/image?key=${encodeURIComponent(key)}`;
@@ -19,7 +19,11 @@ export async function listScreenshots(bucket: R2Bucket): Promise<{
 
 	do {
 		const page = await bucket.list({ cursor, include: ['customMetadata'], limit: 1_000 });
-		objects.push(...page.objects.filter((object) => object.key.endsWith('.png')));
+		objects.push(
+			...page.objects.filter((object) => {
+				return !object.key.includes('-thumbnail.') && /\.(?:jpe?g|png|webp)$/.test(object.key);
+			}),
+		);
 		cursor = page.truncated ? page.cursor : undefined;
 		truncated = objects.length >= MAX_SCREENSHOTS && Boolean(cursor);
 	} while (cursor && objects.length < MAX_SCREENSHOTS);
@@ -42,6 +46,7 @@ export async function listScreenshots(bucket: R2Bucket): Promise<{
 				brand: metadata.brand,
 				capturedAt: metadata.capturedAt,
 				category: metadata.category as SiteCategory,
+				device: (metadata.device as Device | undefined) ?? 'desktop',
 				fullImageUrl: imageUrl(object.key),
 				key: object.key,
 				name: metadata.name,

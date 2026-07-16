@@ -1,50 +1,225 @@
-import puppeteer from '@cloudflare/puppeteer';
+import puppeteer, { type Page } from '@cloudflare/puppeteer';
 
+import { resolveCaptureProfile, type DeviceCaptureConfig } from './capture-profiles';
+import { storeCaptureFailure } from './capture-failures';
 import type { Env } from './env';
+import { errorMessage } from './lib/errors';
 import { screenshotKey, thumbnailKey } from './lib/storage-key';
-import type { ScreenshotResult, SiteDefinition } from './types';
+import type { Device, ScreenshotResult, SiteDefinition } from './types';
 
-export async function captureSite(
+class DetectedCaptureError extends Error {
+	constructor(
+		readonly reason: string,
+		message: string,
+	) {
+		super(message);
+	}
+}
+
+async function waitForImages(page: Page, timeout: number): Promise<void> {
+	try {
+		await page.waitForFunction(
+			() => {
+				const browser = globalThis as unknown as {
+					document: { images: ArrayLike<{ complete: boolean }> };
+				};
+				return Array.from(browser.document.images).every((image) => image.complete);
+			},
+			{ timeout },
+		);
+	} catch {
+		// Slow third-party images should not fail an otherwise usable page.
+	}
+}
+
+async function scrollPage(page: Page, distance: number, waitMs: number): Promise<void> {
+	for (let iteration = 0; iteration < 20; iteration += 1) {
+		const canContinue = await page.evaluate((scrollDistance) => {
+			const browser = globalThis as unknown as {
+				document: { documentElement: { scrollHeight: number } };
+				scrollBy: (x: number, y: number) => void;
+				scrollY: number;
+				innerHeight: number;
+			};
+			browser.scrollBy(0, scrollDistance);
+			return (
+				browser.scrollY + browser.innerHeight < browser.document.documentElement.scrollHeight
+			);
+		}, distance);
+		if (!canContinue) break;
+		await new Promise((resolve) => setTimeout(resolve, waitMs));
+	}
+	await page.evaluate(() => {
+		const browser = globalThis as unknown as { scrollTo: (x: number, y: number) => void };
+		browser.scrollTo(0, 0);
+	});
+}
+
+async function detectFailure(
+	page: Page,
+	config: DeviceCaptureConfig,
+	indicators: Array<{ reason: string; text: string }>,
+): Promise<void> {
+	for (const indicator of config.blockSelectors ?? []) {
+		if (await page.$(indicator.selector)) {
+			throw new DetectedCaptureError(indicator.reason, `Blocked page matched ${indicator.selector}`);
+		}
+	}
+
+	const pageText = await page.evaluate(() => {
+		const browser = globalThis as unknown as {
+			document: { body?: { innerText: string } };
+		};
+		return browser.document.body?.innerText.toLowerCase() ?? '';
+	});
+	for (const indicator of indicators) {
+		if (pageText.includes(indicator.text)) {
+			throw new DetectedCaptureError(indicator.reason, `Blocked page contained ${indicator.text}`);
+		}
+	}
+
+	const contentState = await page.evaluate(() => {
+		const browser = globalThis as unknown as {
+			document: {
+				body?: { innerText: string; scrollHeight: number };
+				images: { length: number };
+			};
+		};
+		return JSON.stringify({
+			bodyHeight: browser.document.body?.scrollHeight ?? 0,
+			images: browser.document.images.length,
+			textLength: browser.document.body?.innerText.trim().length ?? 0,
+		});
+	});
+	const content = JSON.parse(contentState) as {
+		bodyHeight: number;
+		images: number;
+		textLength: number;
+	};
+	if (content.bodyHeight < 100 || (content.textLength < 20 && content.images === 0)) {
+		throw new DetectedCaptureError('blank-page', 'Page did not contain enough visible content');
+	}
+}
+
+async function applyPageProfile(page: Page, config: DeviceCaptureConfig): Promise<void> {
+	await page.setViewport({
+		...config.viewport,
+		deviceScaleFactor: config.deviceScaleFactor,
+		hasTouch: config.hasTouch,
+		isMobile: config.isMobile,
+	});
+	await page.setJavaScriptEnabled(config.javaScriptEnabled ?? true);
+	if (config.userAgent) await page.setUserAgent(config.userAgent);
+	if (config.cookies?.length) await page.setCookie(...config.cookies);
+}
+
+async function takeFullScreenshot(page: Page, config: DeviceCaptureConfig) {
+	const screenshot = config.screenshot ?? { type: 'png' as const, fullPage: true };
+	if (screenshot.type === 'png') {
+		return page.screenshot({ fullPage: screenshot.fullPage, type: 'png' });
+	}
+	return page.screenshot({
+		fullPage: screenshot.fullPage,
+		quality: screenshot.quality ?? 85,
+		type: screenshot.type,
+	});
+}
+
+async function capture(
 	env: Pick<Env, 'BROWSER' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
+	device: Device,
 	capturedAt: string,
 ): Promise<ScreenshotResult> {
+	const profile = resolveCaptureProfile(site);
+	const config = profile.deviceConfig[device];
 	const browser = await puppeteer.launch(env.BROWSER);
 
 	try {
 		const page = await browser.newPage();
-		await page.setViewport({ width: 1740, height: 1008 });
-		await page.goto(site.url, { waitUntil: 'networkidle0', timeout: 60_000 });
-
-		if (site.requestBody?.addStyleTag) {
-			await page.addStyleTag({ content: site.requestBody.addStyleTag });
+		await applyPageProfile(page, config);
+		const response = await page.goto(site.url, {
+			waitUntil: 'domcontentloaded',
+			timeout: config.navigationTimeoutMs,
+		});
+		if (response && response.status() >= 400) {
+			throw new DetectedCaptureError('http-error', `Navigation returned HTTP ${response.status()}`);
 		}
+		if (config.waitForSelector) {
+			await page.waitForSelector(config.waitForSelector.selector, {
+				timeout: config.waitForSelector.timeoutMs,
+			});
+		}
+		if (config.waitAfterLoadMs) {
+			await new Promise((resolve) => setTimeout(resolve, config.waitAfterLoadMs));
+		}
+		if (config.waitForImagesMs) await waitForImages(page, config.waitForImagesMs);
+		if (config.scroll) await scrollPage(page, config.scroll.distance, config.scroll.waitMs);
+		await detectFailure(page, config, profile.failureIndicators);
 
-		const screenshot = await page.screenshot({ fullPage: true, type: 'png' });
-		const key = screenshotKey(site, capturedAt);
+		const hideSelectors = config.hideSelectors ?? [];
+		const profileStyles = hideSelectors.map((selector) => `${selector} { display: none !important; }`).join('\n');
+		const styles = [profileStyles, site.requestBody?.addStyleTag].filter(Boolean).join('\n');
+		if (styles) await page.addStyleTag({ content: styles });
 
-		const thumbnail = await page.screenshot({ type: 'jpeg', quality: 72 });
+		const screenshot = await takeFullScreenshot(page, config);
+		const extension = config.screenshot?.type ?? 'png';
+		const key = screenshotKey(site, capturedAt, device, extension);
+		const thumbnailConfig = config.thumbnail ?? { type: 'jpeg' as const, quality: 72 };
+		const thumbnail = await page.screenshot({
+			quality: thumbnailConfig.quality,
+			type: thumbnailConfig.type,
+		});
 		const previewKey = thumbnailKey(key);
-
 		const customMetadata = {
 			brand: site.brand,
-			category: site.category,
 			capturedAt,
+			category: site.category,
+			device,
 			name: site.name,
 			url: site.url,
 		};
 
-		await env.SCREENSHOTS.put(key, screenshot, {
-			httpMetadata: { contentType: 'image/png' },
-			customMetadata,
-		});
 		await env.SCREENSHOTS.put(previewKey, thumbnail, {
-			httpMetadata: { contentType: 'image/jpeg' },
+			httpMetadata: { contentType: `image/${thumbnailConfig.type}` },
 			customMetadata,
 		});
-
-		return { name: site.name, status: 'success', key };
+		await env.SCREENSHOTS.put(key, screenshot, {
+			httpMetadata: { contentType: `image/${extension}` },
+			customMetadata,
+		});
+		return { device, key, name: site.name, status: 'success' };
 	} finally {
-		await browser.close();
+		try {
+			await browser.close();
+		} catch (error) {
+			console.error('Could not close browser session', {
+				device,
+				error: errorMessage(error),
+				name: site.name,
+			});
+		}
+	}
+}
+
+export async function captureDevice(
+	env: Pick<Env, 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
+	site: SiteDefinition,
+	device: Device,
+	capturedAt: string,
+): Promise<ScreenshotResult> {
+	try {
+		return await capture(env, site, device, capturedAt);
+	} catch (error) {
+		const reason = error instanceof DetectedCaptureError ? error.reason : 'capture-error';
+		const message = errorMessage(error);
+		const failureKey = await storeCaptureFailure(env, {
+			capturedAt,
+			device,
+			message,
+			reason,
+			site,
+		});
+		return { device, error: message, failureKey, name: site.name, status: 'error' };
 	}
 }

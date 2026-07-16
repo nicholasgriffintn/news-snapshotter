@@ -1,10 +1,15 @@
-import type { SiteDefinition } from '../types';
+import type { Device, SiteDefinition } from '../types';
 
-function safeSegment(value: string): string {
+export function safeSegment(value: string): string {
 	return value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-export function screenshotKey(site: SiteDefinition, capturedAt: string): string {
+export function screenshotKey(
+	site: SiteDefinition,
+	capturedAt: string,
+	device: Device,
+	extension: 'jpeg' | 'png' | 'webp',
+): string {
 	const date = capturedAt.slice(0, 10);
 	const timestamp = capturedAt.replace(/[:.]/g, '-');
 
@@ -12,10 +17,10 @@ export function screenshotKey(site: SiteDefinition, capturedAt: string): string 
 		`brand=${safeSegment(site.brand)}`,
 		`category=${site.category}`,
 		`date=${date}`,
-		`${safeSegment(site.name)}-${timestamp}.png`,
+		`${safeSegment(site.name)}-${device}-${timestamp}.${extension}`,
 	].join('/');
 }
 
 export function thumbnailKey(fullScreenshotKey: string): string {
-	return fullScreenshotKey.replace(/\.png$/, '-thumbnail.jpg');
+	return fullScreenshotKey.replace(/\.(?:jpe?g|png|webp)$/, '-thumbnail.jpg');
 }

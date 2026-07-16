@@ -27,7 +27,7 @@ export function SnapshotModal({ onClose, snapshot }: { onClose: () => void; snap
 				<header className="modal__header">
 					<div>
 						<p>
-							{displayName(snapshot.brand)} / {snapshot.category}
+							{displayName(snapshot.brand)} / {snapshot.category} / {snapshot.device}
 						</p>
 						<h2>{displayName(snapshot.name)}</h2>
 						<time dateTime={snapshot.capturedAt}>

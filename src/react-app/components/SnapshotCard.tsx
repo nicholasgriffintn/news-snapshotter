@@ -16,7 +16,9 @@ export function SnapshotCard({ onSelect, snapshot }: { onSelect: () => void; sna
 				<span className={`category category--${snapshot.category}`}>{snapshot.category}</span>
 			</div>
 			<div className="snapshot-card__copy">
-				<span className="snapshot-card__brand">{displayName(snapshot.brand)}</span>
+				<span className="snapshot-card__brand">
+					{displayName(snapshot.brand)} · {snapshot.device}
+				</span>
 				<h3>{displayName(snapshot.name)}</h3>
 				<time dateTime={snapshot.capturedAt}>{timeLabel(snapshot.capturedAt)}</time>
 			</div>

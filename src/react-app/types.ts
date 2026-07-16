@@ -2,6 +2,7 @@ export type Snapshot = {
 	brand: string;
 	capturedAt: string;
 	category: 'news' | 'sport';
+	device: 'desktop' | 'mobile';
 	fullImageUrl: string;
 	key: string;
 	name: string;
