@@ -6,10 +6,12 @@ import type { Device, ScreenshotResult, SiteDefinition } from './types';
 export type SnapshotWorkflowParams = {
 	capturedAt: string;
 	sites: SiteDefinition[];
+	startDelaySeconds?: number;
 };
 
 type WorkflowStepLike = {
 	do<T>(name: string, callback: () => Promise<T>): Promise<T>;
+	sleep?(name: string, duration: `${number} seconds`): Promise<void>;
 };
 
 type CaptureDevice = (
@@ -27,6 +29,10 @@ export async function runSnapshotWorkflow(
 ) {
 	const { capturedAt, sites } = params;
 	const results: ScreenshotResult[] = [];
+	if (params.startDelaySeconds && step.sleep) {
+		const duration: `${number} seconds` = `${params.startDelaySeconds} seconds`;
+		await step.sleep('stagger browser runner', duration);
+	}
 
 	for (const site of sites) {
 		const profile = resolveCaptureProfile(site);

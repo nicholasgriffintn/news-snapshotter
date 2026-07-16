@@ -21,7 +21,13 @@ export async function fetchCatalogue(): Promise<CatalogueSite[]> {
 export async function startSnapshotWorkflow(
 	apiKey: string,
 	selection: { brand?: string; name?: string },
-): Promise<{ workflowId: string; selectedSites: CatalogueSite[] }> {
+): Promise<{
+	batchId: string;
+	runnerCount: number;
+	selectedSites: CatalogueSite[];
+	workflowId: string;
+	workflowIds: string[];
+}> {
 	const response = await fetch('/api/workflows', {
 		method: 'POST',
 		headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },

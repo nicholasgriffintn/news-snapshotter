@@ -9,6 +9,7 @@ import { errorMessage } from './lib/errors.ts';
 import { selectSites, type SiteSelection } from './lib/site-catalogue.ts';
 import { thumbnailKey } from './lib/storage-key.ts';
 import { listScreenshots, screenshotImageUrl, serveScreenshot } from './snapshots.ts';
+import { createWorkflowShards } from './workflow-batch.ts';
 
 function jsonError(message: string, status: number): Response {
 	return Response.json({ status: 'error', message }, { status });
@@ -39,14 +40,36 @@ async function parseSelection(request: Request): Promise<SiteSelection> {
 
 async function startWorkflow(request: Request, env: Env): Promise<Response> {
 	const sites = selectSites(SITES, await parseSelection(request));
-	const instance = await env.NEWS_SNAPSHOTTER.create({ params: { capturedAt: new Date().toISOString(), sites } });
+	const capturedAt = new Date().toISOString();
+	const shards = createWorkflowShards(sites);
+	const workflows = await Promise.all(
+		shards.map(async (shard) => {
+			const instance = await env.NEWS_SNAPSHOTTER.create({
+				params: {
+					capturedAt,
+					sites: shard.sites,
+					startDelaySeconds: shard.startDelaySeconds,
+				},
+			});
+			return {
+				id: instance.id,
+				siteCount: shard.sites.length,
+				status: await instance.status(),
+			};
+		}),
+	);
+	const workflowIds = workflows.map(({ id }) => id);
 
 	return Response.json(
 		{
+			batchId: `capture-${capturedAt.replace(/[:.]/g, '-')}`,
+			capturedAt,
+			runnerCount: workflows.length,
 			status: 'success',
 			selectedSites: sites.map(({ brand, category, name }) => ({ brand, category, name })),
-			workflowId: instance.id,
-			workflowStatus: await instance.status(),
+			workflowId: workflowIds[0],
+			workflowIds,
+			workflows,
 		},
 		{ status: 202 },
 	);

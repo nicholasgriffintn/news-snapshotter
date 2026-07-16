@@ -56,6 +56,35 @@ test('returns an empty summary when no sites are selected', async () => {
 	});
 });
 
+test('delays a child runner before starting its first capture', async () => {
+	const events = [];
+	const step = {
+		do: async (_name, callback) => {
+			events.push('capture');
+			return callback();
+		},
+		sleep: async (name, duration) => {
+			events.push(`${name}:${duration}`);
+		},
+	};
+	const capture = async (_env, site, device) => ({
+		device,
+		key: `${site.name}-${device}.png`,
+		name: site.name,
+		status: 'success',
+	});
+
+	await runSnapshotWorkflow(
+		{},
+		{ capturedAt, sites: [sites[0]], startDelaySeconds: 3 },
+		step,
+		capture,
+	);
+
+	assert.equal(events[0], 'stagger browser runner:3 seconds');
+	assert.equal(events.filter((event) => event === 'capture').length, 2);
+});
+
 test('does not retry or swallow a durable step failure', async () => {
 	let attempts = 0;
 	const step = {

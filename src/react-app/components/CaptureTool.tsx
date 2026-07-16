@@ -27,8 +27,12 @@ export function CaptureTool({ apiKey, catalogue }: { apiKey: string; catalogue: 
 		try {
 			const selection = scope === 'brand' ? { brand } : scope === 'site' ? { name } : {};
 			const result = await startSnapshotWorkflow(apiKey, selection);
-			const plural = result.selectedSites.length === 1 ? '' : 's';
-			setStatus(`Workflow ${result.workflowId} started for ${result.selectedSites.length} site${plural}.`);
+			const sitePlural = result.selectedSites.length === 1 ? '' : 's';
+			const runnerPlural = result.runnerCount === 1 ? '' : 's';
+			setStatus(
+				`${result.batchId} started ${result.selectedSites.length} site${sitePlural} ` +
+					`across ${result.runnerCount} runner${runnerPlural}.`,
+			);
 		} catch (reason) {
 			setStatus(reason instanceof Error ? reason.message : 'Could not start workflow.');
 		} finally {

@@ -164,8 +164,48 @@ test('starts a workflow for a valid named site selection', async () => {
 
 	assert.equal(response.status, 202);
 	assert.equal(body.workflowId, 'workflow-123');
+	assert.deepEqual(body.workflowIds, ['workflow-123']);
+	assert.equal(body.runnerCount, 1);
 	assert.equal(creations[0].params.sites.length, 1);
 	assert.equal(creations[0].params.sites[0].name, 'bbc-home');
+});
+
+test('fans a full capture out across six balanced runners with one timestamp', async () => {
+	const creations = [];
+	const env = environment({
+		NEWS_SNAPSHOTTER: {
+			create: async (options) => {
+				creations.push(options);
+				const id = `workflow-${creations.length}`;
+				return { id, status: async () => ({ status: 'queued' }) };
+			},
+		},
+	});
+
+	const response = await handleRequest(
+		apiRequest('/api/workflows', {
+			headers: { authorization: 'Bearer secret' },
+			method: 'POST',
+		}),
+		env,
+	);
+	const body = await response.json();
+	const sizes = creations.map(({ params }) => params.sites.length);
+
+	assert.equal(response.status, 202);
+	assert.equal(body.runnerCount, 6);
+	assert.deepEqual(body.workflowIds, [
+		'workflow-1',
+		'workflow-2',
+		'workflow-3',
+		'workflow-4',
+		'workflow-5',
+		'workflow-6',
+	]);
+	assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1);
+	assert.equal(sizes.reduce((total, size) => total + size, 0), body.selectedSites.length);
+	assert.equal(new Set(creations.map(({ params }) => params.capturedAt)).size, 1);
+	assert.deepEqual(creations.map(({ params }) => params.startDelaySeconds), [0, 1, 2, 3, 4, 5]);
 });
 
 test('returns workflow status by identifier', async () => {
