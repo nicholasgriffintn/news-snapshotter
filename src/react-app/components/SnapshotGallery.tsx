@@ -1,13 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { fetchSnapshots } from '../lib/api';
+import {
+	DEFAULT_ARCHIVE_PERIOD,
+	matchesArchivePeriod,
+	periodDescription,
+} from '../lib/archive-period';
 import { groupLabel } from '../lib/format';
 import type { Snapshot } from '../types';
 import { SnapshotCard } from './SnapshotCard';
 import { SnapshotFilters, type Filters } from './SnapshotFilters';
 import { SnapshotModal } from './SnapshotModal';
 
-const EMPTY_FILTERS: Filters = { brand: '', category: '', query: '' };
+const EMPTY_FILTERS: Filters = {
+	brand: '',
+	category: '',
+	query: '',
+	...DEFAULT_ARCHIVE_PERIOD,
+};
 
 export function SnapshotGallery() {
 	const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
@@ -15,6 +25,7 @@ export function SnapshotGallery() {
 	const [selected, setSelected] = useState<Snapshot>();
 	const [error, setError] = useState('');
 	const [loading, setLoading] = useState(true);
+	const [now, setNow] = useState(() => new Date());
 
 	useEffect(() => {
 		fetchSnapshots()
@@ -23,16 +34,23 @@ export function SnapshotGallery() {
 			.finally(() => setLoading(false));
 	}, []);
 
+	useEffect(() => {
+		const timer = window.setInterval(() => setNow(new Date()), 60_000);
+		return () => window.clearInterval(timer);
+	}, []);
+
 	const filtered = useMemo(() => {
 		return snapshots.filter((snapshot) => {
 			const query = filters.query.trim().toLowerCase();
 			const matchesBrand = !filters.brand || snapshot.brand === filters.brand;
 			const matchesCategory = !filters.category || snapshot.category === filters.category;
-			const matchesQuery = !query || `${snapshot.name} ${snapshot.brand}`.includes(query);
+			const matchesQuery =
+				!query || `${snapshot.name} ${snapshot.brand}`.toLowerCase().includes(query);
+			const matchesPeriod = matchesArchivePeriod(snapshot.capturedAt, filters, now);
 
-			return matchesBrand && matchesCategory && matchesQuery;
+			return matchesBrand && matchesCategory && matchesQuery && matchesPeriod;
 		});
-	}, [filters, snapshots]);
+	}, [filters, now, snapshots]);
 
 	const brands = useMemo(() => {
 		return [...new Set(snapshots.map(({ brand }) => brand))].sort();
@@ -43,7 +61,10 @@ export function SnapshotGallery() {
 		<>
 			<SnapshotFilters brands={brands} filters={filters} onChange={setFilters} />
 			<div className="gallery-status">
-				<span>{filtered.length} captures</span>
+				<span>
+					<strong>{periodDescription(filters)}</strong>
+					{filtered.length} captures
+				</span>
 				<button onClick={() => setFilters(EMPTY_FILTERS)} type="button">
 					Clear filters
 				</button>

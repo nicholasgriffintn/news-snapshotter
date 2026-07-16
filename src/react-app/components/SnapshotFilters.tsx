@@ -1,6 +1,14 @@
+import type { ArchivePeriod } from '../lib/archive-period';
 import { displayName } from '../lib/format';
+import { DateFilter } from './DateFilter';
 
-export type Filters = { brand: string; category: string; query: string };
+export type Filters = {
+	brand: string;
+	category: string;
+	day: string;
+	period: ArchivePeriod;
+	query: string;
+};
 
 type SnapshotFiltersProps = {
 	brands: string[];
@@ -10,8 +18,8 @@ type SnapshotFiltersProps = {
 
 export function SnapshotFilters({ brands, filters, onChange }: SnapshotFiltersProps) {
 	return (
-		<div aria-label="Screenshot filters" className="filters">
-			<label className="search-field">
+		<section aria-label="Screenshot filters" className="filters">
+			<label className="search-field filter-field">
 				<span className="sr-only">Search snapshots</span>
 				<svg aria-hidden="true" viewBox="0 0 24 24">
 					<circle cx="11" cy="11" r="7" />
@@ -24,7 +32,7 @@ export function SnapshotFilters({ brands, filters, onChange }: SnapshotFiltersPr
 					value={filters.query}
 				/>
 			</label>
-			<label>
+			<label className="filter-field">
 				<span>Brand</span>
 				<select
 					onChange={(event) => onChange({ ...filters, brand: event.target.value })}
@@ -38,7 +46,7 @@ export function SnapshotFilters({ brands, filters, onChange }: SnapshotFiltersPr
 					))}
 				</select>
 			</label>
-			<label>
+			<label className="filter-field">
 				<span>Category</span>
 				<select
 					onChange={(event) => onChange({ ...filters, category: event.target.value })}
@@ -49,6 +57,11 @@ export function SnapshotFilters({ brands, filters, onChange }: SnapshotFiltersPr
 					<option value="sport">Sport</option>
 				</select>
 			</label>
-		</div>
+			<DateFilter
+				day={filters.day}
+				onChange={(period, day = filters.day) => onChange({ ...filters, day, period })}
+				period={filters.period}
+			/>
+		</section>
 	);
 }

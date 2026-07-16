@@ -74,6 +74,10 @@ The archive at `/` groups captures by date and filters them by search text, bran
 
 The `/admin` page starts a workflow for all sites, one brand, or one named site. The API key remains in memory for the current page session and is not written to browser storage.
 
+The archive displays each captured source URL and links visitors to the original publisher. An independent-archive disclosure appears below the gallery, with separate `/terms` and `/privacy` pages.
+
+The contact modal posts to `POST /api/contact`. It sends rights-holder, privacy, and general enquiries to `pashi@nicholasgriffin.dev` through Cloudflare Email Service. The endpoint uses a honeypot, a minimum completion time, strict field limits, a fixed sender and recipient, and Cloudflare's native rate limiter.
+
 ## Catalogue
 
 Site definitions live in `src/sites`. `src/constants.ts` composes every provider list into the active catalogue and assigns each site a `brand`; each definition supplies a unique `name`, a `category` of `news` or `sport`, and a fixed HTTPS URL.
@@ -88,6 +92,8 @@ The Worker requires these bindings:
 - `NEWS_SNAPSHOTTER`: Cloudflare Workflow
 - `SCREENSHOTS`: R2 bucket
 - `CAPTURE_FAILURES`: Workers KV namespace for failed captures
+- `CONTACT_EMAIL`: restricted Email Service binding for archive enquiries
+- `CONTACT_RATE_LIMIT`: native Rate Limiting binding for contact submissions
 - `API_KEY`: secret used to authenticate requests
 
 Create the production and preview R2 buckets, then set the API secret:
@@ -97,6 +103,8 @@ pnpm wrangler r2 bucket create news-snapshotter
 pnpm wrangler r2 bucket create news-snapshotter-preview
 pnpm wrangler secret put API_KEY
 ```
+
+Before deploying contact email, onboard `nicholasgriffin.dev` with Cloudflare Email Service and ensure `pashi@nicholasgriffin.dev` is an allowed sender and verified destination.
 
 `wrangler.json` contains the deployable binding configuration. `wrangler.toml.example` shows the equivalent TOML shape.
 

@@ -1,9 +1,26 @@
+import { useState } from 'react';
+
 import { AdminPage } from './components/AdminPage';
+import { ContactModal } from './components/ContactModal';
+import { Disclosure, DisclosureModal } from './components/Disclosure';
+import { LegalPage } from './components/LegalPage';
 import { SnapshotGallery } from './components/SnapshotGallery';
 
+type Page = 'admin' | 'archive' | 'privacy' | 'terms';
+
+function currentPage(): Page {
+	const path = window.location.pathname;
+	if (path === '/admin' || path.startsWith('/admin/')) return 'admin';
+	if (path === '/privacy' || path.startsWith('/privacy/')) return 'privacy';
+	if (path === '/terms' || path.startsWith('/terms/')) return 'terms';
+	return 'archive';
+}
+
 export default function App() {
-	const isAdmin =
-		window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
+	const [contactOpen, setContactOpen] = useState(false);
+	const [disclosureOpen, setDisclosureOpen] = useState(false);
+	const page = currentPage();
+	const isApplicationPage = page === 'admin' || page === 'archive';
 
 	return (
 		<main className="shell">
@@ -12,43 +29,69 @@ export default function App() {
 					<img alt="" aria-hidden="true" src="/pashi-logo.svg" />
 					<span>Pashi</span>
 				</a>
-				<nav aria-label="Primary navigation">
-					<a aria-current={!isAdmin ? 'page' : undefined} href="/">
-						Archive
-					</a>
-					<a aria-current={isAdmin ? 'page' : undefined} href="/admin">
-						Admin
-					</a>
-				</nav>
 			</header>
 
-			<section className="hero">
-				<div>
-					<p className="eyebrow">The front page, frozen in time</p>
-					<h1>
-						{isAdmin ? (
-							<>
-								Run the
-								<br />
-								<em>press.</em>
-							</>
-						) : (
-							<>
-								Today’s news.
-								<br />
-								<em>Captured.</em>
-							</>
-						)}
-					</h1>
-				</div>
-				<p>
-					{isAdmin
-						? 'Choose every publication, one brand, or a single page. The workflow handles the rest.'
-						: 'Browse full-page records of the stories, layouts and moments shaping the day.'}
-				</p>
-			</section>
+			{isApplicationPage ? (
+				<section className="hero">
+					<div>
+						<p className="eyebrow">The front page, frozen in time</p>
+						<h1>
+							{page === 'admin' ? (
+								<>
+									Run the
+									<br />
+									<em>press.</em>
+								</>
+							) : (
+								<>
+									Today’s news.
+									<br />
+									<em>Captured.</em>
+								</>
+							)}
+						</h1>
+					</div>
+					<div className="hero__intro">
+						<p>
+							{page === 'admin'
+								? 'Choose every publication, one brand, or a single page. The workflow handles the rest.'
+								: 'Browse full-page records of the stories, layouts and moments shaping the day.'}
+						</p>
+						{page === 'archive' ? (
+							<button
+								className="hero__disclosure-action"
+								onClick={() => setDisclosureOpen(true)}
+								type="button"
+							>
+								About this site
+								<span aria-hidden="true">↗</span>
+							</button>
+						) : null}
+					</div>
+				</section>
+			) : null}
 
-			{isAdmin ? <AdminPage /> : <SnapshotGallery />}
+			{page === 'admin' ? <AdminPage /> : null}
+			{page === 'archive' ? (
+				<>
+					<SnapshotGallery />
+					<Disclosure onContact={() => setContactOpen(true)} />
+				</>
+			) : null}
+			{page === 'privacy' ? (
+				<LegalPage kind="privacy" onContact={() => setContactOpen(true)} />
+			) : null}
+			{page === 'terms' ? (
+				<LegalPage kind="terms" onContact={() => setContactOpen(true)} />
+			) : null}
+
+			<nav aria-label="Legal and contact" className="legal-nav">
+				<a href="/terms">Terms</a>
+				<a href="/privacy">Privacy</a>
+				<button onClick={() => setContactOpen(true)} type="button">
+					Contact
+				</button>
+			</nav>
 
 			<footer>
 				<span>
@@ -56,6 +99,17 @@ export default function App() {
 					<a href="https://nicholasgriffin.dev">Nicholas Griffin</a>
 				</span>
 			</footer>
+
+			{contactOpen ? <ContactModal onClose={() => setContactOpen(false)} /> : null}
+			{disclosureOpen ? (
+				<DisclosureModal
+					onClose={() => setDisclosureOpen(false)}
+					onContact={() => {
+						setDisclosureOpen(false);
+						setContactOpen(true);
+					}}
+				/>
+			) : null}
 		</main>
 	);
 }

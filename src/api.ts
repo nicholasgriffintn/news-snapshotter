@@ -1,4 +1,5 @@
 import { SITES } from './constants';
+import { sendContactMessage } from './contact';
 import type { Env } from './env';
 import { isAuthorised } from './lib/auth';
 import { errorMessage } from './lib/errors';
@@ -60,6 +61,10 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
 	if (request.method === 'GET' && url.pathname === '/api/catalogue') {
 		return Response.json({ sites: SITES.map(({ brand, category, name }) => ({ brand, category, name })) });
+	}
+
+	if (request.method === 'POST' && url.pathname === '/api/contact') {
+		return sendContactMessage(request, env);
 	}
 
 	if (!isAuthorised(request.headers.get('authorization'), env.API_KEY)) {

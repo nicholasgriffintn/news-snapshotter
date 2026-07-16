@@ -20,6 +20,7 @@ export function SnapshotCard({ onSelect, snapshot }: { onSelect: () => void; sna
 					{displayName(snapshot.brand)} · {snapshot.device}
 				</span>
 				<h3>{displayName(snapshot.name)}</h3>
+				<span className="snapshot-card__url">{snapshot.url}</span>
 				<time dateTime={snapshot.capturedAt}>{timeLabel(snapshot.capturedAt)}</time>
 			</div>
 		</button>

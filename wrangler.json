@@ -43,6 +43,23 @@
 			"binding": "CAPTURE_FAILURES"
 		}
 	],
+	"ratelimits": [
+		{
+			"name": "CONTACT_RATE_LIMIT",
+			"namespace_id": "78241",
+			"simple": {
+				"limit": 3,
+				"period": 60
+			}
+		}
+	],
+	"send_email": [
+		{
+			"name": "CONTACT_EMAIL",
+			"destination_address": "pashi@nicholasgriffin.dev",
+			"allowed_sender_addresses": ["pashi@nicholasgriffin.dev"]
+		}
+	],
 	"r2_buckets": [
 		{
 			"binding": "SCREENSHOTS",

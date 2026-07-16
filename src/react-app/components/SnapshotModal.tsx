@@ -34,6 +34,15 @@ export function SnapshotModal({ onClose, snapshot }: { onClose: () => void; snap
 							{timeLabel(snapshot.capturedAt)} ·{' '}
 							{new Date(snapshot.capturedAt).toLocaleDateString('en-GB')}
 						</time>
+						<a
+							className="modal__source"
+							href={snapshot.url}
+							rel="noreferrer"
+							target="_blank"
+						>
+							<span>{snapshot.url}</span>
+							<strong>Visit the original publisher ↗</strong>
+						</a>
 					</div>
 					<button
 						aria-label="Close screenshot"

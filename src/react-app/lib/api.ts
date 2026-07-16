@@ -29,3 +29,20 @@ export async function startSnapshotWorkflow(
 	});
 	return readJson(response);
 }
+
+export async function sendContactMessage(message: {
+	email: string;
+	message: string;
+	name: string;
+	reason: 'general' | 'privacy' | 'rights-holder';
+	sourceUrl?: string;
+	startedAt: number;
+	website: string;
+}): Promise<void> {
+	const response = await fetch('/api/contact', {
+		body: JSON.stringify(message),
+		headers: { 'content-type': 'application/json' },
+		method: 'POST',
+	});
+	await readJson(response);
+}
