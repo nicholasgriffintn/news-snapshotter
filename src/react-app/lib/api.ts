@@ -1,4 +1,4 @@
-import type { CatalogueSite, Snapshot } from '../types';
+import type { CaptureFailure, CatalogueSite, Snapshot } from '../types';
 
 async function readJson<T>(response: Response): Promise<T> {
 	const body = (await response.json()) as T & { message?: string };
@@ -33,6 +33,18 @@ export async function startSnapshotWorkflow(
 export async function fetchCaptureProfiles(): Promise<string[]> {
 	const response = await fetch('/api/capture-profiles');
 	return (await readJson<{ profiles: string[] }>(response)).profiles;
+}
+
+export async function fetchCaptureFailures(
+	apiKey: string,
+	cursor?: string,
+): Promise<{ cursor?: string; failures: CaptureFailure[]; hasMore: boolean }> {
+	const search = new URLSearchParams({ limit: '50' });
+	if (cursor) search.set('cursor', cursor);
+	const response = await fetch(`/api/admin/failures?${search}`, {
+		headers: { authorization: `Bearer ${apiKey}` },
+	});
+	return readJson(response);
 }
 
 export type BotCheckResult = {

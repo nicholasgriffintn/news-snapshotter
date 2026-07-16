@@ -11,3 +11,15 @@ export type Snapshot = {
 };
 
 export type CatalogueSite = Pick<Snapshot, 'brand' | 'category' | 'name'>;
+
+export type CaptureFailure = {
+	brand: string;
+	capturedAt: string;
+	category: Snapshot['category'];
+	device: Snapshot['device'];
+	message: string;
+	name: string;
+	reason: string;
+	storedAt: string;
+	url: string;
+};

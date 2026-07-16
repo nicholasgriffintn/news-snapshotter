@@ -82,6 +82,66 @@ test('protects workflow routes with the configured API key', async () => {
 	assert.equal((await response.json()).message, 'Invalid API key');
 });
 
+test('protects capture failures with the configured API key', async () => {
+	const response = await handleRequest(apiRequest('/api/admin/failures'), environment());
+
+	assert.equal(response.status, 401);
+	assert.equal((await response.json()).message, 'Invalid API key');
+});
+
+test('lists bounded capture failures for admins', async () => {
+	const listCalls = [];
+	const record = {
+		brand: 'bbc',
+		capturedAt: '2026-07-16T10:20:30.123Z',
+		category: 'news',
+		device: 'desktop',
+		message: 'Navigation returned HTTP 503',
+		name: 'bbc-home',
+		reason: 'http-error',
+		storedAt: '2026-07-16T10:20:31.123Z',
+		url: 'https://www.bbc.co.uk/',
+	};
+	const response = await handleRequest(
+		apiRequest('/api/admin/failures?limit=25&cursor=next-page', {
+			headers: { authorization: 'Bearer secret' },
+		}),
+		environment({
+			CAPTURE_FAILURES: {
+				get: async () => JSON.stringify(record),
+				list: async (options) => {
+					listCalls.push(options);
+					return {
+						cursor: 'final-page',
+						keys: [{ name: 'failures/date=2026-07-16/failure.json' }],
+						list_complete: false,
+					};
+				},
+			},
+		}),
+	);
+	const body = await response.json();
+
+	assert.equal(response.status, 200);
+	assert.deepEqual(listCalls, [{ cursor: 'next-page', limit: 25, prefix: 'failures/' }]);
+	assert.deepEqual(body.failures, [record]);
+	assert.equal(body.cursor, 'final-page');
+	assert.equal(body.hasMore, true);
+});
+
+test('rejects invalid failure list pagination', async (context) => {
+	context.mock.method(console, 'error', () => undefined);
+	const response = await handleRequest(
+		apiRequest('/api/admin/failures?limit=500', {
+			headers: { authorization: 'Bearer secret' },
+		}),
+		environment(),
+	);
+
+	assert.equal(response.status, 400);
+	assert.equal((await response.json()).message, 'limit must be between 1 and 100');
+});
+
 test('starts a workflow for a valid named site selection', async () => {
 	const creations = [];
 	const env = environment({

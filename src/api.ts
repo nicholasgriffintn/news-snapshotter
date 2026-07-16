@@ -1,5 +1,6 @@
 import { SITES } from './constants.ts';
 import { runBotCheck } from './bot-check.ts';
+import { listCaptureFailures } from './capture-failures.ts';
 import { CAPTURE_PROFILE_NAMES, hasCaptureProfile } from './capture-profiles.ts';
 import { sendContactMessage } from './contact.ts';
 import type { Env } from './env';
@@ -78,6 +79,19 @@ async function startBotCheck(request: Request, env: Env): Promise<Response> {
 	});
 }
 
+function failureListOptions(url: URL): { cursor?: string; limit: number } {
+	const cursor = url.searchParams.get('cursor') ?? undefined;
+	const limitValue = url.searchParams.get('limit');
+	const limit = limitValue === null ? 50 : Number(limitValue);
+	if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+		throw new Error('limit must be between 1 and 100');
+	}
+	if (cursor !== undefined && (cursor.length === 0 || cursor.length > 1_024)) {
+		throw new Error('cursor is invalid');
+	}
+	return { cursor, limit };
+}
+
 async function routeRequest(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url);
 
@@ -111,6 +125,10 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
 	if (request.method === 'POST' && url.pathname === '/api/admin/bot-checks') {
 		return startBotCheck(request, env);
+	}
+
+	if (request.method === 'GET' && url.pathname === '/api/admin/failures') {
+		return Response.json(await listCaptureFailures(env, failureListOptions(url)));
 	}
 
 	if (request.method === 'GET' && url.pathname.startsWith('/api/workflows/')) {

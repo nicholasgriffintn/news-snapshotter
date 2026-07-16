@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import {
-	fetchCaptureProfiles,
-	startBotCheck,
-	type BotCheckResult,
-} from '../lib/api';
+import { startBotCheck, type BotCheckResult } from '../lib/api';
 import { displayName } from '../lib/format';
 import type { Snapshot } from '../types';
 import { SnapshotCard } from './SnapshotCard';
@@ -29,8 +25,7 @@ function botCheckSnapshot(
 	};
 }
 
-export function BotCheckTool({ apiKey }: { apiKey: string }) {
-	const [profiles, setProfiles] = useState<string[]>([]);
+export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: string[] }) {
 	const [profile, setProfile] = useState('default');
 	const [result, setResult] = useState<BotCheckResult>();
 	const [selected, setSelected] = useState<Snapshot>();
@@ -38,13 +33,8 @@ export function BotCheckTool({ apiKey }: { apiKey: string }) {
 	const [submitting, setSubmitting] = useState(false);
 
 	useEffect(() => {
-		fetchCaptureProfiles()
-			.then((values) => {
-				setProfiles(values);
-				setProfile((current) => (values.includes(current) ? current : (values[0] ?? 'default')));
-			})
-			.catch(() => setStatus('Could not load capture profiles.'));
-	}, []);
+		setProfile((current) => (profiles.includes(current) ? current : (profiles[0] ?? 'default')));
+	}, [profiles]);
 
 	async function submit(event: React.FormEvent) {
 		event.preventDefault();
@@ -73,14 +63,9 @@ export function BotCheckTool({ apiKey }: { apiKey: string }) {
 
 	return (
 		<>
-			<form className="bot-check" onSubmit={submit}>
+			<form className="admin-tool bot-check" onSubmit={submit}>
 				<header className="admin-tool__header">
-					<p className="eyebrow">Admin diagnostic</p>
 					<h2>Bot detection check</h2>
-					<p>
-						Capture <a href="https://amiabot.app/">amiabot.app</a> using a selected browser
-						profile.
-					</p>
 				</header>
 
 				<label>

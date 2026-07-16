@@ -34,7 +34,9 @@ export default function App() {
 			{isApplicationPage ? (
 				<section className="hero">
 					<div>
-						<p className="eyebrow">The front page, frozen in time</p>
+						{page === 'archive' ? (
+							<p className="eyebrow">The front page, frozen in time</p>
+						) : null}
 						<h1>
 							{page === 'admin' ? (
 								<>
@@ -52,11 +54,9 @@ export default function App() {
 						</h1>
 					</div>
 					<div className="hero__intro">
-						<p>
-							{page === 'admin'
-								? 'Choose every publication, one brand, or a single page. The workflow handles the rest.'
-								: 'Browse full-page records of the stories, layouts and moments shaping the day.'}
-						</p>
+						{page === 'archive' ? (
+							<p>Browse full-page records of the stories, layouts and moments shaping the day.</p>
+						) : null}
 						{page === 'archive' ? (
 							<button
 								className="hero__disclosure-action"

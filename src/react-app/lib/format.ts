@@ -29,3 +29,10 @@ export function groupLabel(capturedAt: string): string {
 export function timeLabel(capturedAt: string): string {
 	return new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit' }).format(new Date(capturedAt));
 }
+
+export function dateTimeLabel(value: string): string {
+	return new Intl.DateTimeFormat('en-GB', {
+		dateStyle: 'medium',
+		timeStyle: 'medium',
+	}).format(new Date(value));
+}

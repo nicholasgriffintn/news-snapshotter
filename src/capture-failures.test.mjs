@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { storeCaptureFailure } from './capture-failures.ts';
+import { listCaptureFailures, storeCaptureFailure } from './capture-failures.ts';
 
 const failure = {
 	capturedAt: '2026-07-16T10:20:30.123Z',
@@ -43,4 +43,47 @@ test('returns undefined when KV persistence fails', async (context) => {
 	};
 
 	assert.equal(await storeCaptureFailure(env, failure), undefined);
+});
+
+test('lists valid failures newest first and ignores corrupt KV values', async () => {
+	const records = new Map([
+		['older', JSON.stringify({
+			brand: 'bbc',
+			capturedAt: '2026-07-16T10:00:00.000Z',
+			category: 'news',
+			device: 'desktop',
+			message: 'Older failure',
+			name: 'bbc-home',
+			reason: 'http-error',
+			storedAt: '2026-07-16T10:00:01.000Z',
+			url: 'https://bbc.co.uk',
+		})],
+		['newer', JSON.stringify({
+			brand: 'sky',
+			capturedAt: '2026-07-16T11:00:00.000Z',
+			category: 'news',
+			device: 'mobile',
+			message: 'Newer failure',
+			name: 'sky-home',
+			reason: 'captcha',
+			storedAt: '2026-07-16T11:00:01.000Z',
+			url: 'https://news.sky.com',
+		})],
+		['corrupt', '{nope'],
+	]);
+	const env = {
+		CAPTURE_FAILURES: {
+			get: async (key) => records.get(key),
+			list: async () => ({
+				keys: [...records.keys()].map((name) => ({ name })),
+				list_complete: true,
+			}),
+		},
+	};
+
+	const result = await listCaptureFailures(env, { limit: 50 });
+
+	assert.deepEqual(result.failures.map(({ name }) => name), ['sky-home', 'bbc-home']);
+	assert.equal(result.hasMore, false);
+	assert.equal(result.cursor, undefined);
 });

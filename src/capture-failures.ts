@@ -13,6 +13,74 @@ export type CaptureFailure = {
 	site: SiteDefinition;
 };
 
+export type StoredCaptureFailure = {
+	brand: string;
+	capturedAt: string;
+	category: SiteDefinition['category'];
+	device: Device;
+	message: string;
+	name: string;
+	reason: string;
+	storedAt: string;
+	url: string;
+};
+
+export type CaptureFailurePage = {
+	cursor?: string;
+	failures: StoredCaptureFailure[];
+	hasMore: boolean;
+};
+
+function parseStoredFailure(value: string | null): StoredCaptureFailure | undefined {
+	if (!value) return undefined;
+
+	try {
+		const record: unknown = JSON.parse(value);
+		if (!record || typeof record !== 'object' || Array.isArray(record)) return undefined;
+		const failure = record as Record<string, unknown>;
+		const requiredStrings = [
+			'brand',
+			'capturedAt',
+			'category',
+			'device',
+			'message',
+			'name',
+			'reason',
+			'storedAt',
+			'url',
+		];
+		if (!requiredStrings.every((field) => typeof failure[field] === 'string')) return undefined;
+		if (failure.category !== 'news' && failure.category !== 'sport') return undefined;
+		if (failure.device !== 'desktop' && failure.device !== 'mobile') return undefined;
+		return failure as StoredCaptureFailure;
+	} catch {
+		return undefined;
+	}
+}
+
+export async function listCaptureFailures(
+	env: Pick<Env, 'CAPTURE_FAILURES'>,
+	options: { cursor?: string; limit: number },
+): Promise<CaptureFailurePage> {
+	const page = await env.CAPTURE_FAILURES.list({
+		cursor: options.cursor,
+		limit: options.limit,
+		prefix: 'failures/',
+	});
+	const values = await Promise.all(page.keys.map(({ name }) => env.CAPTURE_FAILURES.get(name)));
+	const failures = values.flatMap((value) => {
+		const failure = parseStoredFailure(value);
+		return failure ? [failure] : [];
+	});
+	failures.sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
+
+	return {
+		cursor: page.list_complete ? undefined : page.cursor,
+		failures,
+		hasMore: !page.list_complete,
+	};
+}
+
 export async function storeCaptureFailure(
 	env: Pick<Env, 'CAPTURE_FAILURES'>,
 	failure: CaptureFailure,
