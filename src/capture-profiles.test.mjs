@@ -26,6 +26,9 @@ test('resolves safe desktop and mobile defaults', () => {
 	assert.equal(profile.deviceConfig.desktop.extraHTTPHeaders['accept-language'], 'en-GB,en;q=0.9');
 	assert.equal(profile.deviceConfig.desktop.hideWebdriver, true);
 	assert.ok(profile.deviceConfig.desktop.hideSelectors.includes('#onetrust-banner-sdk'));
+	assert.ok(profile.deviceConfig.mobile.hideSelectors.includes('.smartbanner'));
+	assert.ok(profile.deviceConfig.mobile.hideSelectors.includes('[class*="app-banner"]'));
+	assert.ok(profile.deviceConfig.mobile.clickActions.some(({ selector }) => selector.includes('#onetrust-accept-btn-handler')));
 	assert.ok(profile.failureIndicators.some(({ reason }) => reason === 'captcha'));
 });
 
@@ -42,7 +45,22 @@ test('merges brand overrides without dropping default protection', () => {
 	assert.deepEqual(profile.deviceConfig.desktop.viewport, { height: 1080, width: 1920 });
 	assert.ok(profile.deviceConfig.desktop.hideSelectors.includes('#onetrust-banner-sdk'));
 	assert.ok(profile.deviceConfig.desktop.blockSelectors.some(({ reason }) => reason === 'captcha'));
+	assert.ok(profile.deviceConfig.desktop.hideSelectors.includes('#fortress-container-root'));
+	assert.ok(profile.deviceConfig.desktop.styles.includes('html.sp-message-open { overflow: auto !important; }'));
 	assert.ok(profile.failureIndicators.some(({ reason }) => reason === 'security-systems'));
+});
+
+test('carries publisher cleaning rules into both device profiles', () => {
+	const reach = resolveCaptureProfile(site({ brand: 'reach' }));
+	const sky = resolveCaptureProfile(site({ brand: 'sky' }));
+	const times = resolveCaptureProfile(site({ brand: 'times' }));
+
+	assert.ok(reach.deviceConfig.desktop.hideSelectors.includes('#qc-cmp2-container'));
+	assert.ok(reach.deviceConfig.mobile.hideSelectors.includes('#div-gpt-ad-top-slot'));
+	assert.ok(sky.deviceConfig.mobile.hideSelectors.includes('.ui-news-header-nav'));
+	assert.ok(sky.deviceConfig.mobile.clickActions.some(({ frameUrlIncludes }) => frameUrlIncludes?.includes('consent')));
+	assert.ok(sky.deviceConfig.mobile.styles.includes('.ui-news-header-body { height: 50px !important; }'));
+	assert.ok(times.deviceConfig.desktop.hideSelectors.includes('iframe[id^="sp_message_iframe_"]'));
 });
 
 test('falls back to defaults for an unknown profile', () => {
@@ -55,9 +73,11 @@ test('falls back to defaults for an unknown profile', () => {
 test('returns fresh arrays so one resolution cannot contaminate another', () => {
 	const first = resolveCaptureProfile(site({ brand: 'bbc' }));
 	first.deviceConfig.desktop.hideSelectors.push('.mutation');
+	first.deviceConfig.desktop.styles.push('.mutation {}');
 	first.failureIndicators.push({ reason: 'mutation', text: 'mutation' });
 
 	const second = resolveCaptureProfile(site({ brand: 'bbc' }));
 	assert.equal(second.deviceConfig.desktop.hideSelectors.includes('.mutation'), false);
+	assert.equal(second.deviceConfig.desktop.styles.includes('.mutation {}'), false);
 	assert.equal(second.failureIndicators.some(({ reason }) => reason === 'mutation'), false);
 });

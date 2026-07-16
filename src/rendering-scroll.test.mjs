@@ -89,3 +89,21 @@ test('continues when content appears after first reaching the bottom', async () 
 	assert.equal(page.positions.filter((position) => position > 0).length, 2);
 	assert.equal(page.positions.at(-1), 0);
 });
+
+test('allows lazy content a full settle delay when reaching the bottom', async () => {
+	const page = fakePage([
+		{ height: 2_000, viewportHeight: 1_000, y: 0 },
+		{ height: 2_000, viewportHeight: 1_000, y: 1_000 },
+		{ height: 2_000, viewportHeight: 1_000, y: 1_000 },
+	]);
+	const delays = [];
+
+	await progressivelyRenderPage(page, config, {
+		now: () => 0,
+		seed: 42,
+		sleep: async (duration) => delays.push(duration),
+	});
+
+	assert.ok(delays.includes(config.settleDelayMs));
+	assert.equal(page.positions.at(-1), 0);
+});

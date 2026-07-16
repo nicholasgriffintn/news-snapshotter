@@ -38,15 +38,47 @@ function nextRandom(seed: number): { seed: number; value: number } {
 async function measure(page: Page): Promise<ScrollState> {
 	return page.evaluate(
 		() => {
+			type BrowserElement = {
+				clientHeight: number;
+				clientWidth: number;
+				scrollHeight: number;
+				scrollTop: number;
+			};
 			const browser = globalThis as unknown as {
-				document: { documentElement: { scrollHeight: number } };
+				document: {
+					documentElement: BrowserElement;
+					querySelectorAll: (selector: string) => ArrayLike<BrowserElement>;
+					scrollingElement?: BrowserElement;
+				};
+				getComputedStyle: (element: BrowserElement) => { overflowY: string };
 				innerHeight: number;
 				scrollY: number;
+				__snapshotterScrollTargetResolved?: boolean;
+				__snapshotterScrollTarget?: BrowserElement;
 			};
+			const documentScroller = browser.document.scrollingElement ?? browser.document.documentElement;
+			if (!browser.__snapshotterScrollTargetResolved) {
+				const documentScrollable =
+					documentScroller.scrollHeight - documentScroller.clientHeight >= browser.innerHeight * 0.5;
+				if (!documentScrollable) {
+					browser.__snapshotterScrollTarget = Array.from(browser.document.querySelectorAll('*'))
+						.filter((element) => {
+							const styles = browser.getComputedStyle(element);
+							return (
+								/(auto|scroll)/.test(styles.overflowY) &&
+								element.scrollHeight > element.clientHeight + 1 &&
+								element.clientHeight >= browser.innerHeight * 0.5
+							);
+						})
+						.sort((left, right) => right.clientWidth * right.clientHeight - left.clientWidth * left.clientHeight)[0];
+				}
+				browser.__snapshotterScrollTargetResolved = true;
+			}
+			const target = browser.__snapshotterScrollTarget;
 			return {
-				height: browser.document.documentElement.scrollHeight,
-				viewportHeight: browser.innerHeight,
-				y: browser.scrollY,
+				height: target?.scrollHeight ?? documentScroller.scrollHeight,
+				viewportHeight: target?.clientHeight ?? browser.innerHeight,
+				y: target?.scrollTop ?? browser.scrollY,
 			};
 		},
 		{ action: 'measure' },
@@ -57,9 +89,12 @@ async function move(page: Page, top: number, behavior: ScrollMode): Promise<void
 	await page.evaluate(
 		(_command) => {
 			const browser = globalThis as unknown as {
+				__snapshotterScrollTarget?: {
+					scrollTo: (options: { behavior: ScrollMode; top: number }) => void;
+				};
 				scrollTo: (options: { behavior: ScrollMode; top: number }) => void;
 			};
-			browser.scrollTo(_command);
+			(browser.__snapshotterScrollTarget ?? browser).scrollTo(_command);
 		},
 		{ action: 'move', behavior, top },
 	);
@@ -95,7 +130,7 @@ export async function progressivelyRenderPage(
 		const reachedBottom = current.y + current.viewportHeight >= current.height - 1;
 		previous = current;
 		if (reachedBottom && !pageExpanded) {
-			await sleep(config.minDelayMs * 2);
+			await sleep(Math.max(config.settleDelayMs, config.minDelayMs * 2));
 			const settled = await measure(page);
 			if (settled.height <= current.height) break;
 			previous = settled;

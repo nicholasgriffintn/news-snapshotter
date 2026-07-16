@@ -1,6 +1,10 @@
 import puppeteer, { type Page } from '@cloudflare/puppeteer';
 
-import { resolveCaptureProfile, type DeviceCaptureConfig } from './capture-profiles.ts';
+import {
+	resolveCaptureProfile,
+	type ClickAction,
+	type DeviceCaptureConfig,
+} from './capture-profiles.ts';
 import { storeCaptureFailure } from './capture-failures.ts';
 import type { Env } from './env';
 import { errorMessage } from './lib/errors.ts';
@@ -30,6 +34,42 @@ async function waitForImages(page: Page, timeout: number): Promise<void> {
 		);
 	} catch {
 		// Slow third-party images should not fail an otherwise usable page.
+	}
+}
+
+type ClickContext = {
+	waitForSelector: (
+		selector: string,
+		options: { timeout: number; visible: boolean },
+	) => Promise<{ click: () => Promise<void> } | null>;
+};
+
+async function runClickAction(context: ClickContext, action: ClickAction): Promise<void> {
+	try {
+		const element = await context.waitForSelector(action.selector, {
+			timeout: action.timeoutMs ?? 3_000,
+			visible: true,
+		});
+		if (!element) return;
+		await element.click();
+		await new Promise((resolve) => setTimeout(resolve, action.waitAfterMs ?? 500));
+	} catch {
+		// Optional consent furniture changes often and must not fail an otherwise valid capture.
+	}
+}
+
+async function runClickActions(page: Page, actions: ClickAction[]): Promise<void> {
+	for (const action of actions) {
+		if (!action.frameUrlIncludes?.length) {
+			await runClickAction(page, action);
+			continue;
+		}
+
+		const frame = page.frames().find((candidate) => {
+			const url = candidate.url();
+			return action.frameUrlIncludes?.some((part) => url.includes(part));
+		});
+		if (frame) await runClickAction(frame, action);
 	}
 }
 
@@ -168,6 +208,31 @@ async function takeFullScreenshot(page: Page, config: DeviceCaptureConfig) {
 	});
 }
 
+async function expandScrollableLayout(page: Page): Promise<void> {
+	await page.evaluate(
+		() => {
+			type BrowserElement = {
+				parentElement?: BrowserElement;
+				scrollHeight: number;
+				style: { setProperty: (name: string, value: string, priority?: string) => void };
+			};
+			const browser = globalThis as unknown as {
+				__snapshotterScrollTarget?: BrowserElement;
+			};
+			let element = browser.__snapshotterScrollTarget;
+			if (!element) return;
+
+			while (element) {
+				element.style.setProperty('height', 'auto', 'important');
+				element.style.setProperty('max-height', 'none', 'important');
+				element.style.setProperty('overflow-y', 'visible', 'important');
+				element = element.parentElement;
+			}
+		},
+		{ action: 'expand-scroll-layout' },
+	);
+}
+
 async function capture(
 	env: Pick<Env, 'BROWSER' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
@@ -187,10 +252,23 @@ async function capture(
 			throw new DetectedCaptureError('http-error', `Navigation returned HTTP ${response.status()}`);
 		}
 
+		await runClickActions(page, config.clickActions ?? []);
+
 		if (config.waitForSelector) {
 			await page.waitForSelector(config.waitForSelector.selector, {
 				timeout: config.waitForSelector.timeoutMs,
 			});
+		}
+
+		const hideSelectors = config.hideSelectors ?? [];
+		const profileStyles = hideSelectors
+			.map((selector) => `${selector} { display: none !important; }`)
+			.join('\n');
+		const styles = [profileStyles, ...(config.styles ?? []), site.requestBody?.addStyleTag]
+			.filter(Boolean)
+			.join('\n');
+		if (styles) {
+			await page.addStyleTag({ content: styles });
 		}
 
 		if (config.waitAfterLoadMs) {
@@ -203,6 +281,7 @@ async function capture(
 
 		if (config.scroll) {
 			await progressivelyRenderPage(page, config.scroll);
+			await expandScrollableLayout(page);
 			await waitForImages(page, config.waitForImagesMs ?? 5_000);
 		}
 
@@ -211,13 +290,6 @@ async function capture(
 		}
 
 		await detectFailure(page, config, profile.failureIndicators);
-
-		const hideSelectors = config.hideSelectors ?? [];
-		const profileStyles = hideSelectors.map((selector) => `${selector} { display: none !important; }`).join('\n');
-		const styles = [profileStyles, site.requestBody?.addStyleTag].filter(Boolean).join('\n');
-		if (styles) {
-			await page.addStyleTag({ content: styles });
-		}
 
 		const capturedAt = new Date().toISOString();
 		const screenshot = await takeFullScreenshot(page, config);

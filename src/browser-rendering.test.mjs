@@ -19,12 +19,17 @@ function successfulPage(overrides = {}) {
 	let scrollY = 0;
 	const profileCalls = [];
 	const runtimeCalls = [];
+	const layoutCalls = [];
 	return {
 		$: async () => null,
 		_client: () => ({ send: async (method) => runtimeCalls.push(method) }),
 		addStyleTag: async () => undefined,
 		evaluateOnNewDocument: async (...args) => profileCalls.push(['evaluateOnNewDocument', ...args]),
 		evaluate: async (_callback, command) => {
+			if (command?.action === 'expand-scroll-layout') {
+				layoutCalls.push(command.action);
+				return undefined;
+			}
 			if (command?.action === 'measure') {
 				return { height: 2_000, viewportHeight: 1_000, y: scrollY };
 			}
@@ -37,7 +42,9 @@ function successfulPage(overrides = {}) {
 				? ''
 				: JSON.stringify({ bodyHeight: 2_000, images: 2, textLength: 500 });
 		},
+		frames: () => [],
 		goto: async () => ({ status: () => 200 }),
+		layoutCalls,
 		screenshot: async (options) =>
 			options.fullPage ? Buffer.from('full screenshot') : Buffer.from('thumbnail'),
 		profileCalls,
@@ -96,6 +103,62 @@ test('captures full and thumbnail images with metadata and closes the browser', 
 	assert.match(userAgentCall[1], /Macintosh/);
 	assert.equal(userAgentCall[2].platform, 'macOS');
 	assert.deepEqual(page.runtimeCalls, ['Runtime.disable', 'Runtime.enable']);
+	assert.deepEqual(page.layoutCalls, ['expand-scroll-layout']);
+});
+
+test('runs optional profile clicks before applying cleanup styles', async (context) => {
+	const events = [];
+	const page = successfulPage({
+		addStyleTag: async () => events.push('styles'),
+		waitForSelector: async (selector) => {
+			if (!selector.includes('cassie-accept-all')) return null;
+			return { click: async () => events.push('click') };
+		},
+	});
+	context.mock.method(puppeteer, 'launch', async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { env } = environment();
+
+	const result = await captureDevice(
+		env,
+		{ ...site, brand: 'itv', name: 'itv-home' },
+		'desktop',
+		triggeredAt,
+	);
+
+	assert.equal(result.status, 'success');
+	assert.deepEqual(events.slice(0, 2), ['click', 'styles']);
+});
+
+test('runs consent actions inside matching iframes', async (context) => {
+	const clicked = [];
+	const consentFrame = {
+		url: () => 'https://privacy.example/consent',
+		waitForSelector: async (selector) => ({
+			click: async () => clicked.push(selector),
+		}),
+	};
+	const page = successfulPage({
+		frames: () => [consentFrame],
+		waitForSelector: async () => null,
+	});
+	context.mock.method(puppeteer, 'launch', async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { env } = environment();
+
+	const result = await captureDevice(
+		env,
+		{ ...site, brand: 'financialtimes', name: 'financial-times-home' },
+		'desktop',
+		triggeredAt,
+	);
+
+	assert.equal(result.status, 'success');
+	assert.deepEqual(clicked, ['button[title="Reject"]']);
 });
 
 test('records HTTP capture failures without retrying or writing screenshots', async (context) => {
