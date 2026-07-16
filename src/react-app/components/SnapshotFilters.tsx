@@ -1,14 +1,8 @@
-import type { ArchivePeriod } from '../lib/archive-period';
 import { displayName } from '../lib/format';
+import type { SnapshotFilter } from '../lib/snapshot-filter';
 import { DateFilter } from './DateFilter';
 
-export type Filters = {
-	brand: string;
-	category: string;
-	day: string;
-	period: ArchivePeriod;
-	query: string;
-};
+export type Filters = SnapshotFilter;
 
 type SnapshotFiltersProps = {
 	brands: string[];

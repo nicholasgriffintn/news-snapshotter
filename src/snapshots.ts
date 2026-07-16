@@ -1,5 +1,5 @@
 import type { Env } from './env';
-import { thumbnailKey } from './lib/storage-key';
+import { thumbnailKey } from './lib/storage-key.ts';
 import type { Device, ScreenshotSummary, SiteCategory } from './types';
 
 const MAX_SCREENSHOTS = 2_000;

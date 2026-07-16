@@ -1,18 +1,18 @@
 import puppeteer, { type Page } from '@cloudflare/puppeteer';
 
-import { resolveCaptureProfile, type DeviceCaptureConfig } from './capture-profiles';
-import { storeCaptureFailure } from './capture-failures';
+import { resolveCaptureProfile, type DeviceCaptureConfig } from './capture-profiles.ts';
+import { storeCaptureFailure } from './capture-failures.ts';
 import type { Env } from './env';
-import { errorMessage } from './lib/errors';
-import { screenshotKey, thumbnailKey } from './lib/storage-key';
+import { errorMessage } from './lib/errors.ts';
+import { screenshotKey, thumbnailKey } from './lib/storage-key.ts';
 import type { Device, ScreenshotResult, SiteDefinition } from './types';
 
 class DetectedCaptureError extends Error {
-	constructor(
-		readonly reason: string,
-		message: string,
-	) {
+	readonly reason: string;
+
+	constructor(reason: string, message: string) {
 		super(message);
+		this.reason = reason;
 	}
 }
 

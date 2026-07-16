@@ -1,10 +1,10 @@
-import { SITES } from './constants';
-import { sendContactMessage } from './contact';
+import { SITES } from './constants.ts';
+import { sendContactMessage } from './contact.ts';
 import type { Env } from './env';
-import { isAuthorised } from './lib/auth';
-import { errorMessage } from './lib/errors';
-import { selectSites, type SiteSelection } from './lib/site-catalogue';
-import { listScreenshots, serveScreenshot } from './snapshots';
+import { isAuthorised } from './lib/auth.ts';
+import { errorMessage } from './lib/errors.ts';
+import { selectSites, type SiteSelection } from './lib/site-catalogue.ts';
+import { listScreenshots, serveScreenshot } from './snapshots.ts';
 
 function jsonError(message: string, status: number): Response {
 	return Response.json({ status: 'error', message }, { status });

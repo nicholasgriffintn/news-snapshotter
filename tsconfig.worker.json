@@ -1,5 +1,6 @@
 {
 	"compilerOptions": {
+		"allowImportingTsExtensions": true,
 		"composite": true,
 		"lib": ["ES2022"],
 		"module": "ESNext",

@@ -1,6 +1,6 @@
 import type { Env } from './env';
-import { errorMessage } from './lib/errors';
-import { safeSegment } from './lib/storage-key';
+import { errorMessage } from './lib/errors.ts';
+import { safeSegment } from './lib/storage-key.ts';
 import type { Device, SiteDefinition } from './types';
 
 const FAILURE_RETENTION_SECONDS = 90 * 24 * 60 * 60;

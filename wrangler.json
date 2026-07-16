@@ -40,7 +40,8 @@
 	],
 	"kv_namespaces": [
 		{
-			"binding": "CAPTURE_FAILURES"
+			"binding": "CAPTURE_FAILURES",
+			"id": "eb6fb2073a344839a1ec735891a00527"
 		}
 	],
 	"ratelimits": [
@@ -55,9 +56,7 @@
 	],
 	"send_email": [
 		{
-			"name": "CONTACT_EMAIL",
-			"destination_address": "pashi@nicholasgriffin.dev",
-			"allowed_sender_addresses": ["pashi@nicholasgriffin.dev"]
+			"name": "CONTACT_EMAIL"
 		}
 	],
 	"r2_buckets": [
@@ -70,6 +69,8 @@
 	"assets": {
 		"directory": "./dist/client",
 		"not_found_handling": "single-page-application",
-		"run_worker_first": ["/api/*"]
+		"run_worker_first": [
+			"/api/*"
+		]
 	}
 }

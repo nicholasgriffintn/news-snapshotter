@@ -1,6 +1,5 @@
 import type { Env } from './env';
 
-const CONTACT_ADDRESS = 'pashi@nicholasgriffin.dev';
 const EMAIL_PATTERN = /^[^\s@\r\n]+@[^\s@\r\n]+\.[^\s@\r\n]+$/;
 const CONTACT_REASONS = ['general', 'privacy', 'rights-holder'] as const;
 
@@ -72,8 +71,8 @@ export async function sendContactMessage(request: Request, env: Env): Promise<Re
 	const source = contact.sourceUrl ? `\nCaptured page: ${contact.sourceUrl}` : '';
 	try {
 		await env.CONTACT_EMAIL.send({
-			from: { email: CONTACT_ADDRESS, name: 'Pashi Archive' },
-			replyTo: { email: contact.email, name: contact.name },
+			to: "pashi@nicholasgriffin.dev",
+			from: "contact@email.pashi.app",
 			subject: `Pashi archive contact: ${contact.reason}`,
 			text: [
 				`Name: ${contact.name}`,
@@ -82,7 +81,6 @@ export async function sendContactMessage(request: Request, env: Env): Promise<Re
 				'',
 				contact.message,
 			].join('\n'),
-			to: CONTACT_ADDRESS,
 		});
 	} catch {
 		console.error('Contact email delivery failed');

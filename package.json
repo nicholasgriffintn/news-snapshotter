@@ -9,7 +9,7 @@
 		"deploy": "wrangler deploy",
 		"dev": "vite",
 		"start": "vite",
-		"test": "node --test src/**/*.test.mjs",
+		"test": "node --test",
 		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {

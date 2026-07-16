@@ -3,10 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchSnapshots } from '../lib/api';
 import {
 	DEFAULT_ARCHIVE_PERIOD,
-	matchesArchivePeriod,
 	periodDescription,
 } from '../lib/archive-period';
 import { groupLabel } from '../lib/format';
+import { filterSnapshots } from '../lib/snapshot-filter';
 import type { Snapshot } from '../types';
 import { SnapshotCard } from './SnapshotCard';
 import { SnapshotFilters, type Filters } from './SnapshotFilters';
@@ -40,16 +40,7 @@ export function SnapshotGallery() {
 	}, []);
 
 	const filtered = useMemo(() => {
-		return snapshots.filter((snapshot) => {
-			const query = filters.query.trim().toLowerCase();
-			const matchesBrand = !filters.brand || snapshot.brand === filters.brand;
-			const matchesCategory = !filters.category || snapshot.category === filters.category;
-			const matchesQuery =
-				!query || `${snapshot.name} ${snapshot.brand}`.toLowerCase().includes(query);
-			const matchesPeriod = matchesArchivePeriod(snapshot.capturedAt, filters, now);
-
-			return matchesBrand && matchesCategory && matchesQuery && matchesPeriod;
-		});
+		return filterSnapshots(snapshots, filters, now);
 	}, [filters, now, snapshots]);
 
 	const brands = useMemo(() => {
