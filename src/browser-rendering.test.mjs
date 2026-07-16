@@ -16,6 +16,7 @@ const capturedAt = '2026-07-16T10:20:30.123Z';
 
 function successfulPage(overrides = {}) {
 	let evaluation = 0;
+	let scrollY = 0;
 	const profileCalls = [];
 	const runtimeCalls = [];
 	return {
@@ -23,7 +24,14 @@ function successfulPage(overrides = {}) {
 		_client: () => ({ send: async (method) => runtimeCalls.push(method) }),
 		addStyleTag: async () => undefined,
 		evaluateOnNewDocument: async (...args) => profileCalls.push(['evaluateOnNewDocument', ...args]),
-		evaluate: async () => {
+		evaluate: async (_callback, command) => {
+			if (command?.action === 'measure') {
+				return { height: 2_000, viewportHeight: 1_000, y: scrollY };
+			}
+			if (command?.action === 'move') {
+				scrollY = command.top;
+				return undefined;
+			}
 			evaluation += 1;
 			return evaluation === 1
 				? ''

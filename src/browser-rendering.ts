@@ -5,6 +5,7 @@ import { storeCaptureFailure } from './capture-failures.ts';
 import type { Env } from './env';
 import { errorMessage } from './lib/errors.ts';
 import { screenshotKey, thumbnailKey } from './lib/storage-key.ts';
+import { progressivelyRenderPage } from './rendering-scroll.ts';
 import type { Device, ScreenshotResult, SiteDefinition } from './types';
 
 class DetectedCaptureError extends Error {
@@ -30,29 +31,6 @@ async function waitForImages(page: Page, timeout: number): Promise<void> {
 	} catch {
 		// Slow third-party images should not fail an otherwise usable page.
 	}
-}
-
-async function scrollPage(page: Page, distance: number, waitMs: number): Promise<void> {
-	for (let iteration = 0; iteration < 20; iteration += 1) {
-		const canContinue = await page.evaluate((scrollDistance) => {
-			const browser = globalThis as unknown as {
-				document: { documentElement: { scrollHeight: number } };
-				scrollBy: (x: number, y: number) => void;
-				scrollY: number;
-				innerHeight: number;
-			};
-			browser.scrollBy(0, scrollDistance);
-			return (
-				browser.scrollY + browser.innerHeight < browser.document.documentElement.scrollHeight
-			);
-		}, distance);
-		if (!canContinue) break;
-		await new Promise((resolve) => setTimeout(resolve, waitMs));
-	}
-	await page.evaluate(() => {
-		const browser = globalThis as unknown as { scrollTo: (x: number, y: number) => void };
-		browser.scrollTo(0, 0);
-	});
 }
 
 async function detectFailure(
@@ -224,7 +202,8 @@ async function capture(
 		}
 
 		if (config.scroll) {
-			await scrollPage(page, config.scroll.distance, config.scroll.waitMs);
+			await progressivelyRenderPage(page, config.scroll);
+			await waitForImages(page, config.waitForImagesMs ?? 5_000);
 		}
 
 		if (site.completion) {

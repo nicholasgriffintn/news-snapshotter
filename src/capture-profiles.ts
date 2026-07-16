@@ -1,4 +1,5 @@
 import type { Device, SiteDefinition } from './types';
+import { DEFAULT_PROGRESSIVE_SCROLL, type ProgressiveScrollConfig } from './rendering-scroll.ts';
 
 export type FailureIndicator = {
 	reason: string;
@@ -22,7 +23,7 @@ export type DeviceCaptureConfig = {
 	javaScriptEnabled?: boolean;
 	navigationTimeoutMs?: number;
 	runtimeQuietMs?: number;
-	scroll?: { distance: number; waitMs: number };
+	scroll?: ProgressiveScrollConfig;
 	screenshot?: { fullPage: boolean; type: 'jpeg' | 'png' | 'webp'; quality?: number };
 	thumbnail?: { quality: number; type: 'jpeg' | 'webp' };
 	userAgent?: string;
@@ -97,6 +98,7 @@ const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 		javaScriptEnabled: true,
 		navigationTimeoutMs: 60_000,
 		runtimeQuietMs: 2_000,
+		scroll: DEFAULT_PROGRESSIVE_SCROLL,
 		screenshot: { type: 'png', fullPage: true },
 		thumbnail: { type: 'jpeg', quality: 72 },
 		userAgent: DESKTOP_USER_AGENT,
@@ -122,6 +124,7 @@ const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 		javaScriptEnabled: true,
 		navigationTimeoutMs: 60_000,
 		runtimeQuietMs: 2_000,
+		scroll: DEFAULT_PROGRESSIVE_SCROLL,
 		screenshot: { type: 'png', fullPage: true },
 		thumbnail: { type: 'jpeg', quality: 72 },
 		userAgent: MOBILE_USER_AGENT,
@@ -166,12 +169,10 @@ const PROFILES: Record<string, CaptureProfile> = {
 		deviceConfig: {
 			desktop: {
 				blockSelectors: CHALLENGE_SELECTORS,
-				scroll: { distance: 900, waitMs: 100 },
 				waitAfterLoadMs: 5_000,
 			},
 			mobile: {
 				blockSelectors: CHALLENGE_SELECTORS,
-				scroll: { distance: 700, waitMs: 100 },
 				waitAfterLoadMs: 5_000,
 			},
 		},
@@ -205,13 +206,11 @@ const PROFILES: Record<string, CaptureProfile> = {
 					{ selector: '#px-captcha', reason: 'captcha' },
 					{ selector: '.challenge-form', reason: 'challenge' },
 				],
-				scroll: { distance: 1_000, waitMs: 150 },
 				viewport: { width: 1920, height: 1080 },
 				waitAfterLoadMs: 3_000,
 			},
 			mobile: {
 				blockSelectors: [{ selector: '#px-captcha', reason: 'captcha' }],
-				scroll: { distance: 700, waitMs: 150 },
 				waitAfterLoadMs: 3_000,
 			},
 		},
