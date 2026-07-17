@@ -1,10 +1,10 @@
 import { useState } from "react";
 
-import { AdminPage } from "./components/AdminPage";
-import { ContactModal } from "./components/ContactModal";
-import { Disclosure, DisclosureModal } from "./components/Disclosure";
-import { LegalPage } from "./components/LegalPage";
-import { SnapshotGallery } from "./components/SnapshotGallery";
+import { AdminPage } from "./features/admin/AdminPage";
+import { SnapshotGallery } from "./features/archive/SnapshotGallery";
+import { ContactModal } from "./features/contact/ContactModal";
+import { Disclosure, DisclosureModal } from "./features/legal/Disclosure";
+import { LegalPage } from "./features/legal/LegalPage";
 
 type Page = "admin" | "archive" | "privacy" | "terms";
 

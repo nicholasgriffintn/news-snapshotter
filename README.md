@@ -1,12 +1,18 @@
 # News Snapshotter
 
-News Snapshotter is a React SPA and Cloudflare Worker that captures and displays
-full-page screenshots of configured websites. Browser Rendering stores a full PNG
-and JPEG thumbnail for each capture in R2. Opted-in desktop sites also preserve
-sanitised, compressed rendered HTML and extraction metadata in a separate private
-R2 bucket.
+News Snapshotter is a Cloudflare Worker that captures and displays
+full-page screenshots of configured websites.
 
 ## Architecture
+
+The source is organised as a feature-first modular monolith:
+
+- `src/core` owns shared domain and transport contracts.
+- `src/features` owns capture, workflow, archive, catalogue, and contact behaviour.
+- Feature `application` modules orchestrate use cases, `domain` modules hold policy, `adapters` implement variable providers, and `infrastructure` modules persist data or integrate with external runtimes.
+- `src/platform` adapts Cloudflare bindings and HTTP requests to feature use cases.
+- `src/react-app/features` groups UI behaviour by user-facing feature; its `platform`, `core`, and `shared` folders contain transport, view contracts, and genuinely cross-feature presentation logic.
+- Tests are colocated with the module interface they exercise.
 
 Screenshots use deterministic Hive-style R2 partitions:
 
@@ -16,9 +22,20 @@ brand=bbc/category=sport/date=2026-07-16/bbc-football-2026-07-16T12-34-56-789Z.p
 
 Using the workflow trigger time in the key makes captures idempotent. R2 object metadata records that `triggeredAt` time separately from `capturedAt`, which is set immediately before each device screenshot is taken. The gallery sorts, filters, and displays the actual capture time while using the trigger time to associate desktop and mobile variants from the same run.
 
+## Catalogue
+
+Site definitions live in `src/features/catalogue/domain/sites`. `src/features/catalogue/domain/sites.ts`.
+
+Each definition supplies a unique `name`, a `category` of `news` or `sport`, a fixed HTTPS URL, and a capture priority, which will be assigned if not supplied. The priorities are:
+
+- `1` — primary publisher home routes
+- `2` — major news and sport section fronts
+- `3` — specialist categories, topics, and subsections
+- `4` — local and regional pages
+
 ## Capture profiles
 
-Brand profiles in `src/capture-profiles.ts` control desktop and mobile viewports, user agents, JavaScript, cookies, navigation timeouts, image waits, scrolling, screenshot formats, thumbnails, consent selectors, and failure indicators. Sites use their brand profile by default and can name another profile explicitly.
+Brand profiles in `src/features/capture/domain/profiles.ts` control desktop and mobile viewports, user agents, JavaScript, cookies, navigation timeouts, image waits, scrolling, screenshot formats, thumbnails, consent selectors, and failure indicators. Sites use their brand profile by default and can name another profile explicitly.
 
 Every configured device is captured once per workflow run. There are no same-run retries. HTTP errors, known challenge selectors, captcha or access-denied text, and blank pages are treated as failed captures before screenshots are stored.
 
@@ -61,8 +78,6 @@ curl -X POST "$BASE_URL/api/workflows" \
   -d '{"name":"bbc-football"}'
 ```
 
-`brand` and `name` are mutually exclusive. Unknown values return `400`; successful workflow creation returns `202` with the workflow ID and selected sites.
-
 Check workflow status:
 
 ```sh
@@ -70,36 +85,13 @@ curl "$BASE_URL/api/workflows/<WORKFLOW_ID>" \
   -H "Authorization: Bearer $API_KEY"
 ```
 
-The public gallery uses `GET /api/screenshots`, `GET /api/screenshots/image`, and `GET /api/catalogue`.
+The website uses `GET /api/screenshots`, `GET /api/screenshots/image`, and `GET /api/catalogue` to display the archive.
 
 ## Website
 
-The archive at `/` groups captures by date and filters them by search text, brand, and category. Selecting a thumbnail opens the full-page screenshot in a modal.
+The archive at groups captures by date and filters them by search text, brand, and category. Selecting a thumbnail opens the full-page screenshot in a modal.
 
-The `/admin` page starts a workflow for all sites, one brand, or one named site. The API key remains in memory for the current page session and is not written to browser storage.
-
-The archive displays each captured source URL and links visitors to the original publisher. An independent-archive disclosure appears below the gallery, with separate `/terms` and `/privacy` pages.
-
-The contact modal posts to `POST /api/contact`. It sends rights-holder, privacy, and general enquiries to `pashi@nicholasgriffin.dev` through Cloudflare Email Service. The endpoint uses a honeypot, a minimum completion time, strict field limits, a fixed sender and recipient, and Cloudflare's native rate limiter.
-
-## Catalogue
-
-Site definitions live in `src/sites`. `src/constants.ts` composes every provider list into the active catalogue and assigns each site a `brand`. Each definition supplies a unique `name`, a `category` of `news` or `sport`, a fixed HTTPS URL, and a capture priority.
-
-Capture priorities describe the intended scheduler frequency:
-
-- `1` — primary publisher home routes
-- `2` — major news and sport section fronts
-- `3` — specialist categories, topics, and subsections
-- `4` — local and regional pages
-
-The route helpers infer the usual priority and allow explicit overrides for unusual URLs. A workflow request without a selector captures priority `1`. Send `priority`, `brand`, or `name` to select a different capture scope.
-
-Cloudflare invokes the scheduled handler at the start of every UTC hour. Each scheduled run selects priority `1` sites and dispatches them through the same sharded workflow path as an admin capture.
-
-Each site also resolves to a `uk`, `us`, or `international` capture region. The browser applies the matching language, timezone, and geolocation signals before navigation. International captures use neutral English and UTC settings with edition-specific URLs.
-
-Provider-backed local sites use their parent brand, such as `bbc`, `itv`, `reach`, or `newsquest`. Standalone sites in `other.ts` use their site name as the brand.
+The `/admin` page starts a workflow for all sites, one brand, or one named site.
 
 ## Configuration
 
@@ -113,6 +105,7 @@ The Worker requires these bindings:
 - `CONTACT_EMAIL`: restricted Email Service binding for archive enquiries
 - `CONTACT_RATE_LIMIT`: native Rate Limiting binding for contact submissions
 - `API_KEY`: secret used to authenticate requests
+- `HYPERBROWSER_API_KEY`: secret used when a profile or admin capture selects Hyperbrowser
 
 Create the production and preview R2 buckets, then set the API secret:
 
@@ -122,6 +115,7 @@ pnpm wrangler r2 bucket create news-snapshotter-preview
 pnpm wrangler r2 bucket create news-snapshotter-archive-data
 pnpm wrangler r2 bucket create news-snapshotter-archive-data-preview
 pnpm wrangler secret put API_KEY
+pnpm wrangler secret put HYPERBROWSER_API_KEY
 ```
 
 Before deploying contact email, onboard your email with Cloudflare Email Service.

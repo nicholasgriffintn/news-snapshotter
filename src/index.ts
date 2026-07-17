@@ -1,8 +1,8 @@
-import { handleRequest } from "./api";
-import type { Env } from "./env";
-import { handleScheduledCapture } from "./scheduled-captures.ts";
+import { handleRequest } from "./platform/worker/router.ts";
+import type { Env } from "./platform/cloudflare/env.ts";
+import { handleScheduledCapture } from "./features/workflows/application/run-scheduled-capture.ts";
 
-export { NewsSnapshotterWorkflow } from "./workflow";
+export { NewsSnapshotterWorkflow } from "./features/workflows/infrastructure/cloudflare-workflow.ts";
 
 export default {
 	fetch: handleRequest,
