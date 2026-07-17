@@ -67,7 +67,7 @@ async function measure(page: Page): Promise<ScrollState> {
 						.filter((element) => {
 							const styles = browser.getComputedStyle(element);
 							return (
-								/(auto|scroll)/.test(styles.overflowY) &&
+								/(auto|scroll|hidden|clip)/.test(styles.overflowY) &&
 								element.scrollHeight > element.clientHeight + 1 &&
 								element.clientHeight >= browser.innerHeight * 0.5
 							);
