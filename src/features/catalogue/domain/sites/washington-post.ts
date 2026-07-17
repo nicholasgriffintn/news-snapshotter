@@ -4,6 +4,12 @@ export const WASHINGTON_POST_SITES = [
 		name: "washingtonpost-com",
 		priority: 1 as const,
 		url: "https://www.washingtonpost.com/",
+		analysis: {
+			device: "desktop" as const,
+			extractor: "bbc-front-page" as const,
+			minimumElements: 20,
+			version: 3,
+		},
 	},
 ].map((site) => {
 	return {

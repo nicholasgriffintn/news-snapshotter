@@ -3,7 +3,13 @@ export const FINANCIAL_TIMES_SITES = [
 		captureRegion: "uk" as const,
 		name: "financialtimes-uk",
 		url: "https://www.ft.com/?edition=uk",
-		priority: 1 as const
+		priority: 1 as const,
+		analysis: {
+			device: "desktop" as const,
+			extractor: "bbc-front-page" as const,
+			minimumElements: 20,
+			version: 3,
+		},
 	},
 	{
 		captureRegion: "international" as const,

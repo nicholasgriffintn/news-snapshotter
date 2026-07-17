@@ -3,7 +3,13 @@ export const CNN_SITES = [
 		captureRegion: "international" as const,
 		name: "cnn-com",
 		url: "https://edition.cnn.com/",
-		priority: 1 as const
+		priority: 1 as const,
+		analysis: {
+			device: "desktop" as const,
+			extractor: "bbc-front-page" as const,
+			minimumElements: 20,
+			version: 3,
+		},
 	},
 	{
 		captureRegion: "us" as const,
