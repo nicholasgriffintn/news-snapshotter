@@ -43,7 +43,8 @@ Failures are written to the `CAPTURE_FAILURES` KV namespace under a date partiti
 
 ## API
 
-Every request requires `Authorization: Bearer <API_KEY>`.
+Screenshot, catalogue, and history reads are public. Workflow and admin requests require
+`Authorization: Bearer <API_KEY>`.
 
 The examples below target the local Wrangler server configured on port `8787`:
 
@@ -87,6 +88,18 @@ curl "$BASE_URL/api/workflows/<WORKFLOW_ID>" \
 
 The website uses `GET /api/screenshots`, `GET /api/screenshots/image`, and `GET /api/catalogue` to display the archive.
 
+Analysed history is exposed through bounded public reads:
+
+```text
+GET /api/history/:site/captures?from=&to=&limit=&cursor=
+GET /api/history/:site/captures/:captureId
+GET /api/history/:site/stories/:storyId?from=&to=&limit=&cursor=
+GET /api/history/:site/changes?from=&to=&type=&limit=&cursor=
+```
+
+Responses include publisher source URLs and capture provenance. They never expose private
+rendered-HTML keys or stored HTML.
+
 ## Website
 
 The archive at groups captures by date and filters them by search text, brand, and category. Selecting a thumbnail opens the full-page screenshot in a modal.
@@ -101,6 +114,8 @@ The Worker requires these bindings:
 - `NEWS_SNAPSHOTTER`: Cloudflare Workflow
 - `SCREENSHOTS`: R2 bucket
 - `ARCHIVE_DATA`: private R2 bucket for compressed HTML and extraction artefacts
+- `HISTORY_DB`: D1 database containing queryable capture, observation, and change metadata
+- `HISTORY_INDEX_QUEUE`: Queue producer for persisted extraction artefacts
 - `CAPTURE_FAILURES`: Workers KV namespace for failed captures
 - `CONTACT_EMAIL`: restricted Email Service binding for archive enquiries
 - `CONTACT_RATE_LIMIT`: native Rate Limiting binding for contact submissions
@@ -117,6 +132,21 @@ pnpm wrangler r2 bucket create news-snapshotter-archive-data-preview
 pnpm wrangler secret put API_KEY
 pnpm wrangler secret put HYPERBROWSER_API_KEY
 ```
+
+History deployment also requires account-specific D1 and Queue resources. Create them before
+adding their bindings to `wrangler.json`:
+
+```sh
+pnpm wrangler d1 create news-snapshotter-history
+pnpm wrangler queues create news-snapshotter-history-index
+pnpm wrangler queues create news-snapshotter-history-index-dlq
+```
+
+Add the returned D1 UUID as `HISTORY_DB`, bind the producer as `HISTORY_INDEX_QUEUE`, and attach
+the same queue as this Worker's consumer with `max_concurrency: 1`. Use the dead-letter queue and
+apply [`migrations/0001_history.sql`](migrations/0001_history.sql) before enabling the producer.
+Single-consumer concurrency preserves adjacent-edge convergence while D1 neighbour discovery and
+edge replacement run as separate database batches.
 
 Before deploying contact email, onboard your email with Cloudflare Email Service.
 

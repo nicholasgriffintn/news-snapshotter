@@ -6,11 +6,12 @@ import type { Env } from "../../../platform/cloudflare/env.ts";
 import { screenshotKey, thumbnailKey } from "../../../core/storage-key.ts";
 import { takeFullScreenshot } from "./full-page-screenshot.ts";
 import type { Device, ScreenshotResult, SiteDefinition } from "../../../core/domain.ts";
+import { errorMessage } from "../../../core/errors.ts";
 
 export async function storeCaptureArtefacts(input: {
 	config: DeviceCaptureConfig;
 	device: Device;
-	env: Pick<Env, "ARCHIVE_DATA" | "SCREENSHOTS">;
+	env: Pick<Env, "ARCHIVE_DATA" | "HISTORY_INDEX_QUEUE" | "SCREENSHOTS">;
 	page: Page;
 	profileName: string;
 	site: SiteDefinition;
@@ -20,7 +21,7 @@ export async function storeCaptureArtefacts(input: {
 	const capturedAt = new Date().toISOString();
 	const extension = config.screenshot?.type ?? "png";
 	const key = screenshotKey(site, triggeredAt, device, extension);
-	const analysis =
+	let analysis =
 		site.analysis && site.analysis.device === device
 			? await collectAndStoreAnalysis({
 					bucket: env.ARCHIVE_DATA,
@@ -59,6 +60,26 @@ export async function storeCaptureArtefacts(input: {
 		httpMetadata: { contentType: `image/${extension}` },
 		customMetadata,
 	});
+
+	if (analysis?.status === "stored" && analysis.extractionKey) {
+		let indexingStatus: NonNullable<ScreenshotResult["analysis"]>["indexingStatus"] = "not-queued";
+		if (env.HISTORY_INDEX_QUEUE) {
+			try {
+				await env.HISTORY_INDEX_QUEUE.send({
+					captureId: `${site.name}:${device}:${triggeredAt}`,
+					extractionKey: analysis.extractionKey,
+					site: site.name,
+				});
+				indexingStatus = "pending";
+			} catch (error) {
+				console.error("Could not queue capture history indexing", {
+					captureId: `${site.name}:${device}:${triggeredAt}`,
+					error: errorMessage(error),
+				});
+			}
+		}
+		analysis = { ...analysis, indexingStatus };
+	}
 
 	return { analysis, capturedAt, device, key, name: site.name, status: "success", triggeredAt };
 }

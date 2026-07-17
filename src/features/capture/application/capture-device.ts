@@ -12,7 +12,7 @@ import type { Device, ScreenshotResult, SiteDefinition } from "../../../core/dom
 
 type CaptureEnv = Pick<
 	Env,
-	"ARCHIVE_DATA" | "BROWSER" | "HYPERBROWSER_API_KEY" | "SCREENSHOTS"
+	"ARCHIVE_DATA" | "BROWSER" | "HISTORY_INDEX_QUEUE" | "HYPERBROWSER_API_KEY" | "SCREENSHOTS"
 >;
 
 async function capture(

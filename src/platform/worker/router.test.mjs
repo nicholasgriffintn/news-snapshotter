@@ -27,10 +27,14 @@ test("serves the public site catalogue without authentication", async () => {
 
 	assert.equal(response.status, 200);
 	assert.ok(body.sites.length > 0);
-	assert.deepEqual(
-		Object.keys(body.sites[0]).sort(),
-		["brand", "captureRegion", "category", "name", "priority", "provider"],
-	);
+	assert.deepEqual(Object.keys(body.sites[0]).sort(), [
+		"brand",
+		"captureRegion",
+		"category",
+		"name",
+		"priority",
+		"provider",
+	]);
 	assert.ok(
 		body.sites.every((site) => {
 			return [1, 2, 3, 4].includes(site.priority);
@@ -39,10 +43,7 @@ test("serves the public site catalogue without authentication", async () => {
 });
 
 test("lists the supported capture providers", async () => {
-	const response = await handleRequest(
-		apiRequest("/api/capture-providers"),
-		environment(),
-	);
+	const response = await handleRequest(apiRequest("/api/capture-providers"), environment());
 	const body = await response.json();
 
 	assert.equal(response.status, 200);
@@ -64,6 +65,16 @@ test("lists the supported capture profiles", async () => {
 	assert.equal(response.status, 200);
 	assert.ok(body.profiles.includes("default"));
 	assert.ok(body.profiles.includes("bbc"));
+});
+
+test("reports unavailable public history storage without requiring authentication", async () => {
+	const response = await handleRequest(
+		apiRequest("/api/history/bbc-home/captures"),
+		environment({ HISTORY_DB: undefined }),
+	);
+
+	assert.equal(response.status, 503);
+	assert.equal((await response.json()).message, "History storage is not configured");
 });
 
 test("protects bot checks with the configured API key", async () => {
@@ -270,10 +281,7 @@ test("defaults an unfiltered capture to priority one", async () => {
 	assert.equal(body.triggeredAt, creations[0].params.triggeredAt);
 	assert.deepEqual(
 		creations.map(({ params }) => params.startDelaySeconds),
-		Array.from(
-			{ length: body.runnerCount },
-			(_, index) => index,
-		),
+		Array.from({ length: body.runnerCount }, (_, index) => index),
 	);
 });
 
@@ -381,10 +389,7 @@ test("rejects an unknown capture provider", async (context) => {
 	);
 
 	assert.equal(response.status, 400);
-	assert.equal(
-		(await response.json()).message,
-		"provider must be cloudflare or hyperbrowser",
-	);
+	assert.equal((await response.json()).message, "provider must be cloudflare or hyperbrowser");
 });
 
 test("returns 404 for an unknown authorised API route", async () => {

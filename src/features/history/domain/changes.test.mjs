@@ -1,0 +1,93 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { diffAdjacentCaptures } from "./changes.ts";
+import { historyExtraction, historyStory } from "../testing/extraction-fixture.mjs";
+
+test("records content, promotion, rank, position, and size changes", async () => {
+	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z");
+	const current = historyExtraction("capture-b", "2026-07-17T10:00:00.000Z", {
+		elements: [
+			historyStory({
+				headline: "Updated BBC headline",
+				position: {
+					height: 300,
+					left: 100,
+					pageOrder: 1,
+					top: 100,
+					viewportDepth: 0.1,
+					width: 800,
+				},
+				prominence: "lead",
+			}),
+		],
+	});
+
+	const changes = await diffAdjacentCaptures(previous, current);
+	const types = changes.map(({ type }) => type);
+
+	assert.deepEqual(types, [
+		"headline-changed",
+		"position-changed",
+		"promoted",
+		"rank-changed",
+		"size-changed",
+	]);
+	assert.ok(changes.every(({ changeId }) => /^[a-f0-9]{64}$/.test(changeId)));
+});
+
+test("ignores sub-pixel layout noise", async () => {
+	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z");
+	const current = historyExtraction("capture-b", "2026-07-17T10:00:00.000Z", {
+		elements: [
+			historyStory({
+				position: {
+					height: 200.5,
+					left: 0.5,
+					pageOrder: 2,
+					top: 800.5,
+					viewportDepth: 0.8005,
+					width: 600.5,
+				},
+			}),
+		],
+	});
+
+	assert.deepEqual(await diffAdjacentCaptures(previous, current), []);
+});
+
+test("marks extractor upgrades without interpreting story-level changes", async () => {
+	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z");
+	const current = historyExtraction("capture-b", "2026-07-17T10:00:00.000Z", {
+		extractorVersion: 2,
+		elements: [historyStory({ headline: "Changed under a new extractor" })],
+	});
+
+	const changes = await diffAdjacentCaptures(previous, current);
+
+	assert.deepEqual(
+		changes.map(({ type }) => type),
+		["extractor-version-boundary"],
+	);
+});
+
+test("marks missing scheduled captures and story appearance or disappearance", async () => {
+	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z", {
+		elements: [historyStory()],
+	});
+	const current = historyExtraction("capture-c", "2026-07-17T12:00:00.000Z", {
+		elements: [
+			historyStory({
+				canonicalUrl: "https://www.bbc.co.uk/news/articles/story-two",
+				elementKey: "https://www.bbc.co.uk/news/articles/story-two",
+			}),
+		],
+	});
+
+	const changes = await diffAdjacentCaptures(previous, current);
+
+	assert.deepEqual(
+		changes.map(({ type }) => type),
+		["appeared", "capture-gap", "disappeared"],
+	);
+});

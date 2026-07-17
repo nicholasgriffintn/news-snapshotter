@@ -44,10 +44,7 @@ export type SiteAnalysisConfig = {
 	version: number;
 };
 
-export type SiteSource = Omit<
-	SiteDefinition,
-	"brand" | "captureRegion" | "priority"
-> & {
+export type SiteSource = Omit<SiteDefinition, "brand" | "captureRegion" | "priority"> & {
 	captureRegion?: CaptureRegion;
 	priority?: CapturePriority;
 };
@@ -57,6 +54,7 @@ export type ScreenshotResult = {
 		extractionKey?: string;
 		failureKey?: string;
 		htmlKey?: string;
+		indexingStatus?: "not-queued" | "pending";
 		status: "failed" | "stored";
 	};
 	capturedAt: string;

@@ -12,6 +12,7 @@ type CaptureDevice = (
 		| "ARCHIVE_DATA"
 		| "BROWSER"
 		| "CAPTURE_FAILURES"
+		| "HISTORY_INDEX_QUEUE"
 		| "HYPERBROWSER_API_KEY"
 		| "SCREENSHOTS"
 	>,

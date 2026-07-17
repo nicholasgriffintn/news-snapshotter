@@ -64,17 +64,37 @@ function successfulPage(overrides = {}) {
 
 function environment() {
 	const archive = [];
+	const events = [];
 	const failures = [];
+	const messages = [];
 	const screenshots = [];
 	return {
 		env: {
-			ARCHIVE_DATA: { put: async (...args) => archive.push(args) },
+			ARCHIVE_DATA: {
+				put: async (...args) => {
+					archive.push(args);
+					events.push("archive");
+				},
+			},
 			BROWSER: {},
 			CAPTURE_FAILURES: { put: async (...args) => failures.push(args) },
-			SCREENSHOTS: { put: async (...args) => screenshots.push(args) },
+			HISTORY_INDEX_QUEUE: {
+				send: async (message) => {
+					messages.push(message);
+					events.push("queue");
+				},
+			},
+			SCREENSHOTS: {
+				put: async (...args) => {
+					screenshots.push(args);
+					events.push("screenshot");
+				},
+			},
 		},
 		archive,
+		events,
 		failures,
+		messages,
 		screenshots,
 	};
 }
@@ -125,7 +145,7 @@ test("stores desktop analysis independently from screenshot artefacts", async (c
 		close: async () => undefined,
 		newPage: async () => page,
 	}));
-	const { archive, env, screenshots } = environment();
+	const { archive, env, events, messages, screenshots } = environment();
 	const analysedSite = {
 		...site,
 		analysis: {
@@ -142,8 +162,17 @@ test("stores desktop analysis independently from screenshot artefacts", async (c
 
 	assert.equal(result.status, "success");
 	assert.equal(result.analysis.status, "stored");
+	assert.equal(result.analysis.indexingStatus, "pending");
 	assert.equal(archive.length, 2);
 	assert.equal(screenshots.length, 2);
+	assert.deepEqual(messages, [
+		{
+			captureId: `bbc-home:desktop:${triggeredAt}`,
+			extractionKey: result.analysis.extractionKey,
+			site: "bbc-home",
+		},
+	]);
+	assert.deepEqual(events, ["archive", "archive", "screenshot", "screenshot", "queue"]);
 });
 
 test("captures full and thumbnail images with metadata and closes the browser", async (context) => {

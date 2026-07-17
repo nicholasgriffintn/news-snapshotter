@@ -1,33 +1,18 @@
 import type { Page } from "@cloudflare/puppeteer";
 
 import type { Device, SiteDefinition } from "../../../core/domain.ts";
+import type { ElementPosition, PageElement } from "../../history/domain/extraction.ts";
 
 const SCHEMA_VERSION = 1;
 const SANITISATION_VERSION = 1;
 
-type ElementPosition = {
-	height: number;
-	left: number;
-	pageOrder: number;
-	top: number;
-	viewportDepth: number;
-	width: number;
-};
-
-type CollectedElement = {
+type CollectedElement = PageElement & {
 	canonicalUrl: string;
-	elementKey: string;
 	headline: string;
-	image?: {
-		alt?: string;
-		sourceUrl?: string;
-	};
 	kind: "story";
 	position: ElementPosition;
 	prominence: "lead" | "major" | "standard";
 	selectorHint: string;
-	summary?: string;
-	textFingerprint: string;
 };
 
 type CollectedPage = {
@@ -245,9 +230,10 @@ async function collectPage(page: Page): Promise<CollectedPage> {
 			let imageDetails: CollectedElement["image"];
 
 			if (image) {
+				const imageSource = image.getAttribute("src");
 				imageDetails = {
 					alt: image.getAttribute("alt") ?? undefined,
-					sourceUrl: image.getAttribute("src") ?? undefined,
+					sourceUrl: imageSource ? new URL(imageSource, document.baseURI).toString() : undefined,
 				};
 			}
 
@@ -387,7 +373,6 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 				contentType: "application/json",
 			},
 		});
-
 		return {
 			extractionKey: keys.extractionKey,
 			htmlKey: keys.htmlKey,

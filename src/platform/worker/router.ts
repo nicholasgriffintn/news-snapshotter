@@ -12,8 +12,16 @@ import type { Env } from "../cloudflare/env.ts";
 import { isAuthorised } from "./auth.ts";
 import { errorMessage } from "../../core/errors.ts";
 import { thumbnailKey } from "../../core/storage-key.ts";
-import { listScreenshots, screenshotImageUrl, serveScreenshot } from "../../features/archive/application/snapshots.ts";
-import { parseCaptureSelection, startCaptureWorkflow } from "../../features/workflows/application/start-capture.ts";
+import {
+	listScreenshots,
+	screenshotImageUrl,
+	serveScreenshot,
+} from "../../features/archive/application/snapshots.ts";
+import {
+	parseCaptureSelection,
+	startCaptureWorkflow,
+} from "../../features/workflows/application/start-capture.ts";
+import { handleHistoryRequest } from "../../features/history/application/history-api.ts";
 
 function jsonError(message: string, status: number): Response {
 	return Response.json({ status: "error", message }, { status });
@@ -100,6 +108,13 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
 	if (request.method === "GET" && url.pathname === "/api/capture-profiles") {
 		return Response.json({ profiles: CAPTURE_PROFILE_NAMES });
+	}
+
+	if (url.pathname.startsWith("/api/history/")) {
+		if (!env.HISTORY_DB) return jsonError("History storage is not configured", 503);
+		const historyResponse = await handleHistoryRequest(request, env.HISTORY_DB);
+		if (historyResponse) return historyResponse;
+		return jsonError("Not found", 404);
 	}
 
 	if (request.method === "POST" && url.pathname === "/api/contact") {
