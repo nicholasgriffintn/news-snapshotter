@@ -4,6 +4,7 @@ import test from 'node:test';
 import { progressivelyRenderPage } from './rendering-scroll.ts';
 
 function fakePage(states) {
+	const behaviors = [];
 	const positions = [];
 	let index = 0;
 	return {
@@ -13,9 +14,11 @@ function fakePage(states) {
 				index += 1;
 				return state;
 			}
+			behaviors.push(command.behavior);
 			positions.push(command.top);
 			return undefined;
 		},
+		behaviors,
 		positions,
 	};
 }
@@ -45,6 +48,7 @@ test('progressively renders expanding pages before returning to the top', async 
 	});
 
 	assert.equal(page.positions.at(-1), 0);
+	assert.equal(page.behaviors.at(-1), 'auto');
 	assert.ok(page.positions.slice(0, -1).every((position) => position > 0));
 	assert.ok(delays.some((duration) => duration > config.minDelayMs));
 	assert.equal(delays.at(-1), config.settleDelayMs);

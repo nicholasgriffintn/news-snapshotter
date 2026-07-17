@@ -1,5 +1,6 @@
 import puppeteer, { type Page } from '@cloudflare/puppeteer';
 
+import { collectAndStoreAnalysis } from './analysis.ts';
 import {
 	resolveCaptureProfile,
 	type ClickAction,
@@ -234,7 +235,7 @@ async function expandScrollableLayout(page: Page): Promise<void> {
 }
 
 async function capture(
-	env: Pick<Env, 'BROWSER' | 'SCREENSHOTS'>,
+	env: Pick<Env, 'ARCHIVE_DATA' | 'BROWSER' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,
@@ -268,7 +269,10 @@ async function capture(
 			.filter(Boolean)
 			.join('\n');
 		if (styles) {
-			await page.addStyleTag({ content: styles });
+			const cleanupStyles = await page.addStyleTag({ content: styles });
+			if (cleanupStyles) {
+				await cleanupStyles.evaluate((node) => node.setAttribute('data-pashi-cleanup', ''));
+			}
 		}
 
 		if (config.waitAfterLoadMs) {
@@ -292,10 +296,21 @@ async function capture(
 		await detectFailure(page, config, profile.failureIndicators);
 
 		const capturedAt = new Date().toISOString();
-		const screenshot = await takeFullScreenshot(page, config);
-
 		const extension = config.screenshot?.type ?? 'png';
 		const key = screenshotKey(site, triggeredAt, device, extension);
+		const analysis = site.analysis && site.analysis.device === device
+			? await collectAndStoreAnalysis({
+				bucket: env.ARCHIVE_DATA,
+				capturedAt,
+				device,
+				page,
+				profile: site.profile ?? site.brand,
+				screenshotKey: key,
+				site,
+				triggeredAt,
+			})
+			: undefined;
+		const screenshot = await takeFullScreenshot(page, config);
 
 		const thumbnailConfig = config.thumbnail ?? { type: 'jpeg' as const, quality: 72 };
 		const thumbnail = await page.screenshot({
@@ -325,7 +340,7 @@ async function capture(
 			customMetadata,
 		});
 
-		return { capturedAt, device, key, name: site.name, status: 'success', triggeredAt };
+		return { analysis, capturedAt, device, key, name: site.name, status: 'success', triggeredAt };
 	} finally {
 		try {
 			await browser.close();
@@ -340,7 +355,7 @@ async function capture(
 }
 
 export async function captureDevice(
-	env: Pick<Env, 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
+	env: Pick<Env, 'ARCHIVE_DATA' | 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,

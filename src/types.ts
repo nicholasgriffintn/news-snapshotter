@@ -2,6 +2,7 @@ export type SiteCategory = 'news' | 'sport';
 export type Device = 'desktop' | 'mobile';
 
 export type SiteDefinition = {
+	analysis?: SiteAnalysisConfig;
 	name: string;
 	brand: string;
 	category: SiteCategory;
@@ -19,9 +20,22 @@ export type SiteDefinition = {
 	visibility?: 'admin' | 'public';
 };
 
+export type SiteAnalysisConfig = {
+	device: 'desktop';
+	extractor: 'bbc-front-page';
+	minimumElements: number;
+	version: number;
+};
+
 export type SiteSource = Omit<SiteDefinition, 'brand'>;
 
 export type ScreenshotResult = {
+	analysis?: {
+		extractionKey?: string;
+		failureKey?: string;
+		htmlKey?: string;
+		status: 'failed' | 'stored';
+	};
 	capturedAt: string;
 	device: Device;
 	name: string;

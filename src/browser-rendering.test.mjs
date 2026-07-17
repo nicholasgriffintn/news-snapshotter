@@ -60,18 +60,88 @@ function successfulPage(overrides = {}) {
 }
 
 function environment() {
+	const archive = [];
 	const failures = [];
 	const screenshots = [];
 	return {
 		env: {
+			ARCHIVE_DATA: { put: async (...args) => archive.push(args) },
 			BROWSER: {},
 			CAPTURE_FAILURES: { put: async (...args) => failures.push(args) },
 			SCREENSHOTS: { put: async (...args) => screenshots.push(args) },
 		},
+		archive,
 		failures,
 		screenshots,
 	};
 }
+
+test('stores desktop analysis independently from screenshot artefacts', async (context) => {
+	let evaluation = 0;
+	let scrollY = 0;
+	const elements = Array.from({ length: 20 }, (_, index) => ({
+		canonicalUrl: `https://www.bbc.co.uk/news/articles/${index}`,
+		elementKey: `story-${index}`,
+		headline: `BBC story headline ${index}`,
+		kind: 'story',
+		position: {
+			height: 100,
+			left: 0,
+			pageOrder: index + 1,
+			top: index * 100,
+			viewportDepth: index / 10,
+			width: 500,
+		},
+		textFingerprint: `bbc story headline ${index}`,
+	}));
+	const page = successfulPage({
+		evaluate: async (_callback, command) => {
+			if (command?.action === 'measure') {
+				return { height: 2_000, viewportHeight: 1_000, y: scrollY };
+			}
+			if (command?.action === 'move') {
+				scrollY = command.top;
+				return undefined;
+			}
+			if (command?.action === 'expand-scroll-layout') return undefined;
+
+			evaluation += 1;
+			if (evaluation === 1) return '';
+			if (evaluation === 2) {
+				return JSON.stringify({ bodyHeight: 2_000, images: 2, textLength: 500 });
+			}
+			return JSON.stringify({
+				elements,
+				html: '<!doctype html><html><body>BBC</body></html>',
+				pageHeight: 2_000,
+				pageWidth: 1_740,
+			});
+		},
+	});
+	context.mock.method(puppeteer, 'launch', async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { archive, env, screenshots } = environment();
+	const analysedSite = {
+		...site,
+		analysis: {
+			device: 'desktop',
+			extractor: 'bbc-front-page',
+			minimumElements: 20,
+			version: 1,
+		},
+		brand: 'bbc',
+		name: 'bbc-home',
+	};
+
+	const result = await captureDevice(env, analysedSite, 'desktop', triggeredAt);
+
+	assert.equal(result.status, 'success');
+	assert.equal(result.analysis.status, 'stored');
+	assert.equal(archive.length, 2);
+	assert.equal(screenshots.length, 2);
+});
 
 test('captures full and thumbnail images with metadata and closes the browser', async (context) => {
 	const page = successfulPage();
@@ -109,7 +179,10 @@ test('captures full and thumbnail images with metadata and closes the browser', 
 test('runs optional profile clicks before applying cleanup styles', async (context) => {
 	const events = [];
 	const page = successfulPage({
-		addStyleTag: async () => events.push('styles'),
+		addStyleTag: async () => {
+			events.push('styles');
+			return undefined;
+		},
 		waitForSelector: async (selector) => {
 			if (!selector.includes('cassie-accept-all')) return null;
 			return { click: async () => events.push('click') };

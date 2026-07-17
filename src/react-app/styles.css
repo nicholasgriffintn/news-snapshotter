@@ -598,7 +598,11 @@ select:focus-visible {
 	inset: 0;
 	display: grid;
 	place-items: center;
+	box-sizing: border-box;
+	height: 100vh;
+	height: 100dvh;
 	padding: clamp(1rem, 4vw, 3rem);
+	overflow: hidden;
 	background: rgba(5, 7, 20, 0.88);
 	backdrop-filter: blur(12px);
 	animation: modal-fade 180ms ease-out;
@@ -607,8 +611,10 @@ select:focus-visible {
 .modal__panel {
 	display: grid;
 	grid-template-rows: auto minmax(0, 1fr);
+	min-height: 0;
 	width: min(100%, 1180px);
-	max-height: calc(100vh - 2rem);
+	max-height: 100%;
+	overflow: hidden;
 	background: #11142e;
 	border: 2px solid var(--cyan);
 	box-shadow: 12px 12px 0 var(--pink);
@@ -712,7 +718,10 @@ select:focus-visible {
 }
 
 .modal__image {
+	min-height: 0;
 	overflow: auto;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
 	background: #050714;
 }
 

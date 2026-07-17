@@ -15,7 +15,7 @@ type WorkflowStepLike = {
 };
 
 type CaptureDevice = (
-	env: Pick<Env, 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
+	env: Pick<Env, 'ARCHIVE_DATA' | 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,

@@ -1,6 +1,10 @@
 # News Snapshotter
 
-News Snapshotter is a React SPA and Cloudflare Worker that captures and displays full-page screenshots of configured websites. Browser Rendering stores a full PNG and JPEG thumbnail for each capture in R2.
+News Snapshotter is a React SPA and Cloudflare Worker that captures and displays
+full-page screenshots of configured websites. Browser Rendering stores a full PNG
+and JPEG thumbnail for each capture in R2. Opted-in desktop sites also preserve
+sanitised, compressed rendered HTML and extraction metadata in a separate private
+R2 bucket.
 
 ## Architecture
 
@@ -91,6 +95,7 @@ The Worker requires these bindings:
 - `BROWSER`: Cloudflare Browser Rendering
 - `NEWS_SNAPSHOTTER`: Cloudflare Workflow
 - `SCREENSHOTS`: R2 bucket
+- `ARCHIVE_DATA`: private R2 bucket for compressed HTML and extraction artefacts
 - `CAPTURE_FAILURES`: Workers KV namespace for failed captures
 - `CONTACT_EMAIL`: restricted Email Service binding for archive enquiries
 - `CONTACT_RATE_LIMIT`: native Rate Limiting binding for contact submissions
@@ -101,10 +106,12 @@ Create the production and preview R2 buckets, then set the API secret:
 ```sh
 pnpm wrangler r2 bucket create news-snapshotter
 pnpm wrangler r2 bucket create news-snapshotter-preview
+pnpm wrangler r2 bucket create news-snapshotter-archive-data
+pnpm wrangler r2 bucket create news-snapshotter-archive-data-preview
 pnpm wrangler secret put API_KEY
 ```
 
-Before deploying contact email, onboard `nicholasgriffin.dev` with Cloudflare Email Service and ensure `pashi@nicholasgriffin.dev` is an allowed sender and verified destination.
+Before deploying contact email, onboard your email with Cloudflare Email Service.
 
 `wrangler.json` contains the deployable binding configuration. `wrangler.toml.example` shows the equivalent TOML shape.
 

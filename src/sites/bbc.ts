@@ -1,7 +1,16 @@
 export const BBC_BASE_URL = 'https://www.bbc.co.uk';
 
 const BBC_NEWS_SITES = [
-	{ name: 'bbc-home', url: `${BBC_BASE_URL}/` },
+	{
+		name: 'bbc-home',
+		url: `${BBC_BASE_URL}/`,
+		analysis: {
+			device: 'desktop' as const,
+			extractor: 'bbc-front-page' as const,
+			minimumElements: 20,
+			version: 1,
+		},
+	},
 	{
 		name: 'bbc-news',
 		url: `${BBC_BASE_URL}/news`,

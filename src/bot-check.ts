@@ -7,7 +7,7 @@ import type { Device, ScreenshotResult, SiteDefinition } from './types';
 const AM_I_A_BOT_URL = 'https://amiabot.app/';
 
 type CaptureDevice = (
-	env: Pick<Env, 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
+	env: Pick<Env, 'ARCHIVE_DATA' | 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,

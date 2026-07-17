@@ -61,6 +61,11 @@
 	],
 	"r2_buckets": [
 		{
+			"binding": "ARCHIVE_DATA",
+			"bucket_name": "news-snapshotter-archive-data",
+			"preview_bucket_name": "news-snapshotter-archive-data-preview"
+		},
+		{
 			"binding": "SCREENSHOTS",
 			"bucket_name": "news-snapshotter",
 			"preview_bucket_name": "news-snapshotter-preview"

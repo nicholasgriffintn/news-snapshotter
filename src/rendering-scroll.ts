@@ -139,6 +139,6 @@ export async function progressivelyRenderPage(
 		if (stalledSteps >= 3) break;
 	}
 
-	await move(page, 0, 'smooth');
+	await move(page, 0, 'auto');
 	await sleep(config.settleDelayMs);
 }
