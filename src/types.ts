@@ -1,11 +1,13 @@
 export type SiteCategory = "news" | "sport";
 export type Device = "desktop" | "mobile";
+export type CapturePriority = 1 | 2 | 3 | 4;
 
 export type SiteDefinition = {
 	analysis?: SiteAnalysisConfig;
 	name: string;
 	brand: string;
 	category: SiteCategory;
+	priority: CapturePriority;
 	completion?: {
 		selector: string;
 		textStartsWith: string;
@@ -27,7 +29,9 @@ export type SiteAnalysisConfig = {
 	version: number;
 };
 
-export type SiteSource = Omit<SiteDefinition, "brand">;
+export type SiteSource = Omit<SiteDefinition, "brand" | "priority"> & {
+	priority?: CapturePriority;
+};
 
 export type ScreenshotResult = {
 	analysis?: {

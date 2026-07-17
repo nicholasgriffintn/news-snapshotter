@@ -1,4 +1,9 @@
-import type { CaptureFailure, CatalogueSite, Snapshot } from "../types";
+import type {
+	CaptureFailure,
+	CapturePriority,
+	CatalogueSite,
+	Snapshot,
+} from "../types";
 
 async function readJson<T>(response: Response): Promise<T> {
 	const body = (await response.json()) as T & { message?: string };
@@ -20,7 +25,11 @@ export async function fetchCatalogue(): Promise<CatalogueSite[]> {
 
 export async function startSnapshotWorkflow(
 	apiKey: string,
-	selection: { brand?: string; name?: string },
+	selection: {
+		brand?: string;
+		name?: string;
+		priority?: CapturePriority;
+	},
 ): Promise<{
 	batchId: string;
 	runnerCount: number;

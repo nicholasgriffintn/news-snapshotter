@@ -26,7 +26,7 @@ async function parseSelection(request: Request): Promise<SiteSelection> {
 		throw new Error("Request body must be a JSON object");
 	}
 
-	const { brand, name } = body as Record<string, unknown>;
+	const { brand, name, priority } = body as Record<string, unknown>;
 
 	if (brand !== undefined && (typeof brand !== "string" || brand.length === 0)) {
 		throw new Error("brand must be a non-empty string");
@@ -34,8 +34,18 @@ async function parseSelection(request: Request): Promise<SiteSelection> {
 	if (name !== undefined && (typeof name !== "string" || name.length === 0)) {
 		throw new Error("name must be a non-empty string");
 	}
+	if (
+		priority !== undefined &&
+		(typeof priority !== "number" || ![1, 2, 3, 4].includes(priority))
+	) {
+		throw new Error("priority must be 1, 2, 3, or 4");
+	}
 
-	return { brand: brand as string | undefined, name: name as string | undefined };
+	return {
+		brand: brand as string | undefined,
+		name: name as string | undefined,
+		priority: priority as SiteSelection["priority"],
+	};
 }
 
 async function startWorkflow(request: Request, env: Env): Promise<Response> {
@@ -65,7 +75,14 @@ async function startWorkflow(request: Request, env: Env): Promise<Response> {
 			batchId: `capture-${triggeredAt.replace(/[:.]/g, "-")}`,
 			runnerCount: workflows.length,
 			status: "success",
-			selectedSites: sites.map(({ brand, category, name }) => ({ brand, category, name })),
+			selectedSites: sites.map((site) => {
+				return {
+					brand: site.brand,
+					category: site.category,
+					name: site.name,
+					priority: site.priority,
+				};
+			}),
 			workflowId: workflowIds[0],
 			workflowIds,
 			workflows,
@@ -128,7 +145,14 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
 	if (request.method === "GET" && url.pathname === "/api/catalogue") {
 		return Response.json({
-			sites: SITES.map(({ brand, category, name }) => ({ brand, category, name })),
+			sites: SITES.map((site) => {
+				return {
+					brand: site.brand,
+					category: site.category,
+					name: site.name,
+					priority: site.priority,
+				};
+			}),
 		});
 	}
 

@@ -1,4 +1,8 @@
-import { withBrand, withIndividualBrands, withoutDuplicateNames } from "./lib/site-catalogue.ts";
+import {
+	withBrand,
+	withIndividualBrands,
+	withoutDuplicateNames,
+} from "./lib/site-catalogue.ts";
 import { BBC_LOCAL_SITES } from "./sites/bbc-local.ts";
 import { BBC_SITES } from "./sites/bbc.ts";
 import { BELFAST_LIVE_SITES } from "./sites/belfast-live.ts";
@@ -26,14 +30,20 @@ import { TIMES_SITES } from "./sites/times.ts";
 import { WASHINGTON_POST_SITES } from "./sites/washington-post.ts";
 
 export const SITES = [
-	...withBrand("bbc", [...BBC_SITES, ...withoutDuplicateNames(BBC_LOCAL_SITES, BBC_SITES)]),
+	...withBrand("bbc", BBC_SITES),
+	...withBrand(
+		"bbc",
+		withoutDuplicateNames(BBC_LOCAL_SITES, BBC_SITES),
+		"local",
+	),
 	...withBrand("times", TIMES_SITES),
 	...withBrand("nytimes", NEW_YORK_TIMES_SITES),
 	...withBrand("sky", SKY_SITES),
 	...withBrand("skysports", SKY_SPORTS_SITES),
 	...withBrand("dailymail", DAILYMAIL_SITES),
 	...withBrand("guardian", GUARDIAN_SITES),
-	...withBrand("itv", [...ITV_SITES, ...ITV_LOCAL_SITES]),
+	...withBrand("itv", ITV_SITES),
+	...withBrand("itv", ITV_LOCAL_SITES, "local"),
 	...withBrand("stv", STV_SITES),
 	...withBrand("metro", METRO_SITES),
 	...withBrand("cnn", CNN_SITES),
@@ -45,7 +55,8 @@ export const SITES = [
 	...withBrand("independent", INDEPENDENT_SITES),
 	...withBrand("givemesport", GIVEMESPORT_SITES),
 	...withBrand("belfasttelegraph", BELFAST_TELEGRAPH_SITES),
-	...withBrand("reach", [...REACH_SITES, ...BELFAST_LIVE_SITES]),
-	...withBrand("newsquest", NEWSQUEST_SITES),
-	...withIndividualBrands(OTHER_SITES),
+	...withBrand("reach", REACH_SITES, "local"),
+	...withBrand("reach", BELFAST_LIVE_SITES, "local"),
+	...withBrand("newsquest", NEWSQUEST_SITES, "local"),
+	...withIndividualBrands(OTHER_SITES, "local"),
 ];

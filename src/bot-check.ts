@@ -28,6 +28,7 @@ export async function runBotCheck(
 			timeoutMs: 30_000,
 		},
 		name: `amiabot-${safeSegment(profile)}`,
+		priority: 3,
 		profile,
 		runtimeQuietMs: 12_000,
 		url: AM_I_A_BOT_URL,

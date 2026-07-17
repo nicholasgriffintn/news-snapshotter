@@ -27,7 +27,15 @@ test("serves the public site catalogue without authentication", async () => {
 
 	assert.equal(response.status, 200);
 	assert.ok(body.sites.length > 0);
-	assert.deepEqual(Object.keys(body.sites[0]).sort(), ["brand", "category", "name"]);
+	assert.deepEqual(
+		Object.keys(body.sites[0]).sort(),
+		["brand", "category", "name", "priority"],
+	);
+	assert.ok(
+		body.sites.every((site) => {
+			return [1, 2, 3, 4].includes(site.priority);
+		}),
+	);
 });
 
 test("serves the public screenshot listing", async () => {
@@ -174,7 +182,7 @@ test("starts a workflow for a valid named site selection", async () => {
 	assert.equal(creations[0].params.sites[0].name, "bbc-home");
 });
 
-test("fans a full capture out across six balanced runners with one timestamp", async () => {
+test("defaults an unfiltered capture to priority one", async () => {
 	const creations = [];
 	const env = environment({
 		NEWS_SNAPSHOTTER: {
@@ -197,15 +205,14 @@ test("fans a full capture out across six balanced runners with one timestamp", a
 	const sizes = creations.map(({ params }) => params.sites.length);
 
 	assert.equal(response.status, 202);
-	assert.equal(body.runnerCount, 6);
-	assert.deepEqual(body.workflowIds, [
-		"workflow-1",
-		"workflow-2",
-		"workflow-3",
-		"workflow-4",
-		"workflow-5",
-		"workflow-6",
-	]);
+	assert.ok(body.runnerCount > 0);
+	assert.ok(body.runnerCount <= 6);
+	assert.equal(body.workflowIds.length, body.runnerCount);
+	assert.ok(
+		body.selectedSites.every((site) => {
+			return site.priority === 1;
+		}),
+	);
 	assert.ok(Math.max(...sizes) - Math.min(...sizes) <= 1);
 	assert.equal(
 		sizes.reduce((total, size) => total + size, 0),
@@ -215,7 +222,50 @@ test("fans a full capture out across six balanced runners with one timestamp", a
 	assert.equal(body.triggeredAt, creations[0].params.triggeredAt);
 	assert.deepEqual(
 		creations.map(({ params }) => params.startDelaySeconds),
-		[0, 1, 2, 3, 4, 5],
+		Array.from(
+			{ length: body.runnerCount },
+			(_, index) => index,
+		),
+	);
+});
+
+test("starts a workflow for an explicit capture priority", async () => {
+	const creations = [];
+	const env = environment({
+		NEWS_SNAPSHOTTER: {
+			create: async (options) => {
+				creations.push(options);
+				return {
+					id: `workflow-${creations.length}`,
+					status: async () => ({ status: "queued" }),
+				};
+			},
+		},
+	});
+	const response = await handleRequest(
+		apiRequest("/api/workflows", {
+			body: JSON.stringify({ priority: 4 }),
+			headers: {
+				authorization: "Bearer secret",
+				"content-type": "application/json",
+			},
+			method: "POST",
+		}),
+		env,
+	);
+	const body = await response.json();
+
+	assert.equal(response.status, 202);
+	assert.ok(body.selectedSites.length > 0);
+	assert.ok(
+		body.selectedSites.every((site) => {
+			return site.priority === 4;
+		}),
+	);
+	assert.ok(
+		creations.every(({ params }) => {
+			return params.sites.every((site) => site.priority === 4);
+		}),
 	);
 });
 
@@ -245,7 +295,25 @@ test("turns invalid workflow selections into a 400 response", async (context) =>
 	);
 
 	assert.equal(response.status, 400);
-	assert.match((await response.json()).message, /either brand or name/);
+	assert.match((await response.json()).message, /Specify only one/);
+});
+
+test("rejects an invalid capture priority", async (context) => {
+	context.mock.method(console, "error", () => undefined);
+	const response = await handleRequest(
+		apiRequest("/api/workflows", {
+			body: JSON.stringify({ priority: 5 }),
+			headers: {
+				authorization: "Bearer secret",
+				"content-type": "application/json",
+			},
+			method: "POST",
+		}),
+		environment(),
+	);
+
+	assert.equal(response.status, 400);
+	assert.match((await response.json()).message, /priority must be 1, 2, 3, or 4/);
 });
 
 test("returns 404 for an unknown authorised API route", async () => {

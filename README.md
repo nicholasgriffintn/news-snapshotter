@@ -84,7 +84,16 @@ The contact modal posts to `POST /api/contact`. It sends rights-holder, privacy,
 
 ## Catalogue
 
-Site definitions live in `src/sites`. `src/constants.ts` composes every provider list into the active catalogue and assigns each site a `brand`; each definition supplies a unique `name`, a `category` of `news` or `sport`, and a fixed HTTPS URL.
+Site definitions live in `src/sites`. `src/constants.ts` composes every provider list into the active catalogue and assigns each site a `brand`. Each definition supplies a unique `name`, a `category` of `news` or `sport`, a fixed HTTPS URL, and a capture priority.
+
+Capture priorities describe the intended scheduler frequency:
+
+- `1` — primary publisher home routes
+- `2` — major news and sport section fronts
+- `3` — specialist categories, topics, and subsections
+- `4` — local and regional pages
+
+The route helpers infer the usual priority and allow explicit overrides for unusual URLs. A workflow request without a selector captures priority `1`. Send `priority`, `brand`, or `name` to select a different capture scope.
 
 Provider-backed local sites use their parent brand, such as `bbc`, `itv`, `reach`, or `newsquest`. Standalone sites in `other.ts` use their site name as the brand.
 

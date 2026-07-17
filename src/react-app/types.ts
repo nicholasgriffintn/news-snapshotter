@@ -18,7 +18,11 @@ export type SnapshotGroup = Pick<
 	variants: Partial<Record<Snapshot["device"], Snapshot>>;
 };
 
-export type CatalogueSite = Pick<Snapshot, "brand" | "category" | "name">;
+export type CapturePriority = 1 | 2 | 3 | 4;
+
+export type CatalogueSite = Pick<Snapshot, "brand" | "category" | "name"> & {
+	priority: CapturePriority;
+};
 
 export type CaptureFailure = {
 	brand: string;

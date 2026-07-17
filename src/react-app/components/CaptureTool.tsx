@@ -2,14 +2,27 @@ import { useEffect, useMemo, useState } from "react";
 
 import { startSnapshotWorkflow } from "../lib/api";
 import { displayName } from "../lib/format";
-import type { CatalogueSite } from "../types";
+import type {
+	CapturePriority,
+	CatalogueSite,
+} from "../types";
 
-type Scope = "all" | "brand" | "site";
+type Scope = "priority" | "brand" | "site";
+
+const CAPTURE_PRIORITIES: CapturePriority[] = [1, 2, 3, 4];
+
+const PRIORITY_LABELS: Record<CapturePriority, string> = {
+	1: "Publisher home pages",
+	2: "Major news and sport sections",
+	3: "Specialist categories and topics",
+	4: "Local and regional pages",
+};
 
 export function CaptureTool({ apiKey, catalogue }: { apiKey: string; catalogue: CatalogueSite[] }) {
-	const [scope, setScope] = useState<Scope>("all");
+	const [scope, setScope] = useState<Scope>("priority");
 	const [brand, setBrand] = useState("");
 	const [name, setName] = useState("");
+	const [priority, setPriority] = useState<CapturePriority>(1);
 	const [status, setStatus] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const brands = useMemo(
@@ -28,7 +41,20 @@ export function CaptureTool({ apiKey, catalogue }: { apiKey: string; catalogue: 
 		setStatus("Starting capture workflow…");
 
 		try {
-			const selection = scope === "brand" ? { brand } : scope === "site" ? { name } : {};
+			let selection: {
+				brand?: string;
+				name?: string;
+				priority?: CapturePriority;
+			};
+
+			if (scope === "brand") {
+				selection = { brand };
+			} else if (scope === "site") {
+				selection = { name };
+			} else {
+				selection = { priority };
+			}
+
 			const result = await startSnapshotWorkflow(apiKey, selection);
 			const sitePlural = result.selectedSites.length === 1 ? "" : "s";
 			const runnerPlural = result.runnerCount === 1 ? "" : "s";
@@ -52,7 +78,7 @@ export function CaptureTool({ apiKey, catalogue }: { apiKey: string; catalogue: 
 			<fieldset>
 				<legend>Capture scope</legend>
 				<div className="scope-picker">
-					{(["all", "brand", "site"] as Scope[]).map((value) => (
+					{(["priority", "brand", "site"] as Scope[]).map((value) => (
 						<label key={value}>
 							<input
 								checked={scope === value}
@@ -65,6 +91,24 @@ export function CaptureTool({ apiKey, catalogue }: { apiKey: string; catalogue: 
 					))}
 				</div>
 			</fieldset>
+
+			{scope === "priority" ? (
+				<label>
+					<span>Capture priority</span>
+					<select
+						onChange={(event) => {
+							setPriority(Number(event.target.value) as CapturePriority);
+						}}
+						value={priority}
+					>
+						{CAPTURE_PRIORITIES.map((value) => (
+							<option key={value} value={value}>
+								Priority {value} · {PRIORITY_LABELS[value]}
+							</option>
+						))}
+					</select>
+				</label>
+			) : null}
 
 			{scope === "brand" ? (
 				<label>
