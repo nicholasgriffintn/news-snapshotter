@@ -1,5 +1,6 @@
 import { historyScreenshotUrl } from "../../platform/api-client.ts";
 import type { HistoryCapture, HistoryElement } from "../../core/types.ts";
+import { storyHistoryPath } from "./history-routes.ts";
 
 function storyId(site: string, element: HistoryElement): string {
 	return `${site}:${element.canonicalUrl ?? element.elementKey}`;
@@ -72,7 +73,7 @@ export function HistoryCaptureView({
 								<small>{story.prominence ?? "standard"}</small>
 							</div>
 							<a
-								href={`/history/${encodeURIComponent(capture.capture.site)}/stories/${encodeURIComponent(storyId(capture.capture.site, story))}`}
+								href={storyHistoryPath(capture.capture.site, storyId(capture.capture.site, story))}
 							>
 								<strong>{story.headline ?? "Untitled story"}</strong>
 								{story.summary ? <p>{story.summary}</p> : null}

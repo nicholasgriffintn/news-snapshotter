@@ -5,6 +5,7 @@ import { fetchStoryHistory } from "../../platform/api-client.ts";
 import { displayName } from "../../shared/format.ts";
 import { HistoryNav } from "./HistoryNav.tsx";
 import { StoryTimelineChart } from "./StoryTimelineChart.tsx";
+import { storyHistoryPath } from "./history-routes.ts";
 
 export function StoryComparisonPage({ site, storyIds }: { site: string; storyIds: string[] }) {
 	const [stories, setStories] = useState<StoryHistory[]>([]);
@@ -39,11 +40,7 @@ export function StoryComparisonPage({ site, storyIds }: { site: string; storyIds
 							<p className="eyebrow">{story.observations.length} observations</p>
 							<h2>{latest?.headline ?? story.storyId}</h2>
 							<StoryTimelineChart observations={story.observations} />
-							<a
-								href={`/history/${encodeURIComponent(site)}/stories/${encodeURIComponent(story.storyId)}`}
-							>
-								Full story history →
-							</a>
+							<a href={storyHistoryPath(site, story.storyId)}>Full story history →</a>
 						</article>
 					);
 				})}

@@ -20,12 +20,15 @@ export function StoryHistoryPage({ site, storyId }: { site: string; storyId: str
 	}, [site, storyId]);
 
 	const latest = story?.observations.at(-1);
+	const title = latest?.headline ?? "Story timeline";
 	return (
 		<div className="history-page story-history-page">
 			<header className="history-heading history-heading--story">
 				<div>
 					<p className="eyebrow">{displayName(site)} story history</p>
-					<h1>{latest?.headline ?? "Story timeline"}</h1>
+					<h1 className={title.length > 90 ? "story-title story-title--long" : "story-title"}>
+						{title}
+					</h1>
 				</div>
 			</header>
 			<HistoryNav current="research" site={site} />

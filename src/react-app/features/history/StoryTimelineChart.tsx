@@ -1,48 +1,64 @@
 import type { StoryObservation } from "../../core/types.ts";
+import { timelinePoints } from "./story-timeline.ts";
 
-function points(
-	observations: StoryObservation[],
-	value: (observation: StoryObservation) => number,
-): string {
-	if (observations.length === 0) return "";
-	const values = observations.map(value);
-	const maximum = Math.max(1, ...values);
-	return observations
-		.map((observation, index) => {
-			const x = observations.length === 1 ? 50 : (index / (observations.length - 1)) * 100;
-			const y = (value(observation) / maximum) * 84 + 8;
-			return `${x},${y}`;
-		})
-		.join(" ");
+function TimelinePlot({
+	caption,
+	format,
+	note,
+	values,
+}: {
+	caption: string;
+	format: (value: number) => string;
+	note: string;
+	values: number[];
+}) {
+	const points = timelinePoints(values);
+	const polyline = points.map(({ x, y }) => `${x},${y}`).join(" ");
+	const first = values[0];
+	const latest = values.at(-1);
+
+	return (
+		<figure>
+			<figcaption>{caption}</figcaption>
+			<svg aria-label={caption} preserveAspectRatio="none" role="img" viewBox="0 0 100 100">
+				<line className="story-chart-axis" x1="8" x2="92" y1="88" y2="88" />
+				<polyline points={polyline} />
+				{points.map(({ value, x, y }, index) => (
+					<line
+						aria-label={format(value)}
+						className="story-chart-point"
+						key={`${index}:${value}`}
+						x1={x}
+						x2={x}
+						y1={y - 0.1}
+						y2={y + 0.1}
+					/>
+				))}
+			</svg>
+			<div className="story-chart-values">
+				<span>First {first === undefined ? "—" : format(first)}</span>
+				<span>Latest {latest === undefined ? "—" : format(latest)}</span>
+			</div>
+			<small>{note}</small>
+		</figure>
+	);
 }
 
 export function StoryTimelineChart({ observations }: { observations: StoryObservation[] }) {
 	return (
 		<div className="story-charts">
-			<figure>
-				<figcaption>Rank over time</figcaption>
-				<svg
-					aria-label="Story rank over time"
-					preserveAspectRatio="none"
-					role="img"
-					viewBox="0 0 100 100"
-				>
-					<polyline points={points(observations, ({ rank }) => rank)} />
-				</svg>
-				<small>Higher placement appears nearer the top.</small>
-			</figure>
-			<figure>
-				<figcaption>Page position over time</figcaption>
-				<svg
-					aria-label="Story page position over time"
-					preserveAspectRatio="none"
-					role="img"
-					viewBox="0 0 100 100"
-				>
-					<polyline points={points(observations, ({ top }) => top)} />
-				</svg>
-				<small>Distance from the top of the publisher page.</small>
-			</figure>
+			<TimelinePlot
+				caption="Rank over time"
+				format={(value) => `#${value}`}
+				note="A lower rank means greater prominence."
+				values={observations.map(({ rank }) => rank)}
+			/>
+			<TimelinePlot
+				caption="Page position over time"
+				format={(value) => `${value.toFixed(1)} pages`}
+				note="Distance from the top of the publisher page."
+				values={observations.map(({ viewportDepth }) => viewportDepth)}
+			/>
 		</div>
 	);
 }

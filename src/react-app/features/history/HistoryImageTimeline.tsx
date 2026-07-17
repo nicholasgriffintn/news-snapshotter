@@ -1,5 +1,6 @@
 import type { HistoryImageObservation } from "../../core/types.ts";
 import { historyScreenshotUrl } from "../../platform/api-client.ts";
+import { storyHistoryPath } from "./history-routes.ts";
 
 export function HistoryImageTimeline({
 	images,
@@ -27,7 +28,7 @@ export function HistoryImageTimeline({
 			<div className="history-image-grid">
 				{images.map((image) => (
 					<a
-						href={`/history/${encodeURIComponent(site)}/stories/${encodeURIComponent(image.storyId)}`}
+						href={storyHistoryPath(site, image.storyId)}
 						key={`${image.captureId}:${image.imageId}`}
 					>
 						<img

@@ -4,6 +4,7 @@ import { HistoryResearchPage } from "./HistoryResearchPage.tsx";
 import { SavedTimelinePage } from "./SavedTimelinePage.tsx";
 import { StoryComparisonPage } from "./StoryComparisonPage.tsx";
 import { StoryHistoryPage } from "./StoryHistoryPage.tsx";
+import { storyIdFromSearch } from "./history-routes.ts";
 
 export function HistoryRouter({ site }: { site: string }) {
 	if (!site) return <HistoryIndexPage />;
@@ -16,8 +17,9 @@ export function HistoryRouter({ site }: { site: string }) {
 		const storyIds = [...new Set(new URLSearchParams(window.location.search).getAll("story"))];
 		return <StoryComparisonPage site={site} storyIds={storyIds} />;
 	}
-	if (resource === "stories" && identifier) {
-		return <StoryHistoryPage site={site} storyId={identifier} />;
+	if (resource === "stories") {
+		const storyId = storyIdFromSearch(window.location.search);
+		if (storyId) return <StoryHistoryPage site={site} storyId={storyId} />;
 	}
 	if (resource === "timelines" && identifier) {
 		return <SavedTimelinePage site={site} slug={identifier} />;

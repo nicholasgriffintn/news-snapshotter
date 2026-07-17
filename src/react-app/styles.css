@@ -1493,13 +1493,27 @@ footer a {
 	text-shadow: 0.04em 0.04em 0 var(--pink);
 }
 
-.history-heading--story h1 {
-	max-width: 18ch;
+.history-heading--story {
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0;
+}
+
+.history-heading--story .story-title {
+	max-width: 26ch;
 	font-family: var(--display);
-	font-size: clamp(2.6rem, 6vw, 6rem);
+	font-size: clamp(2.5rem, 4.5vw, 5rem);
 	font-weight: 700;
-	line-height: 0.95;
+	line-height: 1;
+	letter-spacing: -0.025em;
+	overflow-wrap: anywhere;
+	text-wrap: balance;
 	text-transform: none;
+}
+
+.history-heading--story .story-title--long {
+	max-width: 32ch;
+	font-size: clamp(2.2rem, 3.2vw, 3.75rem);
+	line-height: 1.05;
 }
 
 .history-heading__intro {
@@ -2285,8 +2299,35 @@ footer a {
 .story-charts polyline {
 	fill: none;
 	stroke: var(--cyan);
-	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	stroke-width: 3;
 	vector-effect: non-scaling-stroke;
+}
+
+.story-charts .story-chart-axis {
+	stroke: rgba(255, 247, 215, 0.25);
+	stroke-width: 1;
+	vector-effect: non-scaling-stroke;
+}
+
+.story-charts .story-chart-point {
+	stroke: var(--yellow);
+	stroke-linecap: round;
+	stroke-width: 7;
+	vector-effect: non-scaling-stroke;
+}
+
+.story-chart-values {
+	display: flex;
+	gap: 1rem;
+	justify-content: space-between;
+	margin: -0.25rem 0 0.65rem;
+	color: var(--yellow);
+	font-size: 0.68rem;
+	font-weight: 900;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
 }
 
 .story-observations li,

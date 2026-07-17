@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import type { HistorySearchResult } from "../../core/types.ts";
+import { storyHistoryPath } from "./history-routes.ts";
 
 export function HistorySearchPanel({
 	onQuery,
@@ -63,9 +64,7 @@ export function HistorySearchPanel({
 							onChange={() => onToggleStory(result.storyId)}
 							type="checkbox"
 						/>
-						<a
-							href={`/history/${encodeURIComponent(site)}/stories/${encodeURIComponent(result.storyId)}`}
-						>
+						<a href={storyHistoryPath(site, result.storyId)}>
 							<strong>{result.headline ?? "Untitled story"}</strong>
 							{result.summary ? <p>{result.summary}</p> : null}
 							<small>
