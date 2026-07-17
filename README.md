@@ -95,6 +95,8 @@ Capture priorities describe the intended scheduler frequency:
 
 The route helpers infer the usual priority and allow explicit overrides for unusual URLs. A workflow request without a selector captures priority `1`. Send `priority`, `brand`, or `name` to select a different capture scope.
 
+Cloudflare invokes the scheduled handler at the start of every UTC hour. Each scheduled run selects priority `1` sites and dispatches them through the same sharded workflow path as an admin capture.
+
 Each site also resolves to a `uk`, `us`, or `international` capture region. The browser applies the matching language, timezone, and geolocation signals before navigation. International captures use neutral English and UTC settings with edition-specific URLs.
 
 Provider-backed local sites use their parent brand, such as `bbc`, `itv`, `reach`, or `newsquest`. Standalone sites in `other.ts` use their site name as the brand.

@@ -20,6 +20,9 @@
 	"dev": {
 		"port": 8787
 	},
+	"triggers": {
+		"crons": ["0 * * * *"]
+	},
 	"routes": [
 		{
 			"pattern": "news-snapshotter.pashi.app",

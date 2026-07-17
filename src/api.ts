@@ -1,5 +1,6 @@
 import { SITES } from "./constants.ts";
 import { runBotCheck } from "./bot-check.ts";
+import { dispatchCaptureWorkflows } from "./capture-dispatch.ts";
 import { listCaptureFailures } from "./capture-failures.ts";
 import { CAPTURE_PROFILE_NAMES, hasCaptureProfile } from "./capture-profiles.ts";
 import { sendContactMessage } from "./contact.ts";
@@ -9,7 +10,6 @@ import { errorMessage } from "./lib/errors.ts";
 import { selectSites, type SiteSelection } from "./lib/site-catalogue.ts";
 import { thumbnailKey } from "./lib/storage-key.ts";
 import { listScreenshots, screenshotImageUrl, serveScreenshot } from "./snapshots.ts";
-import { createWorkflowShards } from "./workflow-batch.ts";
 
 function jsonError(message: string, status: number): Response {
 	return Response.json({ status: "error", message }, { status });
@@ -51,43 +51,16 @@ async function parseSelection(request: Request): Promise<SiteSelection> {
 async function startWorkflow(request: Request, env: Env): Promise<Response> {
 	const sites = selectSites(SITES, await parseSelection(request));
 	const triggeredAt = new Date().toISOString();
-	const shards = createWorkflowShards(sites);
-	const workflows = await Promise.all(
-		shards.map(async (shard) => {
-			const instance = await env.NEWS_SNAPSHOTTER.create({
-				params: {
-					sites: shard.sites,
-					startDelaySeconds: shard.startDelaySeconds,
-					triggeredAt,
-				},
-			});
-			return {
-				id: instance.id,
-				siteCount: shard.sites.length,
-				status: await instance.status(),
-			};
-		}),
+	const dispatch = await dispatchCaptureWorkflows(
+		env,
+		sites,
+		triggeredAt,
 	);
-	const workflowIds = workflows.map(({ id }) => id);
 
 	return Response.json(
 		{
-			batchId: `capture-${triggeredAt.replace(/[:.]/g, "-")}`,
-			runnerCount: workflows.length,
+			...dispatch,
 			status: "success",
-			selectedSites: sites.map((site) => {
-				return {
-					brand: site.brand,
-					captureRegion: site.captureRegion,
-					category: site.category,
-					name: site.name,
-					priority: site.priority,
-				};
-			}),
-			workflowId: workflowIds[0],
-			workflowIds,
-			workflows,
-			triggeredAt,
 		},
 		{ status: 202 },
 	);
