@@ -2,6 +2,10 @@ import type { Page } from "@cloudflare/puppeteer";
 
 import type { Device, SiteDefinition } from "../../../core/domain.ts";
 import type { ElementPosition, PageElement } from "../../history/domain/extraction.ts";
+import {
+	extractorDefinition,
+	type ExtractorDefinition,
+} from "../domain/extractor-registry.ts";
 
 const SCHEMA_VERSION = 1;
 const SANITISATION_VERSION = 1;
@@ -20,6 +24,7 @@ type CollectedPage = {
 	html: string;
 	pageHeight: number;
 	pageWidth: number;
+	warnings: Array<{ code: string; message: string }>;
 };
 
 type ScreenshotAnalysis = import("../../../core/domain.ts").ScreenshotResult["analysis"];
@@ -119,8 +124,8 @@ async function gzip(value: string): Promise<ArrayBuffer> {
 	return new Response(stream).arrayBuffer();
 }
 
-async function collectPage(page: Page): Promise<CollectedPage> {
-	const serialised = await page.evaluate(() => {
+async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<CollectedPage> {
+	const serialised = await page.evaluate((extractorDefinition) => {
 		type DomElement = {
 			attributes: ArrayLike<{
 				name: string;
@@ -182,12 +187,10 @@ async function collectPage(page: Page): Promise<CollectedPage> {
 		});
 
 		const seen = new Set<string>();
-		const links = Array.from(document.querySelectorAll("a[href]"));
+		const links = Array.from(document.querySelectorAll(extractorDefinition.storyLinkSelector));
 		const elements = links.flatMap((link) => {
-			const cardSelector = 'article, [data-testid*="card"], li';
-			const headlineSelector = 'h1, h2, h3, [data-testid*="headline"]';
-			const card = link.closest(cardSelector) ?? link;
-			const heading = card.querySelector(headlineSelector);
+			const card = link.closest(extractorDefinition.cardSelector) ?? link;
+			const heading = card.querySelector(extractorDefinition.headlineSelector);
 
 			if (!heading) {
 				return [];
@@ -210,7 +213,7 @@ async function collectPage(page: Page): Promise<CollectedPage> {
 
 			const rect = link.getBoundingClientRect();
 			const image = card.querySelector("img");
-			const summaryElement = card.querySelector("p");
+			const summaryElement = card.querySelector(extractorDefinition.summarySelector);
 			const summary = summaryElement?.textContent?.trim().replace(/\s+/g, " ");
 			const headingName = heading.tagName.toLowerCase();
 			const isLead = headingName === "h1";
@@ -264,8 +267,9 @@ async function collectPage(page: Page): Promise<CollectedPage> {
 			html: `<!doctype html>${clone.outerHTML}`,
 			pageHeight: document.documentElement.scrollHeight,
 			pageWidth: document.documentElement.scrollWidth,
+			warnings: elements.length === 0 ? [{ code: "no-story-matches", message: `No elements matched ${extractorDefinition.name}` }] : [],
 		});
-	});
+	}, extractor);
 
 	return JSON.parse(serialised) as CollectedPage;
 }
@@ -282,7 +286,8 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 	const captureId = `${site.name}:${device}:${triggeredAt}`;
 
 	try {
-		const collected = await collectPage(page);
+		const extractor = extractorDefinition(site.analysis.extractor, site.analysis.version);
+		const collected = await collectPage(page, extractor);
 		const stories = normaliseStoryElements(collected.elements);
 		const canonicalElements = stories.map((element) => {
 			const canonicalUrl = canonicaliseUrl(element.canonicalUrl);
@@ -331,7 +336,7 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 			contentHash,
 			elements: collected.elements,
 			structureHash,
-			warnings: [],
+			warnings: collected.warnings,
 		};
 
 		const metadata = {
@@ -398,6 +403,13 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 			const serialisedFailure = JSON.stringify(failure);
 
 			await bucket.put(keys.failureKey, serialisedFailure, {
+				customMetadata: {
+					captureId,
+					capturedAt,
+					device,
+					site: site.name,
+					triggeredAt,
+				},
 				httpMetadata: {
 					contentType: "application/json",
 				},

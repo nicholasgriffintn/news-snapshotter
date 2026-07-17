@@ -144,9 +144,18 @@ pnpm wrangler queues create news-snapshotter-history-index-dlq
 
 Add the returned D1 UUID as `HISTORY_DB`, bind the producer as `HISTORY_INDEX_QUEUE`, and attach
 the same queue as this Worker's consumer with `max_concurrency: 1`. Use the dead-letter queue and
-apply [`migrations/0001_history.sql`](migrations/0001_history.sql) before enabling the producer.
+apply all D1 migrations before enabling the producer.
 Single-consumer concurrency preserves adjacent-edge convergence while D1 neighbour discovery and
 edge replacement run as separate database batches.
+
+Apply migrations to the local development database with:
+
+```sh
+pnpm run db:migrate:local
+```
+
+Production deployment applies pending remote migrations before publishing the Worker. If a migration
+fails, Wrangler rolls it back and the Worker deployment does not run.
 
 Before deploying contact email, onboard your email with Cloudflare Email Service.
 

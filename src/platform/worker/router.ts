@@ -22,6 +22,8 @@ import {
 	startCaptureWorkflow,
 } from "../../features/workflows/application/start-capture.ts";
 import { handleHistoryRequest } from "../../features/history/application/history-api.ts";
+import { handleHistoryAdminRequest } from "../../features/history/application/history-admin.ts";
+import { handleHistoryResearchRequest } from "../../features/history/application/history-research-api.ts";
 
 function jsonError(message: string, status: number): Response {
 	return Response.json({ status: "error", message }, { status });
@@ -112,6 +114,8 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
 	if (url.pathname.startsWith("/api/history/")) {
 		if (!env.HISTORY_DB) return jsonError("History storage is not configured", 503);
+		const researchResponse = await handleHistoryResearchRequest(request, env.HISTORY_DB);
+		if (researchResponse) return researchResponse;
 		const historyResponse = await handleHistoryRequest(request, env.HISTORY_DB);
 		if (historyResponse) return historyResponse;
 		return jsonError("Not found", 404);
@@ -136,6 +140,11 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
 	if (request.method === "GET" && url.pathname === "/api/admin/failures") {
 		return Response.json(await listCaptureFailures(env, failureListOptions(url)));
+	}
+
+	if (url.pathname.startsWith("/api/admin/history/")) {
+		const historyAdminResponse = await handleHistoryAdminRequest(request, env);
+		if (historyAdminResponse) return historyAdminResponse;
 	}
 
 	if (request.method === "GET" && url.pathname.startsWith("/api/workflows/")) {

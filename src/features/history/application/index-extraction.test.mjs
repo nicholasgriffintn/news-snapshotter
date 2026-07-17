@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
-import { SQLiteD1 } from "../../../testing/sqlite-d1.mjs";
+import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { historyExtraction } from "../testing/extraction-fixture.mjs";
 import { indexExtractionArtefact } from "./index-extraction.ts";
 
@@ -12,18 +10,16 @@ async function gzip(value) {
 	return new Response(compressed).arrayBuffer();
 }
 
-async function environment(document) {
-	const sqlite = new DatabaseSync(":memory:");
-	sqlite.exec(
-		await readFile(new URL("../../../../migrations/0001_history.sql", import.meta.url), "utf8"),
-	);
-	const body = await gzip(JSON.stringify(document));
+async function environment(document, compress = true) {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const serialised = JSON.stringify(document);
+	const body = compress ? await gzip(serialised) : new TextEncoder().encode(serialised);
 	return {
 		env: {
 			ARCHIVE_DATA: {
 				get: async () => ({ body: new Blob([body]).stream(), size: body.byteLength }),
 			},
-			HISTORY_DB: new SQLiteD1(sqlite),
+			HISTORY_DB: database,
 		},
 		sqlite,
 	};
@@ -36,6 +32,7 @@ test("indexes a compressed extraction artefact from private R2", async () => {
 	const result = await indexExtractionArtefact(env, {
 		captureId: "capture-a",
 		extractionKey: "capture-a.extraction.v1.json.gz",
+		kind: "extraction",
 		site: "bbc-home",
 	});
 
@@ -53,6 +50,7 @@ test("records identity mismatches as explicit indexing failures", async () => {
 		indexExtractionArtefact(env, {
 			captureId: "capture-other",
 			extractionKey: "capture-a.extraction.v1.json.gz",
+			kind: "extraction",
 			site: "bbc-home",
 		}),
 		/does not match extraction capture identity/,
@@ -63,5 +61,33 @@ test("records identity mismatches as explicit indexing failures", async () => {
 	assert.equal(failure.captureId, "capture-other");
 	assert.equal(failure.stage, "indexing");
 	assert.match(failure.message, /does not match/);
+	sqlite.close();
+});
+
+test("indexes analysis failures idempotently", async () => {
+	const failure = {
+		captureId: "capture-failed",
+		capturedAt: "2026-07-17T09:00:05.000Z",
+		device: "desktop",
+		message: "Expected at least 20 elements, found 3",
+		site: "bbc-home",
+		triggeredAt: "2026-07-17T09:00:00.000Z",
+	};
+	const { env, sqlite } = await environment(failure, false);
+	const message = {
+		failureKey: "site=bbc-home/capture.analysis-failure.json",
+		kind: "failure",
+	};
+
+	await indexExtractionArtefact(env, message);
+	await indexExtractionArtefact(env, message);
+
+	const rows = sqlite
+		.prepare("SELECT capture_id AS captureId, stage FROM extraction_failures")
+		.all();
+	assert.deepEqual(
+		rows.map((row) => ({ ...row })),
+		[{ captureId: "capture-failed", stage: "validation" }],
+	);
 	sqlite.close();
 });

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { fetchSnapshots } from "../../platform/api-client.ts";
+import { fetchHistorySites, fetchSnapshots } from "../../platform/api-client.ts";
 import { captureWindowKey, groupLabel } from "../../shared/format.ts";
 import type { Snapshot, SnapshotGroup } from "../../core/types.ts";
 import { DEFAULT_ARCHIVE_PERIOD, periodDescription } from "./domain/archive-period.ts";
@@ -19,6 +19,7 @@ const EMPTY_FILTERS: Filters = {
 
 export function SnapshotGallery() {
 	const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
+	const [analysedSites, setAnalysedSites] = useState<Set<string>>(new Set());
 	const [filters, setFilters] = useState(EMPTY_FILTERS);
 	const [selected, setSelected] = useState<SnapshotGroup>();
 	const [error, setError] = useState("");
@@ -30,6 +31,12 @@ export function SnapshotGallery() {
 			.then(setSnapshots)
 			.catch((reason: Error) => setError(reason.message))
 			.finally(() => setLoading(false));
+	}, []);
+
+	useEffect(() => {
+		fetchHistorySites()
+			.then((sites) => setAnalysedSites(new Set(sites.map(({ site }) => site))))
+			.catch(() => setAnalysedSites(new Set()));
 	}, []);
 
 	useEffect(() => {
@@ -81,6 +88,7 @@ export function SnapshotGallery() {
 					<div className="snapshot-grid">
 						{items.map((group) => (
 							<SnapshotCard
+								analysed={analysedSites.has(group.name)}
 								group={group}
 								key={`${group.name}-${group.capturedAt}`}
 								onSelect={() => setSelected(group)}

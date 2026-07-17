@@ -2,11 +2,17 @@ import { errorMessage } from "../../../core/errors.ts";
 import { parsePageExtraction } from "../domain/extraction.ts";
 import { ingestExtraction } from "../infrastructure/history-repository.ts";
 
-export type HistoryIndexMessage = {
-	captureId: string;
-	extractionKey: string;
-	site: string;
-};
+export type HistoryIndexMessage =
+	| {
+			captureId?: string;
+			extractionKey: string;
+			kind: "extraction";
+			site?: string;
+	  }
+	| {
+			failureKey: string;
+			kind: "failure";
+	  };
 
 type HistoryIndexEnv = {
 	ARCHIVE_DATA: R2Bucket;
@@ -39,7 +45,7 @@ async function readBoundedText(
 	return chunks.join("");
 }
 
-async function readExtraction(bucket: R2Bucket, key: string): Promise<unknown> {
+async function readArchiveJson(bucket: R2Bucket, key: string): Promise<unknown> {
 	const object = await bucket.get(key);
 	if (!object) throw new Error(`Extraction artefact not found: ${key}`);
 	if (object.size > MAX_COMPRESSED_EXTRACTION_BYTES) {
@@ -63,18 +69,78 @@ async function recordIndexingFailure(
 	message: HistoryIndexMessage,
 	error: unknown,
 ): Promise<void> {
+	const artefactKey = message.kind === "extraction" ? message.extractionKey : message.failureKey;
+	const captureId = message.kind === "extraction" ? message.captureId : undefined;
+	const site = message.kind === "extraction" ? message.site : undefined;
 	await database
 		.prepare(
 			`INSERT INTO extraction_failures (
-				capture_id, site, device, extraction_key, stage, message, failed_at
-			) VALUES (?, ?, 'desktop', ?, 'indexing', ?, ?)`,
+				failure_key, capture_id, site, device, extraction_key, stage, message, failed_at
+			) VALUES (?, ?, ?, 'desktop', ?, 'indexing', ?, ?)
+			ON CONFLICT(failure_key) DO UPDATE SET
+				message = excluded.message,
+				failed_at = excluded.failed_at`,
 		)
 		.bind(
-			message.captureId.slice(0, 4_096),
-			message.site.slice(0, 4_096),
-			message.extractionKey.slice(0, 4_096),
+			`indexing:${artefactKey}`.slice(0, 4_096),
+			captureId?.slice(0, 4_096) ?? null,
+			site?.slice(0, 4_096) ?? null,
+			artefactKey.slice(0, 4_096),
 			errorMessage(error).slice(0, 20_000),
 			new Date().toISOString(),
+		)
+		.run();
+}
+
+type AnalysisFailure = {
+	captureId: string;
+	capturedAt: string;
+	device: "desktop";
+	message: string;
+	site: string;
+	triggeredAt: string;
+};
+
+function parseAnalysisFailure(value: unknown): AnalysisFailure {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		throw new Error("Analysis failure artefact must be an object");
+	}
+	const failure = value as Record<string, unknown>;
+	const strings = ["captureId", "capturedAt", "message", "site", "triggeredAt"];
+	if (
+		failure.device !== "desktop" ||
+		!strings.every((key) => {
+			return typeof failure[key] === "string" && failure[key].length > 0;
+		}) ||
+		String(failure.message).length > 20_000
+	) {
+		throw new Error("Analysis failure artefact does not match the supported schema");
+	}
+	return value as AnalysisFailure;
+}
+
+async function indexAnalysisFailure(
+	database: D1Database,
+	failureKey: string,
+	failure: AnalysisFailure,
+): Promise<void> {
+	await database
+		.prepare(
+			`INSERT INTO extraction_failures (
+				failure_key, capture_id, site, device, extraction_key, stage, message, failed_at
+			) VALUES (?, ?, ?, ?, ?, 'validation', ?, ?)
+			ON CONFLICT(failure_key) DO UPDATE SET
+				message = excluded.message,
+				failed_at = excluded.failed_at`,
+		)
+		.bind(
+			failureKey,
+			failure.captureId,
+			failure.site,
+			failure.device,
+			failureKey,
+			failure.message,
+			failure.capturedAt,
 		)
 		.run();
 }
@@ -84,21 +150,30 @@ export async function indexExtractionArtefact(
 	message: HistoryIndexMessage,
 ): Promise<{ changeCount: number }> {
 	try {
-		if (
-			!message.captureId ||
-			message.captureId.length > 4_096 ||
-			!message.site ||
-			message.site.length > 4_096 ||
-			!message.extractionKey.endsWith(".json.gz") ||
-			message.extractionKey.length > 4_096
-		) {
+		const artefactKey = message.kind === "extraction" ? message.extractionKey : message.failureKey;
+		if (!artefactKey || artefactKey.length > 4_096) {
 			throw new Error("Queue message is invalid");
 		}
-		const rawDocument = await readExtraction(env.ARCHIVE_DATA, message.extractionKey);
+		if (message.kind === "failure") {
+			if (!message.failureKey.endsWith(".analysis-failure.json")) {
+				throw new Error("Queue message is invalid");
+			}
+			const rawFailure = await readArchiveJson(env.ARCHIVE_DATA, message.failureKey);
+			await indexAnalysisFailure(
+				env.HISTORY_DB,
+				message.failureKey,
+				parseAnalysisFailure(rawFailure),
+			);
+			return { changeCount: 0 };
+		}
+		if (!message.extractionKey.endsWith(".json.gz")) {
+			throw new Error("Queue message is invalid");
+		}
+		const rawDocument = await readArchiveJson(env.ARCHIVE_DATA, message.extractionKey);
 		const document = parsePageExtraction(rawDocument);
 		if (
-			document.capture.captureId !== message.captureId ||
-			document.capture.site !== message.site
+			(message.captureId && document.capture.captureId !== message.captureId) ||
+			(message.site && document.capture.site !== message.site)
 		) {
 			throw new Error("Queue message does not match extraction capture identity");
 		}
@@ -109,7 +184,7 @@ export async function indexExtractionArtefact(
 			await recordIndexingFailure(env.HISTORY_DB, message, error);
 		} catch (failureError) {
 			console.error("Could not record extraction indexing failure", {
-				captureId: message.captureId,
+				artefactKey: message.kind === "extraction" ? message.extractionKey : message.failureKey,
 				error: errorMessage(failureError),
 			});
 		}
@@ -127,7 +202,8 @@ export async function handleHistoryIndexQueue(
 			message.ack();
 		} catch (error) {
 			console.error("History extraction indexing failed", {
-				captureId: message.body.captureId,
+				artefactKey:
+					message.body.kind === "extraction" ? message.body.extractionKey : message.body.failureKey,
 				error: errorMessage(error),
 			});
 			message.retry();

@@ -1,0 +1,107 @@
+export type FailureListOptions = {
+	cursor?: {
+		failedAt: string;
+		failureId: number;
+	};
+	limit: number;
+	site?: string;
+};
+
+export async function historyIndexStatus(database: D1Database): Promise<{
+	sites: Record<string, unknown>[];
+	totals: Record<string, number>;
+}> {
+	const totals = await database
+		.prepare(
+			`SELECT
+				(SELECT COUNT(*) FROM analysed_captures) AS captures,
+				(SELECT COUNT(*) FROM stories) AS stories,
+				(SELECT COUNT(*) FROM story_observations) AS observations,
+				(SELECT COUNT(*) FROM change_events) AS changes,
+				(SELECT COUNT(*) FROM extraction_failures) AS failures`,
+		)
+		.first<Record<string, number>>();
+	const sites = await database
+		.prepare(
+			`SELECT
+				analysed_captures.site,
+				COUNT(DISTINCT analysed_captures.capture_id) AS captureCount,
+				MIN(analysed_captures.captured_at) AS firstCaptureAt,
+				MAX(analysed_captures.captured_at) AS lastCaptureAt,
+				MAX(analysed_captures.indexed_at) AS lastIndexedAt,
+				COUNT(DISTINCT story_observations.story_id) AS storyCount
+			FROM analysed_captures
+			LEFT JOIN story_observations
+				ON story_observations.capture_id = analysed_captures.capture_id
+			GROUP BY analysed_captures.site
+			ORDER BY analysed_captures.site`,
+		)
+		.all<Record<string, unknown>>();
+
+	return {
+		sites: sites.results,
+		totals: totals ?? { captures: 0, changes: 0, failures: 0, observations: 0, stories: 0 },
+	};
+}
+
+export async function listExtractionFailures(
+	database: D1Database,
+	options: FailureListOptions,
+): Promise<{
+	failures: Record<string, unknown>[];
+	nextCursor?: { failedAt: string; failureId: number };
+}> {
+	const conditions: string[] = [];
+	const parameters: Array<number | string> = [];
+	if (options.site) {
+		conditions.push("site = ?");
+		parameters.push(options.site);
+	}
+	if (options.cursor) {
+		conditions.push("(failed_at < ? OR (failed_at = ? AND failure_id < ?))");
+		parameters.push(options.cursor.failedAt, options.cursor.failedAt, options.cursor.failureId);
+	}
+	parameters.push(options.limit + 1);
+	const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+	const result = await database
+		.prepare(
+			`SELECT
+				failure_id AS failureId, capture_id AS captureId, site, device,
+				extraction_key AS extractionKey, stage, message, failed_at AS failedAt
+			FROM extraction_failures
+			${where}
+			ORDER BY failed_at DESC, failure_id DESC
+			LIMIT ?`,
+		)
+		.bind(...parameters)
+		.all<Record<string, unknown>>();
+	const hasMore = result.results.length > options.limit;
+	const failures = result.results.slice(0, options.limit);
+	const last = failures.at(-1);
+
+	return {
+		failures,
+		nextCursor:
+			hasMore && last
+				? { failedAt: String(last.failedAt), failureId: Number(last.failureId) }
+				: undefined,
+	};
+}
+
+export async function resetHistoryIndex(database: D1Database, site?: string): Promise<void> {
+	await database.exec("PRAGMA foreign_keys = ON");
+	const suffix = site ? " WHERE site = ?" : "";
+	const statement = (sql: string): D1PreparedStatement => {
+		const prepared = database.prepare(`${sql}${suffix}`);
+		return site ? prepared.bind(site) : prepared;
+	};
+	const statements = [
+		statement("DELETE FROM story_observation_search"),
+		statement("DELETE FROM saved_timelines"),
+		statement("DELETE FROM analysed_captures"),
+		statement("DELETE FROM stories"),
+		statement("DELETE FROM images"),
+		statement("DELETE FROM extraction_failures"),
+	];
+	await database.batch(statements);
+}

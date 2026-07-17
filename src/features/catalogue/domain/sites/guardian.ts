@@ -7,6 +7,12 @@ export const GUARDIAN_SITES = [
 		requestBody: {
 			addStyleTag: "#notice { display: none; }",
 		},
+		analysis: {
+			device: "desktop" as const,
+			extractor: "guardian-front-page" as const,
+			minimumElements: 20,
+			version: 1,
+		},
 	},
 	{
 		name: "guardian-sport",

@@ -2,9 +2,7 @@
 	"name": "news-snapshotter",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-06-16",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
+	"compatibility_flags": ["nodejs_compat"],
 	"workers_dev": false,
 	"preview_urls": false,
 	"placement": {
@@ -23,9 +21,7 @@
 		"port": 8787
 	},
 	"triggers": {
-		"crons": [
-			"0 * * * *"
-		]
+		"crons": ["0 * * * *"]
 	},
 	"routes": [
 		{
@@ -79,9 +75,7 @@
 	"assets": {
 		"directory": "./dist/client",
 		"not_found_handling": "single-page-application",
-		"run_worker_first": [
-			"/api/*"
-		]
+		"run_worker_first": ["/api/*"]
 	},
 	"d1_databases": [
 		{
@@ -89,26 +83,24 @@
 			"database_name": "news-snapshotter-history",
 			"database_id": "903439ec-9e2f-432b-9c7a-fcd349d28620",
 			"migrations_dir": "migrations",
-			"remote": true
+			"remote": false
 		}
 	],
 	"queues": {
 		"producers": [
 			{
 				"queue": "news-snapshotter-history-index",
-				"binding": "news_snapshotter_history_index"
-			},
-			{
-				"queue": "news-snapshotter-history-index-dlq",
-				"binding": "news_snapshotter_history_index_dlq"
+				"binding": "HISTORY_INDEX_QUEUE"
 			}
 		],
 		"consumers": [
 			{
-				"queue": "news-snapshotter-history-index"
-			},
-			{
-				"queue": "news-snapshotter-history-index-dlq"
+				"queue": "news-snapshotter-history-index",
+				"max_batch_size": 10,
+				"max_batch_timeout": 5,
+				"max_retries": 5,
+				"dead_letter_queue": "news-snapshotter-history-index-dlq",
+				"max_concurrency": 1
 			}
 		]
 	}

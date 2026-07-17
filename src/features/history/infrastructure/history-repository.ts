@@ -550,6 +550,28 @@ export async function listCaptures(
 	return { captures, nextCursor };
 }
 
+export async function listHistorySites(database: D1Database): Promise<Record<string, unknown>[]> {
+	const result = await database
+		.prepare(
+			`SELECT
+				analysed_captures.site,
+				analysed_captures.device,
+				COUNT(DISTINCT analysed_captures.capture_id) AS captureCount,
+				MIN(analysed_captures.captured_at) AS firstCaptureAt,
+				MAX(analysed_captures.captured_at) AS lastCaptureAt,
+				MAX(analysed_captures.source_url) AS sourceUrl,
+				COUNT(DISTINCT story_observations.story_id) AS storyCount
+			FROM analysed_captures
+			LEFT JOIN story_observations
+				ON story_observations.capture_id = analysed_captures.capture_id
+			WHERE analysed_captures.status = 'indexed'
+			GROUP BY analysed_captures.site, analysed_captures.device
+			ORDER BY analysed_captures.site, analysed_captures.device`,
+		)
+		.all<Record<string, unknown>>();
+	return result.results;
+}
+
 export async function getCapture(
 	database: D1Database,
 	site: string,

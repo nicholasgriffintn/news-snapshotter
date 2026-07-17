@@ -122,6 +122,13 @@ test("protects capture failures with the configured API key", async () => {
 	assert.equal((await response.json()).message, "Invalid API key");
 });
 
+test("protects history administration with the configured API key", async () => {
+	const response = await handleRequest(apiRequest("/api/admin/history/status"), environment());
+
+	assert.equal(response.status, 401);
+	assert.equal((await response.json()).message, "Invalid API key");
+});
+
 test("lists bounded capture failures for admins", async () => {
 	const listCalls = [];
 	const record = {

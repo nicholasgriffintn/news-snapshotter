@@ -1,0 +1,44 @@
+{
+	"capture": {
+		"captureId": "guardian-uk:desktop:2026-07-17T09:00:00.000Z",
+		"capturedAt": "2026-07-17T09:00:05.000Z",
+		"device": "desktop",
+		"extractor": { "name": "guardian-front-page", "version": 1 },
+		"htmlKey": "fixture.rendered.html.gz",
+		"pageHeight": 1800,
+		"pageWidth": 1440,
+		"profile": "guardian",
+		"sanitisationVersion": 1,
+		"schemaVersion": 1,
+		"screenshotKey": "fixture.webp",
+		"site": "guardian-uk",
+		"sourceUrl": "https://www.theguardian.com/uk",
+		"triggeredAt": "2026-07-17T09:00:00.000Z"
+	},
+	"contentHash": "guardian-fixture-content",
+	"elements": [
+		{
+			"canonicalUrl": "https://www.theguardian.com/politics/2026/jul/17/fixture-story",
+			"elementKey": "https://www.theguardian.com/politics/2026/jul/17/fixture-story",
+			"headline": "Guardian fixture headline",
+			"kind": "story",
+			"position": { "height": 260, "left": 0, "pageOrder": 1, "top": 160, "viewportDepth": 0.18, "width": 700 },
+			"prominence": "major",
+			"selectorHint": "h2",
+			"summary": "Guardian fixture standfirst.",
+			"textFingerprint": "guardian fixture headline"
+		},
+		{
+			"canonicalUrl": "https://www.theguardian.com/culture/2026/jul/17/fixture-culture",
+			"elementKey": "https://www.theguardian.com/culture/2026/jul/17/fixture-culture",
+			"headline": "Guardian culture fixture",
+			"kind": "story",
+			"position": { "height": 220, "left": 720, "pageOrder": 2, "top": 160, "viewportDepth": 0.18, "width": 700 },
+			"prominence": "standard",
+			"selectorHint": "h3",
+			"textFingerprint": "guardian culture fixture"
+		}
+	],
+	"structureHash": "guardian-fixture-structure",
+	"warnings": []
+}

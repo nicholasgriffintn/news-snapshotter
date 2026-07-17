@@ -37,9 +37,11 @@ export type SiteDefinition = {
 	visibility?: "admin" | "public";
 };
 
+export type ExtractorName = "bbc-front-page" | "generic-baseline" | "guardian-front-page";
+
 export type SiteAnalysisConfig = {
 	device: "desktop";
-	extractor: "bbc-front-page";
+	extractor: ExtractorName;
 	minimumElements: number;
 	version: number;
 };

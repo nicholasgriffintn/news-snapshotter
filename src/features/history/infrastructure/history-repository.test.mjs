@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
 import { ingestExtraction } from "./history-repository.ts";
-import { SQLiteD1 } from "../../../testing/sqlite-d1.mjs";
+import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { historyExtraction, historyStory } from "../testing/extraction-fixture.mjs";
 
 function rows(database, sql) {
@@ -15,11 +13,7 @@ function rows(database, sql) {
 }
 
 test("late and repeated ingestion converges on the two true adjacent edges", async () => {
-	const sqlite = new DatabaseSync(":memory:");
-	sqlite.exec(
-		await readFile(new URL("../../../../migrations/0001_history.sql", import.meta.url), "utf8"),
-	);
-	const database = new SQLiteD1(sqlite);
+	const { database, sqlite } = await createHistoryTestDatabase();
 	const captureA = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z");
 	const captureB = historyExtraction("capture-b", "2026-07-17T10:00:00.000Z", {
 		elements: [

@@ -5,20 +5,19 @@ import {
 	fetchCaptureProviders,
 	fetchCatalogue,
 } from "../../platform/api-client.ts";
-import type {
-	CaptureProviderName,
-	CatalogueSite,
-} from "../../core/types.ts";
+import type { CaptureProviderName, CatalogueSite } from "../../core/types.ts";
 import { BotCheckTool } from "./BotCheckTool";
 import { CaptureTool } from "./CaptureTool";
 import { FailureLog } from "./FailureLog";
+import { HistoryOperationsTool } from "./HistoryOperationsTool.tsx";
 
-type AdminView = "capture" | "diagnostics" | "failures";
+type AdminView = "capture" | "diagnostics" | "failures" | "history";
 
 const VIEWS: Array<{ label: string; value: AdminView }> = [
 	{ label: "Run captures", value: "capture" },
 	{ label: "Browser diagnostic", value: "diagnostics" },
 	{ label: "Failure log", value: "failures" },
+	{ label: "History operations", value: "history" },
 ];
 
 export function AdminPage() {
@@ -31,11 +30,7 @@ export function AdminPage() {
 	const [setupStatus, setSetupStatus] = useState("Loading capture configuration…");
 
 	useEffect(() => {
-		Promise.all([
-			fetchCatalogue(),
-			fetchCaptureProfiles(),
-			fetchCaptureProviders(),
-		])
+		Promise.all([fetchCatalogue(), fetchCaptureProfiles(), fetchCaptureProviders()])
 			.then(([sites, captureProfiles, captureProviders]) => {
 				setCatalogue(sites);
 				setProfiles(captureProfiles);
@@ -96,14 +91,11 @@ export function AdminPage() {
 			) : null}
 			<div className="admin-workspace">
 				{view === "capture" ? (
-					<CaptureTool
-						apiKey={apiKey}
-						catalogue={catalogue}
-						providers={providers}
-					/>
+					<CaptureTool apiKey={apiKey} catalogue={catalogue} providers={providers} />
 				) : null}
 				{view === "diagnostics" ? <BotCheckTool apiKey={apiKey} profiles={profiles} /> : null}
 				{view === "failures" ? <FailureLog apiKey={apiKey} /> : null}
+				{view === "history" ? <HistoryOperationsTool apiKey={apiKey} /> : null}
 			</div>
 		</section>
 	);

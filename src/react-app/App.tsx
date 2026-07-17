@@ -1,25 +1,19 @@
 import { useState } from "react";
 
+import { resolveAppPage } from "./core/app-route.ts";
 import { AdminPage } from "./features/admin/AdminPage";
 import { SnapshotGallery } from "./features/archive/SnapshotGallery";
 import { ContactModal } from "./features/contact/ContactModal";
 import { Disclosure, DisclosureModal } from "./features/legal/Disclosure";
 import { LegalPage } from "./features/legal/LegalPage";
-
-type Page = "admin" | "archive" | "privacy" | "terms";
-
-function currentPage(): Page {
-	const path = window.location.pathname;
-	if (path === "/admin" || path.startsWith("/admin/")) return "admin";
-	if (path === "/privacy" || path.startsWith("/privacy/")) return "privacy";
-	if (path === "/terms" || path.startsWith("/terms/")) return "terms";
-	return "archive";
-}
+import { HistoryRouter } from "./features/history/HistoryRouter";
 
 export default function App() {
 	const [contactOpen, setContactOpen] = useState(false);
 	const [disclosureOpen, setDisclosureOpen] = useState(false);
-	const page = currentPage();
+	const page = resolveAppPage(window.location.pathname);
+	const historySite =
+		page === "history" ? decodeURIComponent(window.location.pathname.split("/")[2] ?? "") : "";
 	const isApplicationPage = page === "admin" || page === "archive";
 
 	return (
@@ -76,6 +70,7 @@ export default function App() {
 					<Disclosure onContact={() => setContactOpen(true)} />
 				</>
 			) : null}
+			{page === "history" ? <HistoryRouter site={historySite} /> : null}
 			{page === "privacy" ? (
 				<LegalPage kind="privacy" onContact={() => setContactOpen(true)} />
 			) : null}

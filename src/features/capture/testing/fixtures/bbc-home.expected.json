@@ -1,0 +1,44 @@
+{
+	"capture": {
+		"captureId": "bbc-home:desktop:2026-07-17T09:00:00.000Z",
+		"capturedAt": "2026-07-17T09:00:05.000Z",
+		"device": "desktop",
+		"extractor": { "name": "bbc-front-page", "version": 2 },
+		"htmlKey": "fixture.rendered.html.gz",
+		"pageHeight": 1600,
+		"pageWidth": 1440,
+		"profile": "bbc",
+		"sanitisationVersion": 1,
+		"schemaVersion": 1,
+		"screenshotKey": "fixture.webp",
+		"site": "bbc-home",
+		"sourceUrl": "https://www.bbc.co.uk/",
+		"triggeredAt": "2026-07-17T09:00:00.000Z"
+	},
+	"contentHash": "bbc-fixture-content",
+	"elements": [
+		{
+			"canonicalUrl": "https://www.bbc.co.uk/news/articles/bbc-lead",
+			"elementKey": "https://www.bbc.co.uk/news/articles/bbc-lead",
+			"headline": "Lead BBC fixture headline",
+			"kind": "story",
+			"position": { "height": 320, "left": 0, "pageOrder": 1, "top": 120, "viewportDepth": 0.13, "width": 820 },
+			"prominence": "lead",
+			"selectorHint": "h1",
+			"summary": "Lead BBC fixture summary.",
+			"textFingerprint": "lead bbc fixture headline"
+		},
+		{
+			"canonicalUrl": "https://www.bbc.co.uk/news/articles/bbc-second",
+			"elementKey": "https://www.bbc.co.uk/news/articles/bbc-second",
+			"headline": "Second BBC fixture headline",
+			"kind": "story",
+			"position": { "height": 180, "left": 840, "pageOrder": 2, "top": 120, "viewportDepth": 0.13, "width": 560 },
+			"prominence": "major",
+			"selectorHint": "h2",
+			"textFingerprint": "second bbc fixture headline"
+		}
+	],
+	"structureHash": "bbc-fixture-structure",
+	"warnings": []
+}

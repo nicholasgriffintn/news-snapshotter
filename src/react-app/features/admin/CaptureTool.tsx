@@ -2,11 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { startSnapshotWorkflow } from "../../platform/api-client.ts";
 import { displayName } from "../../shared/format.ts";
-import type {
-	CapturePriority,
-	CaptureProviderName,
-	CatalogueSite,
-} from "../../core/types.ts";
+import type { CapturePriority, CaptureProviderName, CatalogueSite } from "../../core/types.ts";
 
 type Scope = "priority" | "brand" | "site";
 
@@ -25,11 +21,7 @@ type CaptureToolProps = {
 	providers: CaptureProviderName[];
 };
 
-export function CaptureTool({
-	apiKey,
-	catalogue,
-	providers,
-}: CaptureToolProps) {
+export function CaptureTool({ apiKey, catalogue, providers }: CaptureToolProps) {
 	const [scope, setScope] = useState<Scope>("priority");
 	const [brand, setBrand] = useState("");
 	const [name, setName] = useState("");

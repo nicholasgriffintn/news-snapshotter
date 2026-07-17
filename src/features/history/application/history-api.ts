@@ -4,9 +4,11 @@ import {
 	getStory,
 	listCaptures,
 	listChanges,
+	listHistorySites,
 	type ChangeListOptions,
 	type HistoryListOptions,
 } from "../infrastructure/history-repository.ts";
+import { listExtractionFailures } from "../infrastructure/history-admin-repository.ts";
 
 const CHANGE_TYPES = new Set<string>([
 	"appeared",
@@ -85,6 +87,18 @@ function changeListOptions(url: URL): ChangeListOptions {
 	};
 }
 
+function publicFailureOptions(url: URL) {
+	const cursorValue = url.searchParams.get("cursor");
+	let cursor: { failedAt: string; failureId: number } | undefined;
+	if (cursorValue) {
+		const decoded = decodeCursor(cursorValue);
+		const failureId = Number(decoded.failureId);
+		if (!decoded.failedAt || !Number.isInteger(failureId)) throw new Error("cursor is invalid");
+		cursor = { failedAt: decoded.failedAt, failureId };
+	}
+	return { cursor, limit: limit(url) };
+}
+
 function publicCapture(document: NonNullable<Awaited<ReturnType<typeof getCapture>>>) {
 	const {
 		htmlKey: _privateHtmlKey,
@@ -107,7 +121,10 @@ export async function handleHistoryRequest(
 ): Promise<Response | null> {
 	if (request.method !== "GET") return null;
 	const url = new URL(request.url);
-	const match = /^\/api\/history\/([^/]+)\/(captures|changes|stories)(?:\/([^/]+))?$/.exec(
+	if (url.pathname === "/api/history/sites") {
+		return Response.json({ sites: await listHistorySites(database) });
+	}
+	const match = /^\/api\/history\/([^/]+)\/(captures|changes|failures|stories)(?:\/([^/]+))?$/.exec(
 		url.pathname,
 	);
 	if (!match) return null;
@@ -141,6 +158,28 @@ export async function handleHistoryRequest(
 		return Response.json({
 			changes: result.changes,
 			cursor: result.nextCursor ? encodeCursor(result.nextCursor) : undefined,
+		});
+	}
+	if (resource === "failures" && !identifier) {
+		const result = await listExtractionFailures(database, {
+			...publicFailureOptions(url),
+			site,
+		});
+		return Response.json({
+			cursor: result.nextCursor
+				? encodeCursor({
+						failedAt: result.nextCursor.failedAt,
+						failureId: String(result.nextCursor.failureId),
+					})
+				: undefined,
+			failures: result.failures.map((failure) => {
+				return {
+					captureId: failure.captureId,
+					device: failure.device,
+					failedAt: failure.failedAt,
+					stage: failure.stage,
+				};
+			}),
 		});
 	}
 

@@ -1,27 +1,17 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
 
-import { SQLiteD1 } from "../../../testing/sqlite-d1.mjs";
+import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { ingestExtraction } from "../infrastructure/history-repository.ts";
 import { historyExtraction, historyStory } from "../testing/extraction-fixture.mjs";
 import { handleHistoryRequest } from "./history-api.ts";
-
-async function historyDatabase() {
-	const sqlite = new DatabaseSync(":memory:");
-	sqlite.exec(
-		await readFile(new URL("../../../../migrations/0001_history.sql", import.meta.url), "utf8"),
-	);
-	return { database: new SQLiteD1(sqlite), sqlite };
-}
 
 function request(path) {
 	return new Request(`https://archive.example${path}`);
 }
 
 test("serves bounded capture history without private archive keys", async () => {
-	const { database, sqlite } = await historyDatabase();
+	const { database, sqlite } = await createHistoryTestDatabase();
 	await ingestExtraction(
 		database,
 		"capture-a.json.gz",
@@ -32,6 +22,10 @@ test("serves bounded capture history without private archive keys", async () => 
 		"capture-b.json.gz",
 		historyExtraction("capture-b", "2026-07-17T10:00:00.000Z"),
 	);
+	const sitesResponse = await handleHistoryRequest(request("/api/history/sites"), database);
+	const sitesBody = await sitesResponse.json();
+	assert.equal(sitesBody.sites[0].site, "bbc-home");
+	assert.equal(sitesBody.sites[0].captureCount, 2);
 
 	const firstPage = await handleHistoryRequest(
 		request("/api/history/bbc-home/captures?limit=1"),
@@ -68,7 +62,7 @@ test("serves bounded capture history without private archive keys", async () => 
 });
 
 test("serves story observations and filtered adjacent changes", async () => {
-	const { database, sqlite } = await historyDatabase();
+	const { database, sqlite } = await createHistoryTestDatabase();
 	const storyId = "bbc-home:https://www.bbc.co.uk/news/articles/story-one";
 	await ingestExtraction(
 		database,
@@ -108,6 +102,36 @@ test("serves story observations and filtered adjacent changes", async () => {
 	assert.equal(changesBody.changes[0].type, "headline-changed");
 	assert.equal(changesBody.changes[0].before, "Original BBC headline");
 	assert.equal(changesBody.changes[0].after, "Updated BBC headline");
+
+	sqlite
+		.prepare(
+			`INSERT INTO extraction_failures (
+				failure_key, capture_id, site, device, stage, message, failed_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		)
+		.run(
+			"public-failure",
+			"capture-failed",
+			"bbc-home",
+			"desktop",
+			"validation",
+			"Private diagnostic detail",
+			"2026-07-17T11:00:00.000Z",
+		);
+	const failuresResponse = await handleHistoryRequest(
+		request("/api/history/bbc-home/failures"),
+		database,
+	);
+	const failuresBody = await failuresResponse.json();
+	assert.deepEqual(failuresBody.failures, [
+		{
+			captureId: "capture-failed",
+			device: "desktop",
+			failedAt: "2026-07-17T11:00:00.000Z",
+			stage: "validation",
+		},
+	]);
+	assert.equal(JSON.stringify(failuresBody).includes("Private diagnostic detail"), false);
 
 	await assert.rejects(
 		handleHistoryRequest(request("/api/history/bbc-home/changes?type=unknown"), database),

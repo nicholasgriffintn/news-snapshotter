@@ -169,6 +169,7 @@ test("stores desktop analysis independently from screenshot artefacts", async (c
 		{
 			captureId: `bbc-home:desktop:${triggeredAt}`,
 			extractionKey: result.analysis.extractionKey,
+			kind: "extraction",
 			site: "bbc-home",
 		},
 	]);

@@ -61,22 +61,31 @@ export async function storeCaptureArtefacts(input: {
 		customMetadata,
 	});
 
-	if (analysis?.status === "stored" && analysis.extractionKey) {
-		let indexingStatus: NonNullable<ScreenshotResult["analysis"]>["indexingStatus"] = "not-queued";
-		if (env.HISTORY_INDEX_QUEUE) {
-			try {
-				await env.HISTORY_INDEX_QUEUE.send({
+	const indexMessage =
+		analysis?.status === "stored" && analysis.extractionKey
+			? {
 					captureId: `${site.name}:${device}:${triggeredAt}`,
 					extractionKey: analysis.extractionKey,
+					kind: "extraction" as const,
 					site: site.name,
-				});
-				indexingStatus = "pending";
-			} catch (error) {
-				console.error("Could not queue capture history indexing", {
-					captureId: `${site.name}:${device}:${triggeredAt}`,
-					error: errorMessage(error),
-				});
-			}
+				}
+			: analysis?.status === "failed" && analysis.failureKey
+				? {
+						failureKey: analysis.failureKey,
+						kind: "failure" as const,
+					}
+				: undefined;
+
+	if (analysis && indexMessage) {
+		let indexingStatus: NonNullable<ScreenshotResult["analysis"]>["indexingStatus"] = "not-queued";
+		try {
+			await env.HISTORY_INDEX_QUEUE.send(indexMessage);
+			indexingStatus = "pending";
+		} catch (error) {
+			console.error("Could not queue capture history indexing", {
+				captureId: `${site.name}:${device}:${triggeredAt}`,
+				error: errorMessage(error),
+			});
 		}
 		analysis = { ...analysis, indexingStatus };
 	}
