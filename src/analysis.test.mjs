@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { analysisKeys, canonicaliseUrl, collectAndStoreAnalysis } from './analysis.ts';
+import {
+	analysisKeys,
+	canonicaliseUrl,
+	collectAndStoreAnalysis,
+	normaliseStoryElements,
+} from './analysis.ts';
 
 const site = {
 	analysis: {
@@ -16,6 +21,27 @@ const site = {
 	url: 'https://www.bbc.co.uk/',
 };
 const triggeredAt = '2026-07-17T09:00:01.130Z';
+
+function extractedStory(overrides = {}) {
+	return {
+		canonicalUrl: 'https://bbc.co.uk/a?utm_source=x',
+		elementKey: 'a',
+		headline: 'First headline',
+		kind: 'story',
+		position: {
+			height: 40,
+			left: 0,
+			pageOrder: 1,
+			top: 100,
+			viewportDepth: 0.1,
+			width: 300,
+		},
+		prominence: 'standard',
+		selectorHint: 'h3',
+		textFingerprint: 'first headline',
+		...overrides,
+	};
+}
 
 test('builds deterministic private artefact keys', () => {
 	const prefix = [
@@ -41,28 +67,63 @@ test('canonicalises story URLs for stable identity', () => {
 	);
 });
 
+test('keeps visible headline links and rejects navigation or hidden card actions', () => {
+	const base = {
+		canonicalUrl: 'https://www.bbc.co.uk/news/articles/story',
+		elementKey: 'story',
+		headline: 'A real BBC story headline',
+		kind: 'story',
+		position: {
+			height: 40,
+			left: 0,
+			pageOrder: 8,
+			top: 100,
+			viewportDepth: 0.1,
+			width: 300,
+		},
+		prominence: 'standard',
+		selectorHint: 'h3',
+		summary: 'A real BBC story headline',
+		textFingerprint: 'a real bbc story headline',
+	};
+	const stories = normaliseStoryElements([
+		base,
+		{
+			...base,
+			elementKey: 'navigation',
+			headline: 'Accessibility Help',
+			selectorHint: 'a',
+		},
+		{
+			...base,
+			elementKey: 'hidden-action',
+			position: {
+				...base.position,
+				height: 0,
+				width: 0,
+			},
+		},
+	]);
+
+	assert.equal(stories.length, 1);
+	assert.equal(stories[0].elementKey, 'story');
+	assert.equal(stories[0].position.pageOrder, 1);
+	assert.equal(stories[0].summary, undefined);
+});
+
 test('stores compressed HTML and extraction artefacts', async () => {
 	const writes = [];
 	const page = {
 		evaluate: async () => {
 			return JSON.stringify({
 				elements: [
-					{
-						canonicalUrl: 'https://bbc.co.uk/a?utm_source=x',
-						elementKey: 'a',
-						headline: 'First headline',
-						kind: 'story',
-						position: {},
-						textFingerprint: 'first headline',
-					},
-					{
+					extractedStory(),
+					extractedStory({
 						canonicalUrl: 'https://bbc.co.uk/b',
 						elementKey: 'b',
 						headline: 'Second headline',
-						kind: 'story',
-						position: {},
 						textFingerprint: 'second headline',
-					},
+					}),
 				],
 				html: '<!doctype html><html><body>Archive</body></html>',
 				pageHeight: 2_000,
