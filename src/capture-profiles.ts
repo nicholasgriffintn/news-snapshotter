@@ -106,6 +106,18 @@ const GENERIC_CONSENT_SELECTORS = [
 	'[id*="smartbanner"]',
 ];
 
+const METRO_CONSENT_SELECTOR = [
+	'#qc-cmp2-ui button[mode="primary"]',
+	".fc-consent-root .fc-cta-consent",
+	"#didomi-notice-agree-button",
+].join(", ");
+
+const METRO_CONSENT_HIDE_SELECTORS = [
+	"#didomi-popup",
+	"#qc-cmp2-container",
+	".qc-cmp-cleanslate",
+];
+
 const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 	desktop: {
 		clickActions: [
@@ -181,6 +193,8 @@ const PROFILES: Record<string, CaptureProfile> = {
 		deviceConfig: {
 			desktop: {
 				cookies: [
+					{ name: "ckns_policy", value: "111", url: "https://www.bbc.com" },
+					{ name: "ckns_explicit", value: "1", url: "https://www.bbc.com" },
 					{ name: "ckns_policy", value: "111", url: "https://www.bbc.co.uk" },
 					{ name: "ckns_explicit", value: "1", url: "https://www.bbc.co.uk" },
 				],
@@ -192,6 +206,8 @@ const PROFILES: Record<string, CaptureProfile> = {
 			},
 			mobile: {
 				cookies: [
+					{ name: "ckns_policy", value: "111", url: "https://www.bbc.com" },
+					{ name: "ckns_explicit", value: "1", url: "https://www.bbc.com" },
 					{ name: "ckns_policy", value: "111", url: "https://www.bbc.co.uk" },
 					{ name: "ckns_explicit", value: "1", url: "https://www.bbc.co.uk" },
 				],
@@ -366,21 +382,45 @@ const PROFILES: Record<string, CaptureProfile> = {
 	newsquest: {
 		deviceConfig: {
 			desktop: {
+				clickActions: [
+					{
+						frameUrlIncludes: ["consent", "privacy-mgmt.com"],
+						selector: 'button[title="Reject All"], button[title="Accept All"]',
+						timeoutMs: 5_000,
+					},
+				],
 				hideSelectors: [
+					'div[id^="sp_message_container_"]',
+					'iframe[id^="sp_message_iframe_"]',
 					"#premium_mpu_container",
 					"#standard_mpu_1_container",
 					"#standard_mpu_2_container",
 					"#high_vis_container",
 					"#module-content .block-article-shoutout",
 				],
+				styles: [
+					"html, body { height: auto !important; max-height: none !important; overflow-y: auto !important; }",
+				],
 			},
 			mobile: {
+				clickActions: [
+					{
+						frameUrlIncludes: ["consent", "privacy-mgmt.com"],
+						selector: 'button[title="Reject All"], button[title="Accept All"]',
+						timeoutMs: 5_000,
+					},
+				],
 				hideSelectors: [
+					'div[id^="sp_message_container_"]',
+					'iframe[id^="sp_message_iframe_"]',
 					"#premium_mpu_container",
 					"#standard_mpu_1_container",
 					"#standard_mpu_2_container",
 					"#high_vis_container",
 					"#module-content .block-article-shoutout",
+				],
+				styles: [
+					"html, body { height: auto !important; max-height: none !important; overflow-y: auto !important; }",
 				],
 			},
 		},
@@ -397,6 +437,28 @@ const PROFILES: Record<string, CaptureProfile> = {
 			},
 		},
 	},
+	metro: {
+		deviceConfig: {
+			desktop: {
+				clickActions: [
+					{
+						selector: METRO_CONSENT_SELECTOR,
+						timeoutMs: 5_000,
+					},
+				],
+				hideSelectors: METRO_CONSENT_HIDE_SELECTORS,
+			},
+			mobile: {
+				clickActions: [
+					{
+						selector: METRO_CONSENT_SELECTOR,
+						timeoutMs: 5_000,
+					},
+				],
+				hideSelectors: METRO_CONSENT_HIDE_SELECTORS,
+			},
+		},
+	},
 	stv: {
 		deviceConfig: {
 			desktop: { hideSelectors: ["#cassie-widget"] },
@@ -405,8 +467,42 @@ const PROFILES: Record<string, CaptureProfile> = {
 	},
 	dailymail: {
 		deviceConfig: {
-			desktop: { hideSelectors: [".billboard-container"] },
-			mobile: { hideSelectors: [".billboard-container"] },
+			desktop: {
+				clickActions: [
+					{
+						frameUrlIncludes: ["cmp.dmgmediaprivacy.co.uk"],
+						selector: [
+							'button[aria-label="Accept all"]',
+							'button[title="Accept all"]',
+							'button[data-testid="accept-all"]',
+						].join(", "),
+						timeoutMs: 5_000,
+					},
+				],
+				hideSelectors: [
+					".billboard-container",
+					'[data-project="mol-fe-cmp"]',
+					'iframe[src^="https://cmp.dmgmediaprivacy.co.uk/"]',
+				],
+			},
+			mobile: {
+				clickActions: [
+					{
+						frameUrlIncludes: ["cmp.dmgmediaprivacy.co.uk"],
+						selector: [
+							'button[aria-label="Accept all"]',
+							'button[title="Accept all"]',
+							'button[data-testid="accept-all"]',
+						].join(", "),
+						timeoutMs: 5_000,
+					},
+				],
+				hideSelectors: [
+					".billboard-container",
+					'[data-project="mol-fe-cmp"]',
+					'iframe[src^="https://cmp.dmgmediaprivacy.co.uk/"]',
+				],
+			},
 		},
 	},
 	belfasttelegraph: {

@@ -59,9 +59,33 @@ test("merges brand overrides without dropping default protection", () => {
 });
 
 test("carries publisher cleaning rules into both device profiles", () => {
+	const bbc = resolveCaptureProfile(site({ brand: "bbc" }));
+	const dailymail = resolveCaptureProfile(site({ brand: "dailymail" }));
+	const newsquest = resolveCaptureProfile(site({ brand: "newsquest" }));
 	const reach = resolveCaptureProfile(site({ brand: "reach" }));
 	const sky = resolveCaptureProfile(site({ brand: "sky" }));
 	const times = resolveCaptureProfile(site({ brand: "times" }));
+	const metro = resolveCaptureProfile(site({ brand: "metro" }));
+	assert.ok(
+		bbc.deviceConfig.desktop.cookies.some((cookie) => {
+			return cookie.name === "ckns_policy" && cookie.url === "https://www.bbc.com";
+		}),
+	);
+	assert.ok(
+		dailymail.deviceConfig.desktop.clickActions.some((action) => {
+			return action.frameUrlIncludes?.includes("cmp.dmgmediaprivacy.co.uk");
+		}),
+	);
+	assert.ok(
+		newsquest.deviceConfig.desktop.clickActions.some((action) => {
+			return action.frameUrlIncludes?.includes("privacy-mgmt.com");
+		}),
+	);
+	assert.ok(
+		newsquest.deviceConfig.mobile.styles.some((style) => {
+			return style.includes("overflow-y: auto !important");
+		}),
+	);
 
 	assert.ok(reach.deviceConfig.desktop.hideSelectors.includes("#qc-cmp2-container"));
 	assert.ok(reach.deviceConfig.mobile.hideSelectors.includes("#div-gpt-ad-top-slot"));
@@ -75,6 +99,14 @@ test("carries publisher cleaning rules into both device profiles", () => {
 		sky.deviceConfig.mobile.styles.includes(".ui-news-header-body { height: 50px !important; }"),
 	);
 	assert.ok(times.deviceConfig.desktop.hideSelectors.includes('iframe[id^="sp_message_iframe_"]'));
+	assert.ok(
+		metro.deviceConfig.desktop.clickActions.some((action) => {
+			return action.selector.includes("#qc-cmp2-ui") &&
+				action.selector.includes(".fc-cta-consent") &&
+				action.selector.includes("#didomi-notice-agree-button");
+		}),
+	);
+	assert.ok(metro.deviceConfig.mobile.hideSelectors.includes("#qc-cmp2-container"));
 });
 
 test("falls back to defaults for an unknown profile", () => {
