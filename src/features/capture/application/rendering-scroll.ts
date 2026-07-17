@@ -66,10 +66,11 @@ async function measure(page: Page): Promise<ScrollState> {
 				browser.__snapshotterScrollTargetResolved = true;
 			}
 			const target = browser.__snapshotterScrollTarget;
+			const y = target?.scrollTop ?? browser.scrollY;
 			return {
 				height: target?.scrollHeight ?? documentScroller.scrollHeight,
 				viewportHeight: target?.clientHeight ?? browser.innerHeight,
-				y: target?.scrollTop ?? browser.scrollY,
+				y,
 			};
 		},
 		{ action: "measure" },
@@ -115,7 +116,11 @@ export async function progressivelyRenderPage(
 			config.viewportRatio.min +
 			(config.viewportRatio.max - config.viewportRatio.min) * random.value;
 		const bottom = Math.max(0, previous.height - previous.viewportHeight);
-		await move(page, Math.min(bottom, previous.y + previous.viewportHeight * ratio), "smooth");
+		await move(
+			page,
+			Math.min(bottom, previous.y + previous.viewportHeight * ratio),
+			config.behavior ?? "smooth",
+		);
 		await sleep(config.minDelayMs + Math.round(config.minDelayMs * random.value));
 
 		const current = await measure(page);

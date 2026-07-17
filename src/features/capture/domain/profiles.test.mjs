@@ -88,6 +88,8 @@ test("carries publisher cleaning rules into both device profiles", () => {
 			return action.frameUrlIncludes?.includes("cmp.dmgmediaprivacy.co.uk");
 		}),
 	);
+	assert.equal(guardian.deviceConfig.desktop.scroll.behavior, "auto");
+	assert.equal(guardian.deviceConfig.mobile.scroll.behavior, "auto");
 	for (const device of ["desktop", "mobile"]) {
 		assert.ok(
 			guardian.deviceConfig[device].clickActions.some((action) => {

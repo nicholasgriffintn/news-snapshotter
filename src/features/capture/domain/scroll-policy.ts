@@ -1,4 +1,5 @@
 export type ProgressiveScrollConfig = {
+	behavior?: "auto" | "smooth";
 	maxDurationMs: number;
 	maxSteps: number;
 	minDelayMs: number;

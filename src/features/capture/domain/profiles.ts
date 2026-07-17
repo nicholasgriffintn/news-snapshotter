@@ -243,6 +243,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 					waitAfterMs: 1_000,
 				},
 			],
+			scroll: { ...DEFAULT_PROGRESSIVE_SCROLL, behavior: "auto" },
 		}),
 	},
 	sky: {
