@@ -1,35 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { sendContactMessage } from '../lib/api';
+import { sendContactMessage } from "../lib/api";
 
 export function ContactModal({ onClose }: { onClose: () => void }) {
 	const [startedAt] = useState(() => Date.now());
-	const [name, setName] = useState('');
-	const [email, setEmail] = useState('');
-	const [reason, setReason] = useState<'general' | 'privacy' | 'rights-holder'>('rights-holder');
-	const [sourceUrl, setSourceUrl] = useState('');
-	const [message, setMessage] = useState('');
-	const [website, setWebsite] = useState('');
-	const [status, setStatus] = useState('');
+	const [name, setName] = useState("");
+	const [email, setEmail] = useState("");
+	const [reason, setReason] = useState<"general" | "privacy" | "rights-holder">("rights-holder");
+	const [sourceUrl, setSourceUrl] = useState("");
+	const [message, setMessage] = useState("");
+	const [website, setWebsite] = useState("");
+	const [status, setStatus] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === 'Escape') onClose();
+			if (event.key === "Escape") onClose();
 		}
 
-		document.body.classList.add('modal-open');
-		window.addEventListener('keydown', closeOnEscape);
+		document.body.classList.add("modal-open");
+		window.addEventListener("keydown", closeOnEscape);
 		return () => {
-			document.body.classList.remove('modal-open');
-			window.removeEventListener('keydown', closeOnEscape);
+			document.body.classList.remove("modal-open");
+			window.removeEventListener("keydown", closeOnEscape);
 		};
 	}, [onClose]);
 
 	async function submit(event: React.FormEvent) {
 		event.preventDefault();
 		setSubmitting(true);
-		setStatus('Sending…');
+		setStatus("Sending…");
 
 		try {
 			await sendContactMessage({
@@ -41,10 +41,10 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
 				startedAt,
 				website,
 			});
-			setStatus('Message sent. We will review your request promptly and respond if necessary.');
-			setMessage('');
+			setStatus("Message sent. We will review your request promptly and respond if necessary.");
+			setMessage("");
 		} catch (error) {
-			setStatus(error instanceof Error ? error.message : 'Message could not be sent.');
+			setStatus(error instanceof Error ? error.message : "Message could not be sent.");
 		} finally {
 			setSubmitting(false);
 		}
@@ -64,7 +64,12 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
 						<p className="eyebrow">Contact the archive</p>
 						<h2 id="contact-title">Send a message</h2>
 					</div>
-					<button aria-label="Close contact form" className="modal__close" onClick={onClose} type="button">
+					<button
+						aria-label="Close contact form"
+						className="modal__close"
+						onClick={onClose}
+						type="button"
+					>
 						×
 					</button>
 				</header>
@@ -140,7 +145,7 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
 					</label>
 
 					<button className="impact-button" disabled={submitting} type="submit">
-						{submitting ? 'Sending…' : 'Send message'}
+						{submitting ? "Sending…" : "Send message"}
 					</button>
 					<p aria-live="polite" className="contact-modal__status">
 						{status}

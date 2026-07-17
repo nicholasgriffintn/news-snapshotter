@@ -1,7 +1,7 @@
-import type { Env } from './env';
-import { resolveCaptureProfile } from './capture-profiles.ts';
-import { captureDevice } from './browser-rendering.ts';
-import type { Device, ScreenshotResult, SiteDefinition } from './types';
+import type { Env } from "./env";
+import { resolveCaptureProfile } from "./capture-profiles.ts";
+import { captureDevice } from "./browser-rendering.ts";
+import type { Device, ScreenshotResult, SiteDefinition } from "./types";
 
 export type SnapshotWorkflowParams = {
 	sites: SiteDefinition[];
@@ -15,7 +15,7 @@ type WorkflowStepLike = {
 };
 
 type CaptureDevice = (
-	env: Pick<Env, 'ARCHIVE_DATA' | 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
+	env: Pick<Env, "ARCHIVE_DATA" | "BROWSER" | "CAPTURE_FAILURES" | "SCREENSHOTS">,
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,
@@ -31,7 +31,7 @@ export async function runSnapshotWorkflow(
 	const results: ScreenshotResult[] = [];
 	if (params.startDelaySeconds && step.sleep) {
 		const duration: `${number} seconds` = `${params.startDelaySeconds} seconds`;
-		await step.sleep('stagger browser runner', duration);
+		await step.sleep("stagger browser runner", duration);
 	}
 
 	for (const site of sites) {
@@ -45,9 +45,9 @@ export async function runSnapshotWorkflow(
 	}
 
 	return {
-		failed: results.filter((result) => result.status === 'error').length,
+		failed: results.filter((result) => result.status === "error").length,
 		results,
-		successful: results.filter((result) => result.status === 'success').length,
+		successful: results.filter((result) => result.status === "success").length,
 		totalCaptures: results.length,
 		totalSites: sites.length,
 		triggeredAt,

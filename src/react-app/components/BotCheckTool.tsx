@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { startBotCheck, type BotCheckResult } from '../lib/api';
-import { displayName } from '../lib/format';
-import { groupSnapshotVariants } from '../lib/snapshot-groups';
-import type { Snapshot, SnapshotGroup } from '../types';
-import { SnapshotCard } from './SnapshotCard';
-import { SnapshotModal } from './SnapshotModal';
+import { startBotCheck, type BotCheckResult } from "../lib/api";
+import { displayName } from "../lib/format";
+import { groupSnapshotVariants } from "../lib/snapshot-groups";
+import type { Snapshot, SnapshotGroup } from "../types";
+import { SnapshotCard } from "./SnapshotCard";
+import { SnapshotModal } from "./SnapshotModal";
 
 function botCheckSnapshot(
 	result: BotCheckResult,
-	capture: BotCheckResult['results'][number],
+	capture: BotCheckResult["results"][number],
 ): Snapshot | undefined {
 	if (
 		!capture.capturedAt ||
@@ -22,9 +22,9 @@ function botCheckSnapshot(
 	}
 
 	return {
-		brand: 'amiabot',
+		brand: "amiabot",
 		capturedAt: capture.capturedAt,
-		category: 'news',
+		category: "news",
 		device: capture.device,
 		fullImageUrl: capture.fullImageUrl,
 		key: capture.key,
@@ -36,28 +36,28 @@ function botCheckSnapshot(
 }
 
 export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: string[] }) {
-	const [profile, setProfile] = useState('default');
+	const [profile, setProfile] = useState("default");
 	const [result, setResult] = useState<BotCheckResult>();
 	const [selected, setSelected] = useState<SnapshotGroup>();
-	const [status, setStatus] = useState('');
+	const [status, setStatus] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
 	useEffect(() => {
-		setProfile((current) => (profiles.includes(current) ? current : (profiles[0] ?? 'default')));
+		setProfile((current) => (profiles.includes(current) ? current : (profiles[0] ?? "default")));
 	}, [profiles]);
 
 	async function submit(event: React.FormEvent) {
 		event.preventDefault();
 		setSubmitting(true);
 		setResult(undefined);
-		setStatus('Running bot detection capture…');
+		setStatus("Running bot detection capture…");
 
 		try {
 			const nextResult = await startBotCheck(apiKey, profile);
 			setResult(nextResult);
-			setStatus('Bot detection capture finished.');
+			setStatus("Bot detection capture finished.");
 		} catch (reason) {
-			setStatus(reason instanceof Error ? reason.message : 'Could not run bot detection capture.');
+			setStatus(reason instanceof Error ? reason.message : "Could not run bot detection capture.");
 		} finally {
 			setSubmitting(false);
 		}
@@ -65,12 +65,12 @@ export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: s
 
 	const captures = result
 		? result.results.flatMap((capture) => {
-			const snapshot = botCheckSnapshot(result, capture);
-			return snapshot ? [snapshot] : [];
-		})
+				const snapshot = botCheckSnapshot(result, capture);
+				return snapshot ? [snapshot] : [];
+			})
 		: [];
 	const captureGroups = groupSnapshotVariants(captures);
-	const failures = result?.results.filter((capture) => capture.status === 'error') ?? [];
+	const failures = result?.results.filter((capture) => capture.status === "error") ?? [];
 
 	return (
 		<>
@@ -99,11 +99,11 @@ export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: s
 					disabled={!apiKey || profiles.length === 0 || submitting}
 					type="submit"
 				>
-					{submitting ? 'Capturing…' : 'Run bot check'}
+					{submitting ? "Capturing…" : "Run bot check"}
 				</button>
 
 				<p aria-live="polite" className="admin-status">
-					{!apiKey && !status ? 'Enter the API key above to run this tool.' : status}
+					{!apiKey && !status ? "Enter the API key above to run this tool." : status}
 				</p>
 
 				{captureGroups.length > 0 ? (
@@ -133,9 +133,7 @@ export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: s
 				) : null}
 			</form>
 
-			{selected ? (
-				<SnapshotModal group={selected} onClose={() => setSelected(undefined)} />
-			) : null}
+			{selected ? <SnapshotModal group={selected} onClose={() => setSelected(undefined)} /> : null}
 		</>
 	);
 }

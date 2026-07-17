@@ -1,12 +1,11 @@
-import { displayName, timeLabel } from '../lib/format';
-import { preferredVariant } from '../lib/snapshot-groups';
-import type { SnapshotGroup } from '../types';
-import { DeviceIcon } from './DeviceIcon';
-
+import { displayName, timeLabel } from "../lib/format";
+import { preferredVariant } from "../lib/snapshot-groups";
+import type { SnapshotGroup } from "../types";
+import { DeviceIcon } from "./DeviceIcon";
 
 export function SnapshotCard({ group, onSelect }: { group: SnapshotGroup; onSelect: () => void }) {
 	const preview = preferredVariant(group);
-	const devices = (['desktop', 'mobile'] as const).filter((device) => group.variants[device]);
+	const devices = (["desktop", "mobile"] as const).filter((device) => group.variants[device]);
 
 	return (
 		<button className="snapshot-card" onClick={onSelect} type="button">

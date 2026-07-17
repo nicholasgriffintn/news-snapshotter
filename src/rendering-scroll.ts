@@ -1,4 +1,4 @@
-import type { Page } from '@cloudflare/puppeteer';
+import type { Page } from "@cloudflare/puppeteer";
 
 export type ProgressiveScrollConfig = {
 	maxDurationMs: number;
@@ -14,7 +14,7 @@ type ScrollState = {
 	y: number;
 };
 
-type ScrollMode = 'auto' | 'smooth';
+type ScrollMode = "auto" | "smooth";
 
 type ScrollRuntime = {
 	now?: () => number;
@@ -56,12 +56,14 @@ async function measure(page: Page): Promise<ScrollState> {
 				__snapshotterScrollTargetResolved?: boolean;
 				__snapshotterScrollTarget?: BrowserElement;
 			};
-			const documentScroller = browser.document.scrollingElement ?? browser.document.documentElement;
+			const documentScroller =
+				browser.document.scrollingElement ?? browser.document.documentElement;
 			if (!browser.__snapshotterScrollTargetResolved) {
 				const documentScrollable =
-					documentScroller.scrollHeight - documentScroller.clientHeight >= browser.innerHeight * 0.5;
+					documentScroller.scrollHeight - documentScroller.clientHeight >=
+					browser.innerHeight * 0.5;
 				if (!documentScrollable) {
-					browser.__snapshotterScrollTarget = Array.from(browser.document.querySelectorAll('*'))
+					browser.__snapshotterScrollTarget = Array.from(browser.document.querySelectorAll("*"))
 						.filter((element) => {
 							const styles = browser.getComputedStyle(element);
 							return (
@@ -70,7 +72,10 @@ async function measure(page: Page): Promise<ScrollState> {
 								element.clientHeight >= browser.innerHeight * 0.5
 							);
 						})
-						.sort((left, right) => right.clientWidth * right.clientHeight - left.clientWidth * left.clientHeight)[0];
+						.sort(
+							(left, right) =>
+								right.clientWidth * right.clientHeight - left.clientWidth * left.clientHeight,
+						)[0];
 				}
 				browser.__snapshotterScrollTargetResolved = true;
 			}
@@ -81,7 +86,7 @@ async function measure(page: Page): Promise<ScrollState> {
 				y: target?.scrollTop ?? browser.scrollY,
 			};
 		},
-		{ action: 'measure' },
+		{ action: "measure" },
 	);
 }
 
@@ -96,7 +101,7 @@ async function move(page: Page, top: number, behavior: ScrollMode): Promise<void
 			};
 			(browser.__snapshotterScrollTarget ?? browser).scrollTo(_command);
 		},
-		{ action: 'move', behavior, top },
+		{ action: "move", behavior, top },
 	);
 }
 
@@ -106,19 +111,25 @@ export async function progressivelyRenderPage(
 	runtime: ScrollRuntime = {},
 ): Promise<void> {
 	const now = runtime.now ?? Date.now;
-	const sleep = runtime.sleep ?? ((duration) => new Promise((resolve) => setTimeout(resolve, duration)));
+	const sleep =
+		runtime.sleep ?? ((duration) => new Promise((resolve) => setTimeout(resolve, duration)));
 	const startedAt = now();
 	let seed = runtime.seed ?? 0x51f15e;
 	let previous = await measure(page);
 	let stalledSteps = 0;
 
-	for (let step = 0; step < config.maxSteps && now() - startedAt < config.maxDurationMs; step += 1) {
+	for (
+		let step = 0;
+		step < config.maxSteps && now() - startedAt < config.maxDurationMs;
+		step += 1
+	) {
 		const random = nextRandom(seed);
 		seed = random.seed;
-		const ratio = config.viewportRatio.min +
+		const ratio =
+			config.viewportRatio.min +
 			(config.viewportRatio.max - config.viewportRatio.min) * random.value;
 		const bottom = Math.max(0, previous.height - previous.viewportHeight);
-		await move(page, Math.min(bottom, previous.y + previous.viewportHeight * ratio), 'smooth');
+		await move(page, Math.min(bottom, previous.y + previous.viewportHeight * ratio), "smooth");
 		await sleep(config.minDelayMs + Math.round(config.minDelayMs * random.value));
 
 		const current = await measure(page);
@@ -139,6 +150,6 @@ export async function progressivelyRenderPage(
 		if (stalledSteps >= 3) break;
 	}
 
-	await move(page, 0, 'auto');
+	await move(page, 0, "auto");
 	await sleep(config.settleDelayMs);
 }

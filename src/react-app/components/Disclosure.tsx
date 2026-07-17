@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 type DisclosureContentProps = {
 	onContact: () => void;
@@ -11,21 +11,25 @@ function DisclosureContent({ onContact, titleId }: DisclosureContentProps) {
 			<p className="eyebrow">About this site</p>
 			<h2 id={titleId}>Independent. Historical. Unaffiliated.</h2>
 			<p>
-				This website is an independent historical archive and is not affiliated with or endorsed by any publisher featured.
+				This website is an independent historical archive and is not affiliated with or endorsed by
+				any publisher featured.
 			</p>
 			<p>
-				All trademarks, logos and other intellectual property remain the property of their respective owners.
-				Content is displayed solely for archival, historical, research and educational purposes.
+				All trademarks, logos and other intellectual property remain the property of their
+				respective owners. Content is displayed solely for archival, historical, research and
+				educational purposes.
 			</p>
 			<p>
-				Where possible, users are encouraged to visit the original publisher for the latest version of any content.
+				Where possible, users are encouraged to visit the original publisher for the latest version
+				of any content.
 			</p>
 			<p>
-				If you are a rights holder and have questions or concerns about material appearing on this site,
-				please{' '}
+				If you are a rights holder and have questions or concerns about material appearing on this
+				site, please{" "}
 				<button className="text-button" onClick={onContact} type="button">
 					contact us
-				</button>{' '}and we will review your request promptly.
+				</button>{" "}
+				and we will review your request promptly.
 			</p>
 		</>
 	);
@@ -47,15 +51,15 @@ type DisclosureModalProps = {
 export function DisclosureModal({ onClose, onContact }: DisclosureModalProps) {
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === 'Escape') onClose();
+			if (event.key === "Escape") onClose();
 		}
 
-		document.body.classList.add('modal-open');
-		window.addEventListener('keydown', closeOnEscape);
+		document.body.classList.add("modal-open");
+		window.addEventListener("keydown", closeOnEscape);
 
 		return () => {
-			document.body.classList.remove('modal-open');
-			window.removeEventListener('keydown', closeOnEscape);
+			document.body.classList.remove("modal-open");
+			window.removeEventListener("keydown", closeOnEscape);
 		};
 	}, [onClose]);
 

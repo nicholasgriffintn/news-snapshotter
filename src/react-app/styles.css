@@ -31,7 +31,11 @@ body {
 		linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
 		radial-gradient(circle at 78% 8%, rgba(255, 47, 120, 0.24), transparent 30rem),
 		linear-gradient(135deg, #0d1024 0%, #151326 48%, #250f18 100%);
-	background-size: 42px 42px, 42px 42px, auto, auto;
+	background-size:
+		42px 42px,
+		42px 42px,
+		auto,
+		auto;
 	scrollbar-color: var(--cyan) #11142e;
 }
 
@@ -202,7 +206,9 @@ select:focus-visible {
 	border: 0;
 	box-shadow: 5px 5px 0 var(--pink);
 	cursor: pointer;
-	transition: box-shadow 120ms ease, transform 120ms ease;
+	transition:
+		box-shadow 120ms ease,
+		transform 120ms ease;
 }
 
 .hero__disclosure-action:hover {
@@ -291,7 +297,7 @@ select:focus-visible {
 
 .date-filter__popup > button:hover,
 .date-filter__popup > button:focus-visible,
-.date-filter__popup > button[aria-pressed='true'] {
+.date-filter__popup > button[aria-pressed="true"] {
 	color: var(--ink);
 	background: var(--yellow);
 }
@@ -451,7 +457,10 @@ select:focus-visible {
 	border: 2px solid rgba(37, 255, 230, 0.72);
 	box-shadow: 7px 7px 0 rgba(255, 47, 120, 0.85);
 	cursor: pointer;
-	transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+	transition:
+		transform 180ms ease,
+		box-shadow 180ms ease,
+		border-color 180ms ease;
 }
 
 .snapshot-card:hover {
@@ -711,7 +720,7 @@ select:focus-visible {
 }
 
 .modal__variants button:hover,
-.modal__variants button[aria-selected='true'] {
+.modal__variants button[aria-selected="true"] {
 	color: var(--ink);
 	background: var(--cyan);
 	border-color: var(--cyan);
@@ -780,7 +789,7 @@ select:focus-visible {
 }
 
 .admin-tabs button:hover,
-.admin-tabs button[aria-current='page'] {
+.admin-tabs button[aria-current="page"] {
 	color: var(--ink);
 	background: var(--cyan);
 	border-color: var(--ink);
@@ -1003,7 +1012,9 @@ select:focus-visible {
 	border: 2px solid var(--ink);
 	box-shadow: 6px 6px 0 var(--pink);
 	cursor: pointer;
-	transition: transform 150ms ease, box-shadow 150ms ease;
+	transition:
+		transform 150ms ease,
+		box-shadow 150ms ease;
 }
 
 .impact-button:hover:not(:disabled) {
@@ -1289,7 +1300,6 @@ footer a {
 	.filters {
 		grid-template-columns: 1fr 1fr;
 	}
-
 
 	.search-field {
 		grid-column: 1 / -1;

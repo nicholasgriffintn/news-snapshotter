@@ -1,7 +1,7 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
+import assert from "node:assert/strict";
+import test from "node:test";
 
-import { progressivelyRenderPage } from './rendering-scroll.ts';
+import { progressivelyRenderPage } from "./rendering-scroll.ts";
 
 function fakePage(states) {
 	const behaviors = [];
@@ -9,7 +9,7 @@ function fakePage(states) {
 	let index = 0;
 	return {
 		evaluate: async (_callback, command) => {
-			if (command.action === 'measure') {
+			if (command.action === "measure") {
 				const state = states[Math.min(index, states.length - 1)];
 				index += 1;
 				return state;
@@ -31,7 +31,7 @@ const config = {
 	viewportRatio: { max: 0.85, min: 0.6 },
 };
 
-test('progressively renders expanding pages before returning to the top', async () => {
+test("progressively renders expanding pages before returning to the top", async () => {
 	const page = fakePage([
 		{ height: 2_000, viewportHeight: 1_000, y: 0 },
 		{ height: 2_000, viewportHeight: 1_000, y: 700 },
@@ -48,13 +48,13 @@ test('progressively renders expanding pages before returning to the top', async 
 	});
 
 	assert.equal(page.positions.at(-1), 0);
-	assert.equal(page.behaviors.at(-1), 'auto');
+	assert.equal(page.behaviors.at(-1), "auto");
 	assert.ok(page.positions.slice(0, -1).every((position) => position > 0));
 	assert.ok(delays.some((duration) => duration > config.minDelayMs));
 	assert.equal(delays.at(-1), config.settleDelayMs);
 });
 
-test('stops bounded rendering when scrolling cannot make progress', async () => {
+test("stops bounded rendering when scrolling cannot make progress", async () => {
 	const page = fakePage([
 		{ height: 10_000, viewportHeight: 1_000, y: 0 },
 		{ height: 10_000, viewportHeight: 1_000, y: 0 },
@@ -75,7 +75,7 @@ test('stops bounded rendering when scrolling cannot make progress', async () => 
 	assert.equal(page.positions.at(-1), 0);
 });
 
-test('continues when content appears after first reaching the bottom', async () => {
+test("continues when content appears after first reaching the bottom", async () => {
 	const page = fakePage([
 		{ height: 2_000, viewportHeight: 1_000, y: 0 },
 		{ height: 2_000, viewportHeight: 1_000, y: 1_000 },
@@ -94,7 +94,7 @@ test('continues when content appears after first reaching the bottom', async () 
 	assert.equal(page.positions.at(-1), 0);
 });
 
-test('allows lazy content a full settle delay when reaching the bottom', async () => {
+test("allows lazy content a full settle delay when reaching the bottom", async () => {
 	const page = fakePage([
 		{ height: 2_000, viewportHeight: 1_000, y: 0 },
 		{ height: 2_000, viewportHeight: 1_000, y: 1_000 },

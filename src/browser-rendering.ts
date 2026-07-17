@@ -1,17 +1,17 @@
-import puppeteer, { type Page } from '@cloudflare/puppeteer';
+import puppeteer, { type Page } from "@cloudflare/puppeteer";
 
-import { collectAndStoreAnalysis } from './analysis.ts';
+import { collectAndStoreAnalysis } from "./analysis.ts";
 import {
 	resolveCaptureProfile,
 	type ClickAction,
 	type DeviceCaptureConfig,
-} from './capture-profiles.ts';
-import { storeCaptureFailure } from './capture-failures.ts';
-import type { Env } from './env';
-import { errorMessage } from './lib/errors.ts';
-import { screenshotKey, thumbnailKey } from './lib/storage-key.ts';
-import { progressivelyRenderPage } from './rendering-scroll.ts';
-import type { Device, ScreenshotResult, SiteDefinition } from './types';
+} from "./capture-profiles.ts";
+import { storeCaptureFailure } from "./capture-failures.ts";
+import type { Env } from "./env";
+import { errorMessage } from "./lib/errors.ts";
+import { screenshotKey, thumbnailKey } from "./lib/storage-key.ts";
+import { progressivelyRenderPage } from "./rendering-scroll.ts";
+import type { Device, ScreenshotResult, SiteDefinition } from "./types";
 
 class DetectedCaptureError extends Error {
 	readonly reason: string;
@@ -81,7 +81,10 @@ async function detectFailure(
 ): Promise<void> {
 	for (const indicator of config.blockSelectors ?? []) {
 		if (await page.$(indicator.selector)) {
-			throw new DetectedCaptureError(indicator.reason, `Blocked page matched ${indicator.selector}`);
+			throw new DetectedCaptureError(
+				indicator.reason,
+				`Blocked page matched ${indicator.selector}`,
+			);
 		}
 	}
 
@@ -89,7 +92,7 @@ async function detectFailure(
 		const browser = globalThis as unknown as {
 			document: { body?: { innerText: string } };
 		};
-		return browser.document.body?.innerText.toLowerCase() ?? '';
+		return browser.document.body?.innerText.toLowerCase() ?? "";
 	});
 	for (const indicator of indicators) {
 		if (pageText.includes(indicator.text)) {
@@ -116,7 +119,7 @@ async function detectFailure(
 		textLength: number;
 	};
 	if (content.bodyHeight < 100 || (content.textLength < 20 && content.images === 0)) {
-		throw new DetectedCaptureError('blank-page', 'Page did not contain enough visible content');
+		throw new DetectedCaptureError("blank-page", "Page did not contain enough visible content");
 	}
 }
 
@@ -143,7 +146,7 @@ async function applyPageProfile(page: Page, config: DeviceCaptureConfig): Promis
 			const browser = globalThis as unknown as { navigator: object };
 			const navigatorPrototype = Object.getPrototypeOf(browser.navigator) as object | null;
 			if (navigatorPrototype) {
-				Reflect.deleteProperty(navigatorPrototype, 'webdriver');
+				Reflect.deleteProperty(navigatorPrototype, "webdriver");
 			}
 		});
 	}
@@ -152,14 +155,17 @@ async function applyPageProfile(page: Page, config: DeviceCaptureConfig): Promis
 	}
 }
 
-async function waitForCompletion(page: Page, completion: NonNullable<SiteDefinition['completion']>) {
+async function waitForCompletion(
+	page: Page,
+	completion: NonNullable<SiteDefinition["completion"]>,
+) {
 	try {
 		await page.waitForFunction(
 			(selector, textStartsWith) => {
 				const browser = globalThis as unknown as {
 					document: { querySelector: (value: string) => { textContent?: string } | null };
 				};
-				const text = browser.document.querySelector(selector)?.textContent?.trim() ?? '';
+				const text = browser.document.querySelector(selector)?.textContent?.trim() ?? "";
 				return text.startsWith(textStartsWith);
 			},
 			{ timeout: completion.timeoutMs },
@@ -168,7 +174,7 @@ async function waitForCompletion(page: Page, completion: NonNullable<SiteDefinit
 		);
 	} catch {
 		throw new DetectedCaptureError(
-			'completion-timeout',
+			"completion-timeout",
 			`Page did not complete within ${completion.timeoutMs}ms`,
 		);
 	}
@@ -179,28 +185,30 @@ async function navigateWithQuietRuntime(
 	site: SiteDefinition,
 	config: DeviceCaptureConfig,
 ) {
-	const runtime = (page as unknown as {
-		_client: () => { send: (method: string) => Promise<unknown> };
-	})._client();
+	const runtime = (
+		page as unknown as {
+			_client: () => { send: (method: string) => Promise<unknown> };
+		}
+	)._client();
 	const quietMs = site.runtimeQuietMs ?? config.runtimeQuietMs ?? 0;
 
-	await runtime.send('Runtime.disable');
+	await runtime.send("Runtime.disable");
 	try {
 		const response = await page.goto(site.url, {
-			waitUntil: 'domcontentloaded',
+			waitUntil: "domcontentloaded",
 			timeout: config.navigationTimeoutMs,
 		});
 		if (quietMs > 0) await new Promise((resolve) => setTimeout(resolve, quietMs));
 		return response;
 	} finally {
-		await runtime.send('Runtime.enable');
+		await runtime.send("Runtime.enable");
 	}
 }
 
 async function takeFullScreenshot(page: Page, config: DeviceCaptureConfig) {
-	const screenshot = config.screenshot ?? { type: 'png' as const, fullPage: true };
-	if (screenshot.type === 'png') {
-		return page.screenshot({ fullPage: screenshot.fullPage, type: 'png' });
+	const screenshot = config.screenshot ?? { type: "png" as const, fullPage: true };
+	if (screenshot.type === "png") {
+		return page.screenshot({ fullPage: screenshot.fullPage, type: "png" });
 	}
 	return page.screenshot({
 		fullPage: screenshot.fullPage,
@@ -224,18 +232,18 @@ async function expandScrollableLayout(page: Page): Promise<void> {
 			if (!element) return;
 
 			while (element) {
-				element.style.setProperty('height', 'auto', 'important');
-				element.style.setProperty('max-height', 'none', 'important');
-				element.style.setProperty('overflow-y', 'visible', 'important');
+				element.style.setProperty("height", "auto", "important");
+				element.style.setProperty("max-height", "none", "important");
+				element.style.setProperty("overflow-y", "visible", "important");
 				element = element.parentElement;
 			}
 		},
-		{ action: 'expand-scroll-layout' },
+		{ action: "expand-scroll-layout" },
 	);
 }
 
 async function capture(
-	env: Pick<Env, 'ARCHIVE_DATA' | 'BROWSER' | 'SCREENSHOTS'>,
+	env: Pick<Env, "ARCHIVE_DATA" | "BROWSER" | "SCREENSHOTS">,
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,
@@ -250,7 +258,7 @@ async function capture(
 		const response = await navigateWithQuietRuntime(page, site, config);
 
 		if (response && response.status() >= 400) {
-			throw new DetectedCaptureError('http-error', `Navigation returned HTTP ${response.status()}`);
+			throw new DetectedCaptureError("http-error", `Navigation returned HTTP ${response.status()}`);
 		}
 
 		await runClickActions(page, config.clickActions ?? []);
@@ -264,14 +272,14 @@ async function capture(
 		const hideSelectors = config.hideSelectors ?? [];
 		const profileStyles = hideSelectors
 			.map((selector) => `${selector} { display: none !important; }`)
-			.join('\n');
+			.join("\n");
 		const styles = [profileStyles, ...(config.styles ?? []), site.requestBody?.addStyleTag]
 			.filter(Boolean)
-			.join('\n');
+			.join("\n");
 		if (styles) {
 			const cleanupStyles = await page.addStyleTag({ content: styles });
 			if (cleanupStyles) {
-				await cleanupStyles.evaluate((node) => node.setAttribute('data-pashi-cleanup', ''));
+				await cleanupStyles.evaluate((node) => node.setAttribute("data-pashi-cleanup", ""));
 			}
 		}
 
@@ -296,23 +304,24 @@ async function capture(
 		await detectFailure(page, config, profile.failureIndicators);
 
 		const capturedAt = new Date().toISOString();
-		const extension = config.screenshot?.type ?? 'png';
+		const extension = config.screenshot?.type ?? "png";
 		const key = screenshotKey(site, triggeredAt, device, extension);
-		const analysis = site.analysis && site.analysis.device === device
-			? await collectAndStoreAnalysis({
-				bucket: env.ARCHIVE_DATA,
-				capturedAt,
-				device,
-				page,
-				profile: site.profile ?? site.brand,
-				screenshotKey: key,
-				site,
-				triggeredAt,
-			})
-			: undefined;
+		const analysis =
+			site.analysis && site.analysis.device === device
+				? await collectAndStoreAnalysis({
+						bucket: env.ARCHIVE_DATA,
+						capturedAt,
+						device,
+						page,
+						profile: site.profile ?? site.brand,
+						screenshotKey: key,
+						site,
+						triggeredAt,
+					})
+				: undefined;
 		const screenshot = await takeFullScreenshot(page, config);
 
-		const thumbnailConfig = config.thumbnail ?? { type: 'jpeg' as const, quality: 72 };
+		const thumbnailConfig = config.thumbnail ?? { type: "jpeg" as const, quality: 72 };
 		const thumbnail = await page.screenshot({
 			quality: thumbnailConfig.quality,
 			type: thumbnailConfig.type,
@@ -328,7 +337,7 @@ async function capture(
 			name: site.name,
 			triggeredAt,
 			url: site.url,
-			visibility: site.visibility ?? 'public',
+			visibility: site.visibility ?? "public",
 		};
 
 		await env.SCREENSHOTS.put(previewKey, thumbnail, {
@@ -340,12 +349,12 @@ async function capture(
 			customMetadata,
 		});
 
-		return { analysis, capturedAt, device, key, name: site.name, status: 'success', triggeredAt };
+		return { analysis, capturedAt, device, key, name: site.name, status: "success", triggeredAt };
 	} finally {
 		try {
 			await browser.close();
 		} catch (error) {
-			console.error('Could not close browser session', {
+			console.error("Could not close browser session", {
 				device,
 				error: errorMessage(error),
 				name: site.name,
@@ -355,7 +364,7 @@ async function capture(
 }
 
 export async function captureDevice(
-	env: Pick<Env, 'ARCHIVE_DATA' | 'BROWSER' | 'CAPTURE_FAILURES' | 'SCREENSHOTS'>,
+	env: Pick<Env, "ARCHIVE_DATA" | "BROWSER" | "CAPTURE_FAILURES" | "SCREENSHOTS">,
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,
@@ -363,7 +372,7 @@ export async function captureDevice(
 	try {
 		return await capture(env, site, device, triggeredAt);
 	} catch (error) {
-		const reason = error instanceof DetectedCaptureError ? error.reason : 'capture-error';
+		const reason = error instanceof DetectedCaptureError ? error.reason : "capture-error";
 		const message = errorMessage(error);
 		const capturedAt = new Date().toISOString();
 		const failureKey = await storeCaptureFailure(env, {
@@ -380,7 +389,7 @@ export async function captureDevice(
 			error: message,
 			failureKey,
 			name: site.name,
-			status: 'error',
+			status: "error",
 			triggeredAt,
 		};
 	}

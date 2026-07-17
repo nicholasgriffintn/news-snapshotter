@@ -1,7 +1,7 @@
-import type { Env } from './env';
-import { errorMessage } from './lib/errors.ts';
-import { safeSegment } from './lib/storage-key.ts';
-import type { Device, SiteDefinition } from './types';
+import type { Env } from "./env";
+import { errorMessage } from "./lib/errors.ts";
+import { safeSegment } from "./lib/storage-key.ts";
+import type { Device, SiteDefinition } from "./types";
 
 const FAILURE_RETENTION_SECONDS = 90 * 24 * 60 * 60;
 
@@ -17,7 +17,7 @@ export type CaptureFailure = {
 export type StoredCaptureFailure = {
 	brand: string;
 	capturedAt: string;
-	category: SiteDefinition['category'];
+	category: SiteDefinition["category"];
 	device: Device;
 	message: string;
 	name: string;
@@ -38,23 +38,23 @@ function parseStoredFailure(value: string | null): StoredCaptureFailure | undefi
 
 	try {
 		const record: unknown = JSON.parse(value);
-		if (!record || typeof record !== 'object' || Array.isArray(record)) return undefined;
+		if (!record || typeof record !== "object" || Array.isArray(record)) return undefined;
 		const failure = record as Record<string, unknown>;
 		const requiredStrings = [
-			'brand',
-			'capturedAt',
-			'category',
-			'device',
-			'message',
-			'name',
-			'reason',
-			'storedAt',
-			'triggeredAt',
-			'url',
+			"brand",
+			"capturedAt",
+			"category",
+			"device",
+			"message",
+			"name",
+			"reason",
+			"storedAt",
+			"triggeredAt",
+			"url",
 		];
-		if (!requiredStrings.every((field) => typeof failure[field] === 'string')) return undefined;
-		if (failure.category !== 'news' && failure.category !== 'sport') return undefined;
-		if (failure.device !== 'desktop' && failure.device !== 'mobile') return undefined;
+		if (!requiredStrings.every((field) => typeof failure[field] === "string")) return undefined;
+		if (failure.category !== "news" && failure.category !== "sport") return undefined;
+		if (failure.device !== "desktop" && failure.device !== "mobile") return undefined;
 		return failure as StoredCaptureFailure;
 	} catch {
 		return undefined;
@@ -62,13 +62,13 @@ function parseStoredFailure(value: string | null): StoredCaptureFailure | undefi
 }
 
 export async function listCaptureFailures(
-	env: Pick<Env, 'CAPTURE_FAILURES'>,
+	env: Pick<Env, "CAPTURE_FAILURES">,
 	options: { cursor?: string; limit: number },
 ): Promise<CaptureFailurePage> {
 	const page = await env.CAPTURE_FAILURES.list({
 		cursor: options.cursor,
 		limit: options.limit,
-		prefix: 'failures/',
+		prefix: "failures/",
 	});
 	const values = await Promise.all(page.keys.map(({ name }) => env.CAPTURE_FAILURES.get(name)));
 	const failures = values.flatMap((value) => {
@@ -85,15 +85,15 @@ export async function listCaptureFailures(
 }
 
 export async function storeCaptureFailure(
-	env: Pick<Env, 'CAPTURE_FAILURES'>,
+	env: Pick<Env, "CAPTURE_FAILURES">,
 	failure: CaptureFailure,
 ): Promise<string | undefined> {
-	const timestamp = failure.capturedAt.replace(/[:.]/g, '-');
+	const timestamp = failure.capturedAt.replace(/[:.]/g, "-");
 	const key = [
-		'failures',
+		"failures",
 		`date=${failure.capturedAt.slice(0, 10)}`,
 		`${timestamp}-${safeSegment(failure.site.name)}-${failure.device}.json`,
-	].join('/');
+	].join("/");
 	const record = {
 		brand: failure.site.brand,
 		capturedAt: failure.capturedAt,
@@ -118,7 +118,7 @@ export async function storeCaptureFailure(
 		});
 		return key;
 	} catch (error) {
-		console.error('Could not store capture failure', {
+		console.error("Could not store capture failure", {
 			device: failure.device,
 			error: errorMessage(error),
 			name: failure.site.name,

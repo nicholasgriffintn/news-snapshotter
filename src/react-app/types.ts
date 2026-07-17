@@ -1,8 +1,8 @@
 export type Snapshot = {
 	brand: string;
 	capturedAt: string;
-	category: 'news' | 'sport';
-	device: 'desktop' | 'mobile';
+	category: "news" | "sport";
+	device: "desktop" | "mobile";
 	fullImageUrl: string;
 	key: string;
 	name: string;
@@ -13,18 +13,18 @@ export type Snapshot = {
 
 export type SnapshotGroup = Pick<
 	Snapshot,
-	'brand' | 'capturedAt' | 'category' | 'name' | 'triggeredAt' | 'url'
+	"brand" | "capturedAt" | "category" | "name" | "triggeredAt" | "url"
 > & {
-	variants: Partial<Record<Snapshot['device'], Snapshot>>;
+	variants: Partial<Record<Snapshot["device"], Snapshot>>;
 };
 
-export type CatalogueSite = Pick<Snapshot, 'brand' | 'category' | 'name'>;
+export type CatalogueSite = Pick<Snapshot, "brand" | "category" | "name">;
 
 export type CaptureFailure = {
 	brand: string;
 	capturedAt: string;
-	category: Snapshot['category'];
-	device: Snapshot['device'];
+	category: Snapshot["category"];
+	device: Snapshot["device"];
 	message: string;
 	name: string;
 	reason: string;

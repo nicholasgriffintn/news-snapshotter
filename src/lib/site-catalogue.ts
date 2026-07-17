@@ -1,4 +1,4 @@
-import type { SiteDefinition, SiteSource } from '../types';
+import type { SiteDefinition, SiteSource } from "../types";
 
 export type SiteSelection = {
 	brand?: string;
@@ -13,14 +13,17 @@ export function withIndividualBrands(sites: SiteSource[]): SiteDefinition[] {
 	return sites.map((site) => ({ ...site, brand: site.name }));
 }
 
-export function withoutDuplicateNames(sites: SiteSource[], existingSites: SiteSource[]): SiteSource[] {
+export function withoutDuplicateNames(
+	sites: SiteSource[],
+	existingSites: SiteSource[],
+): SiteSource[] {
 	const existingNames = new Set(existingSites.map((site) => site.name));
 	return sites.filter((site) => !existingNames.has(site.name));
 }
 
 export function selectSites(sites: SiteDefinition[], selection: SiteSelection): SiteDefinition[] {
 	if (selection.brand && selection.name) {
-		throw new Error('Specify either brand or name, not both');
+		throw new Error("Specify either brand or name, not both");
 	}
 
 	if (selection.name) {

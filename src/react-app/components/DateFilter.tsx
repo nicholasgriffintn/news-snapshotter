@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
-import { dateInputValue, type ArchivePeriod } from '../lib/archive-period';
+import { dateInputValue, type ArchivePeriod } from "../lib/archive-period";
 
 type DateFilterProps = {
 	day: string;
@@ -9,21 +9,21 @@ type DateFilterProps = {
 };
 
 const PERIOD_OPTIONS: Array<{ label: string; value: ArchivePeriod }> = [
-	{ label: 'Last 3 hours', value: 'last-3-hours' },
-	{ label: 'Last 24 hours', value: 'last-24-hours' },
-	{ label: 'Yesterday', value: 'yesterday' },
+	{ label: "Last 3 hours", value: "last-3-hours" },
+	{ label: "Last 24 hours", value: "last-24-hours" },
+	{ label: "Yesterday", value: "yesterday" },
 ];
 
 function selectedLabel(period: ArchivePeriod, day: string): string {
-	if (period === 'day') {
+	if (period === "day") {
 		return day
-			? new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(
+			? new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(
 					new Date(`${day}T12:00:00`),
 				)
-			: 'Custom date';
+			: "Custom date";
 	}
 
-	return PERIOD_OPTIONS.find((option) => option.value === period)?.label ?? 'Date';
+	return PERIOD_OPTIONS.find((option) => option.value === period)?.label ?? "Date";
 }
 
 export function DateFilter({ day, onChange, period }: DateFilterProps) {
@@ -37,15 +37,15 @@ export function DateFilter({ day, onChange, period }: DateFilterProps) {
 		}
 
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === 'Escape') setOpen(false);
+			if (event.key === "Escape") setOpen(false);
 		}
 
-		document.addEventListener('pointerdown', closeDropdown);
-		window.addEventListener('keydown', closeOnEscape);
+		document.addEventListener("pointerdown", closeDropdown);
+		window.addEventListener("keydown", closeOnEscape);
 
 		return () => {
-			document.removeEventListener('pointerdown', closeDropdown);
-			window.removeEventListener('keydown', closeOnEscape);
+			document.removeEventListener("pointerdown", closeDropdown);
+			window.removeEventListener("keydown", closeOnEscape);
 		};
 	}, []);
 
@@ -81,20 +81,20 @@ export function DateFilter({ day, onChange, period }: DateFilterProps) {
 						</button>
 					))}
 					<button
-						aria-expanded={period === 'day'}
-						aria-pressed={period === 'day'}
-						onClick={() => onChange('day', day)}
+						aria-expanded={period === "day"}
+						aria-pressed={period === "day"}
+						onClick={() => onChange("day", day)}
 						type="button"
 					>
 						Custom
 					</button>
-					{period === 'day' ? (
+					{period === "day" ? (
 						<div className="date-filter__calendar">
 							<label htmlFor="custom-date">Choose a date</label>
 							<input
 								id="custom-date"
 								max={currentDay}
-								onChange={(event) => onChange('day', event.target.value)}
+								onChange={(event) => onChange("day", event.target.value)}
 								type="date"
 								value={day}
 							/>

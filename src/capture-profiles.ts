@@ -1,5 +1,5 @@
-import type { Device, SiteDefinition } from './types';
-import { DEFAULT_PROGRESSIVE_SCROLL, type ProgressiveScrollConfig } from './rendering-scroll.ts';
+import type { Device, SiteDefinition } from "./types";
+import { DEFAULT_PROGRESSIVE_SCROLL, type ProgressiveScrollConfig } from "./rendering-scroll.ts";
 
 export type FailureIndicator = {
 	reason: string;
@@ -32,9 +32,9 @@ export type DeviceCaptureConfig = {
 	navigationTimeoutMs?: number;
 	runtimeQuietMs?: number;
 	scroll?: ProgressiveScrollConfig;
-	screenshot?: { fullPage: boolean; type: 'jpeg' | 'png' | 'webp'; quality?: number };
+	screenshot?: { fullPage: boolean; type: "jpeg" | "png" | "webp"; quality?: number };
 	styles?: string[];
-	thumbnail?: { quality: number; type: 'jpeg' | 'webp' };
+	thumbnail?: { quality: number; type: "jpeg" | "webp" };
 	userAgent?: string;
 	userAgentMetadata?: {
 		architecture: string;
@@ -64,37 +64,37 @@ export type ResolvedCaptureProfile = {
 };
 
 const DESKTOP_USER_AGENT =
-	'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36';
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36";
 const MOBILE_USER_AGENT =
-	'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36';
+	"Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36";
 
 const CHROME_BRANDS = [
-	{ brand: 'Google Chrome', version: '131' },
-	{ brand: 'Chromium', version: '131' },
-	{ brand: 'Not_A Brand', version: '24' },
+	{ brand: "Google Chrome", version: "131" },
+	{ brand: "Chromium", version: "131" },
+	{ brand: "Not_A Brand", version: "24" },
 ];
 
 const CHROME_FULL_VERSIONS = CHROME_BRANDS.map(({ brand, version }) => ({
 	brand,
-	version: version === '24' ? version : `${version}.0.0.0`,
+	version: version === "24" ? version : `${version}.0.0.0`,
 }));
 
 const FAILURE_INDICATORS: FailureIndicator[] = [
-	{ reason: 'access-denied', text: 'access denied' },
-	{ reason: 'akamai-access-denied', text: 'errors.edgesuite.net' },
-	{ reason: 'captcha', text: 'complete the captcha' },
-	{ reason: 'captcha', text: 'captcha verification' },
-	{ reason: 'not-a-robot', text: 'not a robot' },
-	{ reason: 'please-verify', text: 'please verify you are a human' },
-	{ reason: 'please-verify', text: 'please verify that you are human' },
-	{ reason: 'unusual-activity', text: 'unusual activity' },
+	{ reason: "access-denied", text: "access denied" },
+	{ reason: "akamai-access-denied", text: "errors.edgesuite.net" },
+	{ reason: "captcha", text: "complete the captcha" },
+	{ reason: "captcha", text: "captcha verification" },
+	{ reason: "not-a-robot", text: "not a robot" },
+	{ reason: "please-verify", text: "please verify you are a human" },
+	{ reason: "please-verify", text: "please verify that you are human" },
+	{ reason: "unusual-activity", text: "unusual activity" },
 ];
 
 const GENERIC_CONSENT_SELECTORS = [
-	'#onetrust-banner-sdk',
-	'#onetrust-consent-sdk',
-	'.fc-consent-root',
-	'.smartbanner',
+	"#onetrust-banner-sdk",
+	"#onetrust-consent-sdk",
+	".fc-consent-root",
+	".smartbanner",
 	'[aria-label="Cookie banner"]',
 	'[class*="app-banner"]',
 	'[class*="appBanner"]',
@@ -114,24 +114,24 @@ const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 				timeoutMs: 1_500,
 			},
 		],
-		extraHTTPHeaders: { 'accept-language': 'en-GB,en;q=0.9' },
+		extraHTTPHeaders: { "accept-language": "en-GB,en;q=0.9" },
 		hideWebdriver: true,
 		viewport: { width: 1740, height: 1008 },
 		javaScriptEnabled: true,
 		navigationTimeoutMs: 60_000,
 		runtimeQuietMs: 2_000,
 		scroll: DEFAULT_PROGRESSIVE_SCROLL,
-		screenshot: { type: 'png', fullPage: true },
-		thumbnail: { type: 'jpeg', quality: 72 },
+		screenshot: { type: "png", fullPage: true },
+		thumbnail: { type: "jpeg", quality: 72 },
 		userAgent: DESKTOP_USER_AGENT,
 		userAgentMetadata: {
-			architecture: 'x86',
+			architecture: "x86",
 			brands: CHROME_BRANDS,
 			fullVersionList: CHROME_FULL_VERSIONS,
 			mobile: false,
-			model: '',
-			platform: 'macOS',
-			platformVersion: '15.0.0',
+			model: "",
+			platform: "macOS",
+			platformVersion: "15.0.0",
 		},
 		waitForImagesMs: 5_000,
 		hideSelectors: GENERIC_CONSENT_SELECTORS,
@@ -143,7 +143,7 @@ const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 				timeoutMs: 1_500,
 			},
 		],
-		extraHTTPHeaders: { 'accept-language': 'en-GB,en;q=0.9' },
+		extraHTTPHeaders: { "accept-language": "en-GB,en;q=0.9" },
 		viewport: { width: 412, height: 915 },
 		deviceScaleFactor: 2.625,
 		hasTouch: true,
@@ -153,17 +153,17 @@ const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 		navigationTimeoutMs: 60_000,
 		runtimeQuietMs: 2_000,
 		scroll: DEFAULT_PROGRESSIVE_SCROLL,
-		screenshot: { type: 'png', fullPage: true },
-		thumbnail: { type: 'jpeg', quality: 72 },
+		screenshot: { type: "png", fullPage: true },
+		thumbnail: { type: "jpeg", quality: 72 },
 		userAgent: MOBILE_USER_AGENT,
 		userAgentMetadata: {
-			architecture: 'arm',
+			architecture: "arm",
 			brands: CHROME_BRANDS,
 			fullVersionList: CHROME_FULL_VERSIONS,
 			mobile: true,
-			model: 'Pixel 8',
-			platform: 'Android',
-			platformVersion: '14.0.0',
+			model: "Pixel 8",
+			platform: "Android",
+			platformVersion: "14.0.0",
 		},
 		waitForImagesMs: 5_000,
 		hideSelectors: GENERIC_CONSENT_SELECTORS,
@@ -171,8 +171,8 @@ const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 };
 
 const CHALLENGE_SELECTORS: BlockSelector[] = [
-	{ selector: '#challenge-running', reason: 'cloudflare-challenge' },
-	{ selector: '[data-testid="captcha"]', reason: 'captcha' },
+	{ selector: "#challenge-running", reason: "cloudflare-challenge" },
+	{ selector: '[data-testid="captcha"]', reason: "captcha" },
 ];
 
 const PROFILES: Record<string, CaptureProfile> = {
@@ -181,22 +181,22 @@ const PROFILES: Record<string, CaptureProfile> = {
 		deviceConfig: {
 			desktop: {
 				cookies: [
-					{ name: 'ckns_policy', value: '111', url: 'https://www.bbc.co.uk' },
-					{ name: 'ckns_explicit', value: '1', url: 'https://www.bbc.co.uk' },
+					{ name: "ckns_policy", value: "111", url: "https://www.bbc.co.uk" },
+					{ name: "ckns_explicit", value: "1", url: "https://www.bbc.co.uk" },
 				],
 				hideSelectors: [
-					'.ssrcss-1tm3b0g-SignInBannerWrapper',
+					".ssrcss-1tm3b0g-SignInBannerWrapper",
 					'[class*="MenuListContainer"]',
 					'[class*="MoreMenuWrapper"]',
 				],
 			},
 			mobile: {
 				cookies: [
-					{ name: 'ckns_policy', value: '111', url: 'https://www.bbc.co.uk' },
-					{ name: 'ckns_explicit', value: '1', url: 'https://www.bbc.co.uk' },
+					{ name: "ckns_policy", value: "111", url: "https://www.bbc.co.uk" },
+					{ name: "ckns_explicit", value: "1", url: "https://www.bbc.co.uk" },
 				],
 				hideSelectors: [
-					'.ssrcss-1tm3b0g-SignInBannerWrapper',
+					".ssrcss-1tm3b0g-SignInBannerWrapper",
 					'[class*="MenuListContainer"]',
 					'[class*="MoreMenuWrapper"]',
 				],
@@ -209,26 +209,26 @@ const PROFILES: Record<string, CaptureProfile> = {
 				blockSelectors: CHALLENGE_SELECTORS,
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="Accept all"]',
 						timeoutMs: 5_000,
 					},
 				],
-				hideSelectors: ['.ui-news-header-nav'],
-				styles: ['.ui-news-header-body { height: 50px !important; }'],
+				hideSelectors: [".ui-news-header-nav"],
+				styles: [".ui-news-header-body { height: 50px !important; }"],
 				waitAfterLoadMs: 5_000,
 			},
 			mobile: {
 				blockSelectors: CHALLENGE_SELECTORS,
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="Accept all"]',
 						timeoutMs: 5_000,
 					},
 				],
-				hideSelectors: ['.ui-news-header-nav'],
-				styles: ['.ui-news-header-body { height: 50px !important; }'],
+				hideSelectors: [".ui-news-header-nav"],
+				styles: [".ui-news-header-body { height: 50px !important; }"],
 				waitAfterLoadMs: 5_000,
 			},
 		},
@@ -243,40 +243,40 @@ const PROFILES: Record<string, CaptureProfile> = {
 		deviceConfig: {
 			desktop: {
 				hideSelectors: ['div[id^="sp_message_container_"]', 'iframe[id^="sp_message_iframe_"]'],
-				styles: ['html.sp-message-open { overflow: auto !important; }'],
+				styles: ["html.sp-message-open { overflow: auto !important; }"],
 			},
 			mobile: {
 				hideSelectors: ['div[id^="sp_message_container_"]', 'iframe[id^="sp_message_iframe_"]'],
-				styles: ['html.sp-message-open { overflow: auto !important; }'],
+				styles: ["html.sp-message-open { overflow: auto !important; }"],
 			},
 		},
 		failureIndicators: [
-			{ reason: 'device-verification', text: 'verifying your device' },
-			{ reason: 'device-verification', text: 'verification failed. please try again' },
+			{ reason: "device-verification", text: "verifying your device" },
+			{ reason: "device-verification", text: "verification failed. please try again" },
 		],
 	},
 	telegraph: {
 		deviceConfig: {
 			desktop: {
-				blockSelectors: [{ selector: '#sec-if-cpt-container', reason: 'akamai-challenge' }],
+				blockSelectors: [{ selector: "#sec-if-cpt-container", reason: "akamai-challenge" }],
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="I Accept"]',
 						timeoutMs: 5_000,
 					},
-					{ selector: 'button.martech-spotlight-modal__close-button', timeoutMs: 1_000 },
+					{ selector: "button.martech-spotlight-modal__close-button", timeoutMs: 1_000 },
 				],
 			},
 			mobile: {
-				blockSelectors: [{ selector: '#sec-if-cpt-container', reason: 'akamai-challenge' }],
+				blockSelectors: [{ selector: "#sec-if-cpt-container", reason: "akamai-challenge" }],
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="I Accept"]',
 						timeoutMs: 5_000,
 					},
-					{ selector: 'button.martech-spotlight-modal__close-button', timeoutMs: 1_000 },
+					{ selector: "button.martech-spotlight-modal__close-button", timeoutMs: 1_000 },
 				],
 			},
 		},
@@ -289,76 +289,76 @@ const PROFILES: Record<string, CaptureProfile> = {
 						selector: '#cmp-consent-button, button[aria-label="Dismiss banner"]',
 					},
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="No, I Do Not Accept"]',
 						timeoutMs: 5_000,
 					},
 				],
 				blockSelectors: [
-					{ selector: '#px-captcha', reason: 'captcha' },
-					{ selector: '.challenge-form', reason: 'challenge' },
+					{ selector: "#px-captcha", reason: "captcha" },
+					{ selector: ".challenge-form", reason: "challenge" },
 				],
 				hideSelectors: [
-					'#cmp-consent-modal',
-					'#fortress-container-root',
-					'.grecaptcha-badge',
+					"#cmp-consent-modal",
+					"#fortress-container-root",
+					".grecaptcha-badge",
 					'[data-testid="dismissible-banner"]',
 					'div[class*="media-ui-FullWidthAd_fullWidthAdWrapper"]',
 					'div[id^="sp_message_container_"]',
 					'iframe[id^="sp_message_iframe_"]',
 				],
-				styles: ['html.sp-message-open { overflow: auto !important; }'],
+				styles: ["html.sp-message-open { overflow: auto !important; }"],
 				viewport: { width: 1920, height: 1080 },
 				waitAfterLoadMs: 3_000,
 			},
 			mobile: {
-				blockSelectors: [{ selector: '#px-captcha', reason: 'captcha' }],
+				blockSelectors: [{ selector: "#px-captcha", reason: "captcha" }],
 				clickActions: [
 					{
 						selector: '#cmp-consent-button, button[aria-label="Dismiss banner"]',
 					},
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="No, I Do Not Accept"]',
 						timeoutMs: 5_000,
 					},
 				],
 				hideSelectors: [
-					'#cmp-consent-modal',
-					'#fortress-container-root',
-					'.grecaptcha-badge',
+					"#cmp-consent-modal",
+					"#fortress-container-root",
+					".grecaptcha-badge",
 					'[data-testid="dismissible-banner"]',
 					'div[class*="media-ui-FullWidthAd_fullWidthAdWrapper"]',
 					'div[id^="sp_message_container_"]',
 					'iframe[id^="sp_message_iframe_"]',
 				],
-				styles: ['html.sp-message-open { overflow: auto !important; }'],
+				styles: ["html.sp-message-open { overflow: auto !important; }"],
 				waitAfterLoadMs: 3_000,
 			},
 		},
 		failureIndicators: [
-			{ reason: 'security-systems', text: 'security systems have detected' },
-			{ reason: 'tollbit-token', text: 'valid tollbit token' },
+			{ reason: "security-systems", text: "security systems have detected" },
+			{ reason: "tollbit-token", text: "valid tollbit token" },
 		],
 	},
 	reach: {
 		deviceConfig: {
 			desktop: {
 				hideSelectors: [
-					'#qc-cmp2-container',
-					'.qc-cmp-cleanslate',
-					'#div-gpt-ad-top-slot',
-					'#div-gpt-ad-ad-mix-slot',
-					'#div-gpt-ad-ad-web-strip',
+					"#qc-cmp2-container",
+					".qc-cmp-cleanslate",
+					"#div-gpt-ad-top-slot",
+					"#div-gpt-ad-ad-mix-slot",
+					"#div-gpt-ad-ad-web-strip",
 				],
 			},
 			mobile: {
 				hideSelectors: [
-					'#qc-cmp2-container',
-					'.qc-cmp-cleanslate',
-					'#div-gpt-ad-top-slot',
-					'#div-gpt-ad-ad-mix-slot',
-					'#div-gpt-ad-ad-web-strip',
+					"#qc-cmp2-container",
+					".qc-cmp-cleanslate",
+					"#div-gpt-ad-top-slot",
+					"#div-gpt-ad-ad-mix-slot",
+					"#div-gpt-ad-ad-web-strip",
 				],
 			},
 		},
@@ -367,20 +367,20 @@ const PROFILES: Record<string, CaptureProfile> = {
 		deviceConfig: {
 			desktop: {
 				hideSelectors: [
-					'#premium_mpu_container',
-					'#standard_mpu_1_container',
-					'#standard_mpu_2_container',
-					'#high_vis_container',
-					'#module-content .block-article-shoutout',
+					"#premium_mpu_container",
+					"#standard_mpu_1_container",
+					"#standard_mpu_2_container",
+					"#high_vis_container",
+					"#module-content .block-article-shoutout",
 				],
 			},
 			mobile: {
 				hideSelectors: [
-					'#premium_mpu_container',
-					'#standard_mpu_1_container',
-					'#standard_mpu_2_container',
-					'#high_vis_container',
-					'#module-content .block-article-shoutout',
+					"#premium_mpu_container",
+					"#standard_mpu_1_container",
+					"#standard_mpu_2_container",
+					"#high_vis_container",
+					"#module-content .block-article-shoutout",
 				],
 			},
 		},
@@ -388,31 +388,31 @@ const PROFILES: Record<string, CaptureProfile> = {
 	itv: {
 		deviceConfig: {
 			desktop: {
-				clickActions: [{ selector: 'button.cassie-pre-banner--button.cassie-accept-all' }],
-				hideSelectors: ['#cassie-widget'],
+				clickActions: [{ selector: "button.cassie-pre-banner--button.cassie-accept-all" }],
+				hideSelectors: ["#cassie-widget"],
 			},
 			mobile: {
-				clickActions: [{ selector: 'button.cassie-pre-banner--button.cassie-accept-all' }],
-				hideSelectors: ['#cassie-widget'],
+				clickActions: [{ selector: "button.cassie-pre-banner--button.cassie-accept-all" }],
+				hideSelectors: ["#cassie-widget"],
 			},
 		},
 	},
 	stv: {
 		deviceConfig: {
-			desktop: { hideSelectors: ['#cassie-widget'] },
-			mobile: { hideSelectors: ['#cassie-widget'] },
+			desktop: { hideSelectors: ["#cassie-widget"] },
+			mobile: { hideSelectors: ["#cassie-widget"] },
 		},
 	},
 	dailymail: {
 		deviceConfig: {
-			desktop: { hideSelectors: ['.billboard-container'] },
-			mobile: { hideSelectors: ['.billboard-container'] },
+			desktop: { hideSelectors: [".billboard-container"] },
+			mobile: { hideSelectors: [".billboard-container"] },
 		},
 	},
 	belfasttelegraph: {
 		deviceConfig: {
-			desktop: { hideSelectors: ['#didomi-popup'] },
-			mobile: { hideSelectors: ['#didomi-popup'] },
+			desktop: { hideSelectors: ["#didomi-popup"] },
+			mobile: { hideSelectors: ["#didomi-popup"] },
 		},
 	},
 	financialtimes: {
@@ -420,22 +420,22 @@ const PROFILES: Record<string, CaptureProfile> = {
 			desktop: {
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="Reject"]',
 						timeoutMs: 5_000,
 					},
 				],
-				hideSelectors: ['.slot-wrapper', '.o-banner'],
+				hideSelectors: [".slot-wrapper", ".o-banner"],
 			},
 			mobile: {
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="Reject"]',
 						timeoutMs: 5_000,
 					},
 				],
-				hideSelectors: ['.slot-wrapper', '.o-banner'],
+				hideSelectors: [".slot-wrapper", ".o-banner"],
 			},
 		},
 	},
@@ -444,7 +444,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 			desktop: {
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="ACCEPT"], button[aria-label="ACCEPT"]',
 						timeoutMs: 5_000,
 					},
@@ -453,7 +453,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 			mobile: {
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="ACCEPT"], button[aria-label="ACCEPT"]',
 						timeoutMs: 5_000,
 					},
@@ -466,7 +466,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 			desktop: {
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="Accept All"]',
 						timeoutMs: 5_000,
 					},
@@ -475,7 +475,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 			mobile: {
 				clickActions: [
 					{
-						frameUrlIncludes: ['consent', 'privacy'],
+						frameUrlIncludes: ["consent", "privacy"],
 						selector: 'button[title="Accept All"]',
 						timeoutMs: 5_000,
 					},
@@ -511,7 +511,7 @@ function mergeDeviceConfig(
 export function resolveCaptureProfile(site: SiteDefinition): ResolvedCaptureProfile {
 	const profile = PROFILES[site.profile ?? site.brand] ?? PROFILES.default;
 	return {
-		devices: profile.devices ?? ['desktop', 'mobile'],
+		devices: profile.devices ?? ["desktop", "mobile"],
 		deviceConfig: {
 			desktop: mergeDeviceConfig(DEFAULT_DEVICE_CONFIG.desktop, profile.deviceConfig?.desktop),
 			mobile: mergeDeviceConfig(DEFAULT_DEVICE_CONFIG.mobile, profile.deviceConfig?.mobile),

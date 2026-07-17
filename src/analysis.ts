@@ -1,6 +1,6 @@
-import type { Page } from '@cloudflare/puppeteer';
+import type { Page } from "@cloudflare/puppeteer";
 
-import type { Device, SiteDefinition } from './types';
+import type { Device, SiteDefinition } from "./types";
 
 const SCHEMA_VERSION = 1;
 const SANITISATION_VERSION = 1;
@@ -22,9 +22,9 @@ type CollectedElement = {
 		alt?: string;
 		sourceUrl?: string;
 	};
-	kind: 'story';
+	kind: "story";
 	position: ElementPosition;
-	prominence: 'lead' | 'major' | 'standard';
+	prominence: "lead" | "major" | "standard";
 	selectorHint: string;
 	summary?: string;
 	textFingerprint: string;
@@ -37,7 +37,7 @@ type CollectedPage = {
 	pageWidth: number;
 };
 
-type ScreenshotAnalysis = import('./types').ScreenshotResult['analysis'];
+type ScreenshotAnalysis = import("./types").ScreenshotResult["analysis"];
 
 export type AnalysisOutcome = NonNullable<ScreenshotAnalysis>;
 
@@ -53,14 +53,12 @@ type AnalysisInput = {
 };
 
 export function normaliseStoryElements(
-	elements: CollectedPage['elements'],
-): CollectedPage['elements'] {
+	elements: CollectedPage["elements"],
+): CollectedPage["elements"] {
 	return elements
 		.filter((element) => {
 			return (
-				element.selectorHint !== 'a' &&
-				element.position.height > 0 &&
-				element.position.width > 0
+				element.selectorHint !== "a" && element.position.height > 0 && element.position.width > 0
 			);
 		})
 		.map((element, index) => {
@@ -84,13 +82,13 @@ export function normaliseStoryElements(
 function safeSegment(value: string): string {
 	return value
 		.toLowerCase()
-		.replace(/[^a-z0-9-]+/g, '-')
-		.replace(/^-+|-+$/g, '');
+		.replace(/[^a-z0-9-]+/g, "-")
+		.replace(/^-+|-+$/g, "");
 }
 
 export function canonicaliseUrl(value: string): string {
 	const url = new URL(value);
-	url.hash = '';
+	url.hash = "";
 
 	for (const parameter of [...url.searchParams.keys()]) {
 		if (/^(utm_|at_|cmpid$)/i.test(parameter)) {
@@ -98,26 +96,22 @@ export function canonicaliseUrl(value: string): string {
 		}
 	}
 
-	if (url.pathname !== '/') {
-		url.pathname = url.pathname.replace(/\/+$/, '');
+	if (url.pathname !== "/") {
+		url.pathname = url.pathname.replace(/\/+$/, "");
 	}
 
 	return url.toString();
 }
 
-export function analysisKeys(
-	site: SiteDefinition,
-	device: Device,
-	triggeredAt: string,
-) {
-	const timestamp = triggeredAt.replace(/[:.]/g, '-');
+export function analysisKeys(site: SiteDefinition, device: Device, triggeredAt: string) {
+	const timestamp = triggeredAt.replace(/[:.]/g, "-");
 	const prefix = [
 		`brand=${safeSegment(site.brand)}`,
 		`category=${site.category}`,
 		`date=${triggeredAt.slice(0, 10)}`,
 		`site=${safeSegment(site.name)}`,
 		`device=${device}`,
-	].join('/');
+	].join("/");
 	return {
 		extractionKey: `${prefix}/${timestamp}.extraction.v${SCHEMA_VERSION}.json.gz`,
 		failureKey: `${prefix}/${timestamp}.analysis-failure.json`,
@@ -127,16 +121,14 @@ export function analysisKeys(
 
 async function sha256(value: string): Promise<string> {
 	const encoded = new TextEncoder().encode(value);
-	const digest = await crypto.subtle.digest('SHA-256', encoded);
+	const digest = await crypto.subtle.digest("SHA-256", encoded);
 
-	return [...new Uint8Array(digest)]
-		.map((byte) => byte.toString(16).padStart(2, '0'))
-		.join('');
+	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 async function gzip(value: string): Promise<ArrayBuffer> {
 	const source = new Blob([value]).stream();
-	const compression = new CompressionStream('gzip');
+	const compression = new CompressionStream("gzip");
 	const stream = source.pipeThrough(compression);
 
 	return new Response(stream).arrayBuffer();
@@ -179,15 +171,13 @@ async function collectPage(page: Page): Promise<CollectedPage> {
 		};
 		const { document } = browser;
 		const clone = document.documentElement.cloneNode(true);
-		const unsafeNodes = clone.querySelectorAll(
-			'script, [data-pashi-cleanup]',
-		);
+		const unsafeNodes = clone.querySelectorAll("script, [data-pashi-cleanup]");
 
 		Array.from(unsafeNodes).forEach((node) => {
 			node.remove();
 		});
 
-		Array.from(clone.querySelectorAll('*')).forEach((node) => {
+		Array.from(clone.querySelectorAll("*")).forEach((node) => {
 			for (const attribute of Array.from(node.attributes)) {
 				const isEventHandler = /^on/i.test(attribute.name);
 				const isSensitiveValue = /^(nonce|value)$/i.test(attribute.name);
@@ -198,41 +188,34 @@ async function collectPage(page: Page): Promise<CollectedPage> {
 			}
 		});
 
-		Array.from(clone.querySelectorAll('input, textarea')).forEach((node) => {
-			node.removeAttribute('value');
+		Array.from(clone.querySelectorAll("input, textarea")).forEach((node) => {
+			node.removeAttribute("value");
 
-			if (node.tagName === 'TEXTAREA') {
-				node.textContent = '';
+			if (node.tagName === "TEXTAREA") {
+				node.textContent = "";
 			}
 		});
 
 		const seen = new Set<string>();
-		const links = Array.from(document.querySelectorAll('a[href]'));
+		const links = Array.from(document.querySelectorAll("a[href]"));
 		const elements = links.flatMap((link) => {
 			const cardSelector = 'article, [data-testid*="card"], li';
 			const headlineSelector = 'h1, h2, h3, [data-testid*="headline"]';
 			const card = link.closest(cardSelector) ?? link;
-			const heading = card.querySelector(
-				headlineSelector,
-			);
+			const heading = card.querySelector(headlineSelector);
 
 			if (!heading) {
 				return [];
 			}
 
-			const headingText = heading.textContent ?? link.textContent ?? '';
-			const headline = headingText
-				.trim()
-				.replace(/\s+/g, ' ');
+			const headingText = heading.textContent ?? link.textContent ?? "";
+			const headline = headingText.trim().replace(/\s+/g, " ");
 
 			if (headline.length < 10) {
 				return [];
 			}
 
-			const canonicalUrl = new URL(
-				link.href,
-				document.baseURI,
-			).toString();
+			const canonicalUrl = new URL(link.href, document.baseURI).toString();
 
 			if (seen.has(canonicalUrl)) {
 				return [];
@@ -241,32 +224,30 @@ async function collectPage(page: Page): Promise<CollectedPage> {
 			seen.add(canonicalUrl);
 
 			const rect = link.getBoundingClientRect();
-			const image = card.querySelector('img');
-			const summaryElement = card.querySelector('p');
-			const summary = summaryElement?.textContent
-				?.trim()
-				.replace(/\s+/g, ' ');
+			const image = card.querySelector("img");
+			const summaryElement = card.querySelector("p");
+			const summary = summaryElement?.textContent?.trim().replace(/\s+/g, " ");
 			const headingName = heading.tagName.toLowerCase();
-			const isLead = headingName === 'h1';
+			const isLead = headingName === "h1";
 			const majorStoryWidth = document.documentElement.scrollWidth * 0.4;
 			const isWide = rect.width > majorStoryWidth;
 			const isAboveFold = rect.top < browser.innerHeight;
 			const absoluteTop = rect.top + browser.scrollY;
 			const viewportDepth = absoluteTop / browser.innerHeight;
-			let prominence: CollectedElement['prominence'] = 'standard';
+			let prominence: CollectedElement["prominence"] = "standard";
 
 			if (isLead) {
-				prominence = 'lead';
+				prominence = "lead";
 			} else if (isWide && isAboveFold) {
-				prominence = 'major';
+				prominence = "major";
 			}
 
-			let imageDetails: CollectedElement['image'];
+			let imageDetails: CollectedElement["image"];
 
 			if (image) {
 				imageDetails = {
-					alt: image.getAttribute('alt') ?? undefined,
-					sourceUrl: image.getAttribute('src') ?? undefined,
+					alt: image.getAttribute("alt") ?? undefined,
+					sourceUrl: image.getAttribute("src") ?? undefined,
 				};
 			}
 
@@ -276,7 +257,7 @@ async function collectPage(page: Page): Promise<CollectedPage> {
 					elementKey: canonicalUrl,
 					headline,
 					image: imageDetails,
-					kind: 'story',
+					kind: "story",
 					position: {
 						height: rect.height,
 						left: rect.left,
@@ -303,22 +284,11 @@ async function collectPage(page: Page): Promise<CollectedPage> {
 	return JSON.parse(serialised) as CollectedPage;
 }
 
-export async function collectAndStoreAnalysis(
-	input: AnalysisInput,
-): Promise<AnalysisOutcome> {
-	const {
-		bucket,
-		capturedAt,
-		device,
-		page,
-		profile,
-		screenshotKey,
-		site,
-		triggeredAt,
-	} = input;
+export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<AnalysisOutcome> {
+	const { bucket, capturedAt, device, page, profile, screenshotKey, site, triggeredAt } = input;
 	if (!site.analysis || site.analysis.device !== device) {
 		return {
-			status: 'failed',
+			status: "failed",
 		};
 	}
 
@@ -339,21 +309,17 @@ export async function collectAndStoreAnalysis(
 		});
 
 		collected.elements = [
-			...new Map(
-				canonicalElements.map((element) => [element.elementKey, element]),
-			).values(),
+			...new Map(canonicalElements.map((element) => [element.elementKey, element])).values(),
 		];
 
 		if (collected.elements.length < site.analysis.minimumElements) {
 			throw new Error(
 				`Expected at least ${site.analysis.minimumElements} elements, ` +
-				`found ${collected.elements.length}`,
+					`found ${collected.elements.length}`,
 			);
 		}
 		const contentHash = await sha256(collected.html);
-		const structureSource = collected.elements
-			.map(({ elementKey }) => elementKey)
-			.join('\n');
+		const structureSource = collected.elements.map(({ elementKey }) => elementKey).join("\n");
 		const structureHash = await sha256(structureSource);
 
 		const extraction = {
@@ -394,7 +360,7 @@ export async function collectAndStoreAnalysis(
 			site: site.name,
 			sourceUrl: site.url,
 			triggeredAt,
-			visibility: site.visibility ?? 'public',
+			visibility: site.visibility ?? "public",
 		};
 
 		const compressedHtml = await gzip(collected.html);
@@ -409,26 +375,26 @@ export async function collectAndStoreAnalysis(
 				structureHash,
 			},
 			httpMetadata: {
-				contentEncoding: 'gzip',
-				contentType: 'text/html; charset=utf-8',
+				contentEncoding: "gzip",
+				contentType: "text/html; charset=utf-8",
 			},
 		});
 
 		await bucket.put(keys.extractionKey, compressedExtraction, {
 			customMetadata: metadata,
 			httpMetadata: {
-				contentEncoding: 'gzip',
-				contentType: 'application/json',
+				contentEncoding: "gzip",
+				contentType: "application/json",
 			},
 		});
 
 		return {
 			extractionKey: keys.extractionKey,
 			htmlKey: keys.htmlKey,
-			status: 'stored',
+			status: "stored",
 		};
 	} catch (error) {
-		let message = 'Unknown analysis failure';
+		let message = "Unknown analysis failure";
 
 		if (error instanceof Error) {
 			message = error.message;
@@ -448,17 +414,17 @@ export async function collectAndStoreAnalysis(
 
 			await bucket.put(keys.failureKey, serialisedFailure, {
 				httpMetadata: {
-					contentType: 'application/json',
+					contentType: "application/json",
 				},
 			});
 
 			return {
 				failureKey: keys.failureKey,
-				status: 'failed',
+				status: "failed",
 			};
 		} catch {
 			return {
-				status: 'failed',
+				status: "failed",
 			};
 		}
 	}

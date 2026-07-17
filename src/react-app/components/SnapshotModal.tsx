@@ -1,34 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { displayName, timeLabel } from '../lib/format';
-import { preferredVariant } from '../lib/snapshot-groups';
-import type { Snapshot, SnapshotGroup } from '../types';
-import { DeviceIcon } from './DeviceIcon';
+import { displayName, timeLabel } from "../lib/format";
+import { preferredVariant } from "../lib/snapshot-groups";
+import type { Snapshot, SnapshotGroup } from "../types";
+import { DeviceIcon } from "./DeviceIcon";
 
 export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClose: () => void }) {
 	const initialDevice = preferredVariant(group).device;
-	const [device, setDevice] = useState<Snapshot['device']>(initialDevice);
-	const devices = (['desktop', 'mobile'] as const).filter(
-		(candidate) => group.variants[candidate],
-	);
+	const [device, setDevice] = useState<Snapshot["device"]>(initialDevice);
+	const devices = (["desktop", "mobile"] as const).filter((candidate) => group.variants[candidate]);
 	const snapshot = group.variants[device] ?? preferredVariant(group);
 
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === 'Escape') onClose();
+			if (event.key === "Escape") onClose();
 		}
-		document.body.classList.add('modal-open');
-		window.addEventListener('keydown', closeOnEscape);
+		document.body.classList.add("modal-open");
+		window.addEventListener("keydown", closeOnEscape);
 		return () => {
-			document.body.classList.remove('modal-open');
-			window.removeEventListener('keydown', closeOnEscape);
+			document.body.classList.remove("modal-open");
+			window.removeEventListener("keydown", closeOnEscape);
 		};
 	}, [onClose]);
 
 	function selectAdjacentDevice(event: React.KeyboardEvent, currentIndex: number) {
-		if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+		if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
 		event.preventDefault();
-		const direction = event.key === 'ArrowRight' ? 1 : -1;
+		const direction = event.key === "ArrowRight" ? 1 : -1;
 		const nextIndex = (currentIndex + direction + devices.length) % devices.length;
 		setDevice(devices[nextIndex]);
 	}
@@ -40,7 +38,7 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 			onMouseDown={(event) => event.target === event.currentTarget && onClose()}
 			role="dialog"
 		>
-			<div className={`modal__panel${devices.length > 1 ? ' modal__panel--variants' : ''}`}>
+			<div className={`modal__panel${devices.length > 1 ? " modal__panel--variants" : ""}`}>
 				<header className="modal__header">
 					<div>
 						<p>
@@ -48,8 +46,8 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 						</p>
 						<h2>{displayName(group.name)}</h2>
 						<time dateTime={group.capturedAt}>
-							{timeLabel(group.capturedAt)} ·{' '}
-							{new Date(group.capturedAt).toLocaleDateString('en-GB')}
+							{timeLabel(group.capturedAt)} ·{" "}
+							{new Date(group.capturedAt).toLocaleDateString("en-GB")}
 						</time>
 						<a className="modal__source" href={group.url} rel="noreferrer" target="_blank">
 							<span>{group.url}</span>

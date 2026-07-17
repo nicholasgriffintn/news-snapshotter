@@ -1,5 +1,5 @@
-export type SiteCategory = 'news' | 'sport';
-export type Device = 'desktop' | 'mobile';
+export type SiteCategory = "news" | "sport";
+export type Device = "desktop" | "mobile";
 
 export type SiteDefinition = {
 	analysis?: SiteAnalysisConfig;
@@ -17,29 +17,29 @@ export type SiteDefinition = {
 	requestBody?: {
 		addStyleTag?: string;
 	};
-	visibility?: 'admin' | 'public';
+	visibility?: "admin" | "public";
 };
 
 export type SiteAnalysisConfig = {
-	device: 'desktop';
-	extractor: 'bbc-front-page';
+	device: "desktop";
+	extractor: "bbc-front-page";
 	minimumElements: number;
 	version: number;
 };
 
-export type SiteSource = Omit<SiteDefinition, 'brand'>;
+export type SiteSource = Omit<SiteDefinition, "brand">;
 
 export type ScreenshotResult = {
 	analysis?: {
 		extractionKey?: string;
 		failureKey?: string;
 		htmlKey?: string;
-		status: 'failed' | 'stored';
+		status: "failed" | "stored";
 	};
 	capturedAt: string;
 	device: Device;
 	name: string;
-	status: 'success' | 'error';
+	status: "success" | "error";
 	triggeredAt: string;
 	key?: string;
 	error?: string;

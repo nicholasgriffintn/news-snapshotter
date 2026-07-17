@@ -1,6 +1,6 @@
-import type { Snapshot } from '../types';
-import type { ArchivePeriodFilter } from './archive-period.ts';
-import { matchesArchivePeriod } from './archive-period.ts';
+import type { Snapshot } from "../types";
+import type { ArchivePeriodFilter } from "./archive-period.ts";
+import { matchesArchivePeriod } from "./archive-period.ts";
 
 export type SnapshotFilter = ArchivePeriodFilter & {
 	brand: string;
@@ -8,7 +8,7 @@ export type SnapshotFilter = ArchivePeriodFilter & {
 	query: string;
 };
 
-type FilterableSnapshot = Pick<Snapshot, 'brand' | 'capturedAt' | 'category' | 'name'>;
+type FilterableSnapshot = Pick<Snapshot, "brand" | "capturedAt" | "category" | "name">;
 
 export function filterSnapshots<T extends FilterableSnapshot>(
 	snapshots: T[],

@@ -1,4 +1,4 @@
-import type { Snapshot, SnapshotGroup } from '../types';
+import type { Snapshot, SnapshotGroup } from "../types";
 
 function groupKey(snapshot: Snapshot): string {
 	return `${snapshot.name}\u0000${snapshot.triggeredAt}`;
@@ -30,6 +30,6 @@ export function groupSnapshotVariants(snapshots: Snapshot[]): SnapshotGroup[] {
 
 export function preferredVariant(group: SnapshotGroup): Snapshot {
 	const variant = group.variants.desktop ?? group.variants.mobile;
-	if (!variant) throw new Error('Snapshot group has no captured variants');
+	if (!variant) throw new Error("Snapshot group has no captured variants");
 	return variant;
 }

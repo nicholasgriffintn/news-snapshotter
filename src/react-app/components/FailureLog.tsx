@@ -1,41 +1,45 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 
-import { fetchCaptureFailures } from '../lib/api';
-import { dateTimeLabel, displayName } from '../lib/format';
-import type { CaptureFailure } from '../types';
+import { fetchCaptureFailures } from "../lib/api";
+import { dateTimeLabel, displayName } from "../lib/format";
+import type { CaptureFailure } from "../types";
 
 export function FailureLog({ apiKey }: { apiKey: string }) {
 	const [failures, setFailures] = useState<CaptureFailure[]>([]);
 	const [cursor, setCursor] = useState<string>();
 	const [hasMore, setHasMore] = useState(false);
-	const [query, setQuery] = useState('');
-	const [reason, setReason] = useState('all');
-	const [status, setStatus] = useState('');
+	const [query, setQuery] = useState("");
+	const [reason, setReason] = useState("all");
+	const [status, setStatus] = useState("");
 	const [loading, setLoading] = useState(false);
 
-	const reasons = useMemo(() => [...new Set(failures.map((failure) => failure.reason))].sort(), [failures]);
+	const reasons = useMemo(
+		() => [...new Set(failures.map((failure) => failure.reason))].sort(),
+		[failures],
+	);
 	const visibleFailures = useMemo(() => {
 		const search = query.trim().toLowerCase();
 		return failures.filter((failure) => {
-			if (reason !== 'all' && failure.reason !== reason) return false;
+			if (reason !== "all" && failure.reason !== reason) return false;
 			if (!search) return true;
-			return [failure.brand, failure.name, failure.message, failure.url]
-				.some((value) => value.toLowerCase().includes(search));
+			return [failure.brand, failure.name, failure.message, failure.url].some((value) =>
+				value.toLowerCase().includes(search),
+			);
 		});
 	}, [failures, query, reason]);
 
 	async function load(nextCursor?: string, append = false) {
 		if (!apiKey) return;
 		setLoading(true);
-		setStatus(append ? 'Loading more failures…' : 'Loading failures…');
+		setStatus(append ? "Loading more failures…" : "Loading failures…");
 		try {
 			const page = await fetchCaptureFailures(apiKey, nextCursor);
-			setFailures((current) => append ? [...current, ...page.failures] : page.failures);
+			setFailures((current) => (append ? [...current, ...page.failures] : page.failures));
 			setCursor(page.cursor);
 			setHasMore(page.hasMore);
-			setStatus(page.failures.length === 0 && !append ? 'No capture failures found.' : '');
+			setStatus(page.failures.length === 0 && !append ? "No capture failures found." : "");
 		} catch (error) {
-			setStatus(error instanceof Error ? error.message : 'Could not load capture failures.');
+			setStatus(error instanceof Error ? error.message : "Could not load capture failures.");
 		} finally {
 			setLoading(false);
 		}
@@ -86,26 +90,31 @@ export function FailureLog({ apiKey }: { apiKey: string }) {
 			</div>
 
 			<p aria-live="polite" className="admin-status">
-				{!apiKey ? 'Enter the API key above to view failures.' : status}
+				{!apiKey ? "Enter the API key above to view failures." : status}
 			</p>
 
 			{visibleFailures.length > 0 ? (
 				<div className="failure-list">
 					{visibleFailures.map((failure) => (
-						<article className="failure-item" key={`${failure.capturedAt}-${failure.name}-${failure.device}`}>
+						<article
+							className="failure-item"
+							key={`${failure.capturedAt}-${failure.name}-${failure.device}`}
+						>
 							<div className="failure-item__heading">
 								<div>
 									<strong>{displayName(failure.name)}</strong>
-									<span>{displayName(failure.brand)} · {failure.device} · {failure.category}</span>
+									<span>
+										{displayName(failure.brand)} · {failure.device} · {failure.category}
+									</span>
 								</div>
 								<span className="failure-item__reason">{displayName(failure.reason)}</span>
 							</div>
 							<p>{failure.message}</p>
 							<div className="failure-item__meta">
-								<time dateTime={failure.capturedAt}>
-									{dateTimeLabel(failure.capturedAt)}
-								</time>
-								<a href={failure.url} rel="noreferrer" target="_blank">Open publisher ↗</a>
+								<time dateTime={failure.capturedAt}>{dateTimeLabel(failure.capturedAt)}</time>
+								<a href={failure.url} rel="noreferrer" target="_blank">
+									Open publisher ↗
+								</a>
 							</div>
 						</article>
 					))}

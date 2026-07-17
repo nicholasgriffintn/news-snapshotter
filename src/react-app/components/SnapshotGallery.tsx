@@ -1,22 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from "react";
 
-import { fetchSnapshots } from '../lib/api';
-import {
-	DEFAULT_ARCHIVE_PERIOD,
-	periodDescription,
-} from '../lib/archive-period';
-import { captureWindowKey, groupLabel } from '../lib/format';
-import { filterSnapshots } from '../lib/snapshot-filter';
-import { groupSnapshotVariants } from '../lib/snapshot-groups';
-import type { Snapshot, SnapshotGroup } from '../types';
-import { SnapshotCard } from './SnapshotCard';
-import { SnapshotFilters, type Filters } from './SnapshotFilters';
-import { SnapshotModal } from './SnapshotModal';
+import { fetchSnapshots } from "../lib/api";
+import { DEFAULT_ARCHIVE_PERIOD, periodDescription } from "../lib/archive-period";
+import { captureWindowKey, groupLabel } from "../lib/format";
+import { filterSnapshots } from "../lib/snapshot-filter";
+import { groupSnapshotVariants } from "../lib/snapshot-groups";
+import type { Snapshot, SnapshotGroup } from "../types";
+import { SnapshotCard } from "./SnapshotCard";
+import { SnapshotFilters, type Filters } from "./SnapshotFilters";
+import { SnapshotModal } from "./SnapshotModal";
 
 const EMPTY_FILTERS: Filters = {
-	brand: '',
-	category: '',
-	query: '',
+	brand: "",
+	category: "",
+	query: "",
 	...DEFAULT_ARCHIVE_PERIOD,
 };
 
@@ -24,7 +21,7 @@ export function SnapshotGallery() {
 	const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
 	const [filters, setFilters] = useState(EMPTY_FILTERS);
 	const [selected, setSelected] = useState<SnapshotGroup>();
-	const [error, setError] = useState('');
+	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(true);
 	const [now, setNow] = useState(() => new Date());
 
@@ -75,7 +72,7 @@ export function SnapshotGallery() {
 				<section
 					className="capture-group"
 					key={capturedAt}
-					style={{ '--group-index': Math.min(groupIndex, 4) } as React.CSSProperties}
+					style={{ "--group-index": Math.min(groupIndex, 4) } as React.CSSProperties}
 				>
 					<div className="capture-group__heading">
 						<h2>{groupLabel(capturedAt)}</h2>
@@ -93,9 +90,7 @@ export function SnapshotGallery() {
 				</section>
 			))}
 
-			{selected ? (
-				<SnapshotModal group={selected} onClose={() => setSelected(undefined)} />
-			) : null}
+			{selected ? <SnapshotModal group={selected} onClose={() => setSelected(undefined)} /> : null}
 		</>
 	);
 }

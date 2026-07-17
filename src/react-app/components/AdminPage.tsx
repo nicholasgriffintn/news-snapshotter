@@ -1,35 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
-import { fetchCaptureProfiles, fetchCatalogue } from '../lib/api';
-import type { CatalogueSite } from '../types';
-import { BotCheckTool } from './BotCheckTool';
-import { CaptureTool } from './CaptureTool';
-import { FailureLog } from './FailureLog';
+import { fetchCaptureProfiles, fetchCatalogue } from "../lib/api";
+import type { CatalogueSite } from "../types";
+import { BotCheckTool } from "./BotCheckTool";
+import { CaptureTool } from "./CaptureTool";
+import { FailureLog } from "./FailureLog";
 
-type AdminView = 'capture' | 'diagnostics' | 'failures';
+type AdminView = "capture" | "diagnostics" | "failures";
 
 const VIEWS: Array<{ label: string; value: AdminView }> = [
-	{ label: 'Run captures', value: 'capture' },
-	{ label: 'Browser diagnostic', value: 'diagnostics' },
-	{ label: 'Failure log', value: 'failures' },
+	{ label: "Run captures", value: "capture" },
+	{ label: "Browser diagnostic", value: "diagnostics" },
+	{ label: "Failure log", value: "failures" },
 ];
 
 export function AdminPage() {
-	const [apiKeyDraft, setApiKeyDraft] = useState('');
-	const [apiKey, setApiKey] = useState('');
+	const [apiKeyDraft, setApiKeyDraft] = useState("");
+	const [apiKey, setApiKey] = useState("");
 	const [catalogue, setCatalogue] = useState<CatalogueSite[]>([]);
 	const [profiles, setProfiles] = useState<string[]>([]);
-	const [view, setView] = useState<AdminView>('capture');
-	const [setupStatus, setSetupStatus] = useState('Loading capture configuration…');
+	const [view, setView] = useState<AdminView>("capture");
+	const [setupStatus, setSetupStatus] = useState("Loading capture configuration…");
 
 	useEffect(() => {
 		Promise.all([fetchCatalogue(), fetchCaptureProfiles()])
 			.then(([sites, captureProfiles]) => {
 				setCatalogue(sites);
 				setProfiles(captureProfiles);
-				setSetupStatus('');
+				setSetupStatus("");
 			})
-			.catch(() => setSetupStatus('Could not load the capture configuration.'));
+			.catch(() => setSetupStatus("Could not load the capture configuration."));
 	}, []);
 
 	return (
@@ -53,12 +53,12 @@ export function AdminPage() {
 						/>
 					</label>
 					<button className="admin-secondary-button" type="submit">
-						{apiKey ? 'Update key' : 'Enable actions'}
+						{apiKey ? "Update key" : "Enable actions"}
 					</button>
 					<small>
 						{apiKey
-							? 'Admin actions enabled for this session.'
-							: 'Required for every admin action.'}
+							? "Admin actions enabled for this session."
+							: "Required for every admin action."}
 					</small>
 				</form>
 			</div>
@@ -66,7 +66,7 @@ export function AdminPage() {
 			<nav aria-label="Admin tools" className="admin-tabs">
 				{VIEWS.map((item) => (
 					<button
-						aria-current={view === item.value ? 'page' : undefined}
+						aria-current={view === item.value ? "page" : undefined}
 						key={item.value}
 						onClick={() => setView(item.value)}
 						type="button"
@@ -76,11 +76,15 @@ export function AdminPage() {
 				))}
 			</nav>
 
-			{setupStatus ? <p aria-live="polite" className="admin-status">{setupStatus}</p> : null}
+			{setupStatus ? (
+				<p aria-live="polite" className="admin-status">
+					{setupStatus}
+				</p>
+			) : null}
 			<div className="admin-workspace">
-				{view === 'capture' ? <CaptureTool apiKey={apiKey} catalogue={catalogue} /> : null}
-				{view === 'diagnostics' ? <BotCheckTool apiKey={apiKey} profiles={profiles} /> : null}
-				{view === 'failures' ? <FailureLog apiKey={apiKey} /> : null}
+				{view === "capture" ? <CaptureTool apiKey={apiKey} catalogue={catalogue} /> : null}
+				{view === "diagnostics" ? <BotCheckTool apiKey={apiKey} profiles={profiles} /> : null}
+				{view === "failures" ? <FailureLog apiKey={apiKey} /> : null}
 			</div>
 		</section>
 	);

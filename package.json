@@ -10,7 +10,13 @@
 		"dev": "vite",
 		"start": "vite",
 		"test": "node --test",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types",
+		"format": "vp fmt"
+	},
+	"dependencies": {
+		"@cloudflare/puppeteer": "^1.1.0",
+		"react": "19.2.7",
+		"react-dom": "19.2.7"
 	},
 	"devDependencies": {
 		"@cloudflare/vite-plugin": "1.45.0",
@@ -21,11 +27,7 @@
 		"@vitejs/plugin-react": "6.0.3",
 		"typescript": "^7.0.2",
 		"vite": "8.1.5",
+		"vite-plus": "^0.2.4",
 		"wrangler": "^4.111.0"
-	},
-	"dependencies": {
-		"@cloudflare/puppeteer": "^1.1.0",
-		"react": "19.2.7",
-		"react-dom": "19.2.7"
 	}
 }

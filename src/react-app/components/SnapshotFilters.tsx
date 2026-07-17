@@ -1,6 +1,6 @@
-import { displayName } from '../lib/format';
-import type { SnapshotFilter } from '../lib/snapshot-filter';
-import { DateFilter } from './DateFilter';
+import { displayName } from "../lib/format";
+import type { SnapshotFilter } from "../lib/snapshot-filter";
+import { DateFilter } from "./DateFilter";
 
 export type Filters = SnapshotFilter;
 

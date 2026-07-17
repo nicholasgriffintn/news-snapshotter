@@ -1,15 +1,15 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
+import assert from "node:assert/strict";
+import test from "node:test";
 
-import { runSnapshotWorkflow } from './workflow-runner.ts';
+import { runSnapshotWorkflow } from "./workflow-runner.ts";
 
-const triggeredAt = '2026-07-16T10:20:30.123Z';
+const triggeredAt = "2026-07-16T10:20:30.123Z";
 const sites = [
-	{ brand: 'bbc', category: 'news', name: 'bbc-home', url: 'https://bbc.co.uk' },
-	{ brand: 'sky', category: 'sport', name: 'sky-sports', url: 'https://skysports.com' },
+	{ brand: "bbc", category: "news", name: "bbc-home", url: "https://bbc.co.uk" },
+	{ brand: "sky", category: "sport", name: "sky-sports", url: "https://skysports.com" },
 ];
 
-test('runs one durable step per site and device and aggregates results', async () => {
+test("runs one durable step per site and device and aggregates results", async () => {
 	const stepNames = [];
 	const captures = [];
 	const step = {
@@ -20,23 +20,23 @@ test('runs one durable step per site and device and aggregates results', async (
 	};
 	const capture = async (_env, site, device, timestamp) => {
 		captures.push({ device, name: site.name, timestamp });
-		return device === 'desktop'
+		return device === "desktop"
 			? {
-				capturedAt: timestamp,
-				device,
-				key: `${site.name}-${device}.png`,
-				name: site.name,
-				status: 'success',
-				triggeredAt: timestamp,
-			}
+					capturedAt: timestamp,
+					device,
+					key: `${site.name}-${device}.png`,
+					name: site.name,
+					status: "success",
+					triggeredAt: timestamp,
+				}
 			: {
-				capturedAt: timestamp,
-				device,
-				error: 'mobile failed',
-				name: site.name,
-				status: 'error',
-				triggeredAt: timestamp,
-			};
+					capturedAt: timestamp,
+					device,
+					error: "mobile failed",
+					name: site.name,
+					status: "error",
+					triggeredAt: timestamp,
+				};
 	};
 
 	const result = await runSnapshotWorkflow({}, { triggeredAt, sites }, step, capture);
@@ -46,18 +46,18 @@ test('runs one durable step per site and device and aggregates results', async (
 	assert.equal(result.successful, 2);
 	assert.equal(result.failed, 2);
 	assert.deepEqual(stepNames, [
-		'screenshot-bbc-home-desktop',
-		'screenshot-bbc-home-mobile',
-		'screenshot-sky-sports-desktop',
-		'screenshot-sky-sports-mobile',
+		"screenshot-bbc-home-desktop",
+		"screenshot-bbc-home-mobile",
+		"screenshot-sky-sports-desktop",
+		"screenshot-sky-sports-mobile",
 	]);
 	assert.ok(captures.every(({ timestamp }) => timestamp === triggeredAt));
 });
 
-test('returns an empty summary when no sites are selected', async () => {
+test("returns an empty summary when no sites are selected", async () => {
 	const step = { do: async (_name, callback) => callback() };
 	const result = await runSnapshotWorkflow({}, { triggeredAt, sites: [] }, step, async () => {
-		throw new Error('capture should not run');
+		throw new Error("capture should not run");
 	});
 
 	assert.deepEqual(result, {
@@ -70,11 +70,11 @@ test('returns an empty summary when no sites are selected', async () => {
 	});
 });
 
-test('delays a child runner before starting its first capture', async () => {
+test("delays a child runner before starting its first capture", async () => {
 	const events = [];
 	const step = {
 		do: async (_name, callback) => {
-			events.push('capture');
+			events.push("capture");
 			return callback();
 		},
 		sleep: async (name, duration) => {
@@ -85,7 +85,7 @@ test('delays a child runner before starting its first capture', async () => {
 		device,
 		key: `${site.name}-${device}.png`,
 		name: site.name,
-		status: 'success',
+		status: "success",
 	});
 
 	await runSnapshotWorkflow(
@@ -95,16 +95,16 @@ test('delays a child runner before starting its first capture', async () => {
 		capture,
 	);
 
-	assert.equal(events[0], 'stagger browser runner:3 seconds');
-	assert.equal(events.filter((event) => event === 'capture').length, 2);
+	assert.equal(events[0], "stagger browser runner:3 seconds");
+	assert.equal(events.filter((event) => event === "capture").length, 2);
 });
 
-test('does not retry or swallow a durable step failure', async () => {
+test("does not retry or swallow a durable step failure", async () => {
 	let attempts = 0;
 	const step = {
 		do: async () => {
 			attempts += 1;
-			throw new Error('step unavailable');
+			throw new Error("step unavailable");
 		},
 	};
 
