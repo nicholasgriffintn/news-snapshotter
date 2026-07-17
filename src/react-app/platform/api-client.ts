@@ -259,3 +259,46 @@ export async function createHistoryTimeline(
 	});
 	return readJson(response);
 }
+
+export type ExtractorPreview = {
+	capture: HistoryCapture["capture"];
+	elements: HistoryCapture["elements"];
+	expectedMinimum?: number;
+	extractionKey: string;
+	matchedElements: number;
+	warnings: Array<{ code: string; message: string }>;
+};
+
+export async function fetchExtractorChecklist(apiKey: string): Promise<string[]> {
+	const response = await fetch("/api/admin/history/extractor-checklist", {
+		headers: { authorization: `Bearer ${apiKey}` },
+	});
+	return (await readJson<{ checklist: string[] }>(response)).checklist;
+}
+
+export async function fetchExtractorPreview(
+	apiKey: string,
+	key: string,
+): Promise<ExtractorPreview> {
+	const search = new URLSearchParams({ key });
+	const response = await fetch(`/api/admin/history/extractor-preview?${search}`, {
+		headers: { authorization: `Bearer ${apiKey}` },
+	});
+	return readJson(response);
+}
+
+export async function downloadExtractorFixture(apiKey: string, key: string): Promise<void> {
+	const search = new URLSearchParams({ download: "fixture", key });
+	const response = await fetch(`/api/admin/history/extractor-preview?${search}`, {
+		headers: { authorization: `Bearer ${apiKey}` },
+	});
+	if (!response.ok) await readJson(response);
+	const objectUrl = URL.createObjectURL(await response.blob());
+	const anchor = document.createElement("a");
+	anchor.href = objectUrl;
+	anchor.download =
+		response.headers.get("content-disposition")?.match(/filename="([^"]+)"/)?.[1] ??
+		"extraction.expected.json";
+	anchor.click();
+	URL.revokeObjectURL(objectUrl);
+}

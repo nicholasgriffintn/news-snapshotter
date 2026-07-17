@@ -3,10 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { parsePageExtraction } from "../../history/domain/extraction.ts";
-import {
-	extractorAuthoringChecklist,
-	extractorDefinition,
-} from "./extractor-registry.ts";
+import { extractorAuthoringChecklist, extractorDefinition } from "./extractor-registry.ts";
 
 for (const fixture of ["bbc-home", "guardian-uk"]) {
 	test(`${fixture} fixture preserves reviewed stable story identities`, async () => {

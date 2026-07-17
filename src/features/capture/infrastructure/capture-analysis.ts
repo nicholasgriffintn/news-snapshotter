@@ -2,10 +2,7 @@ import type { Page } from "@cloudflare/puppeteer";
 
 import type { Device, SiteDefinition } from "../../../core/domain.ts";
 import type { ElementPosition, PageElement } from "../../history/domain/extraction.ts";
-import {
-	extractorDefinition,
-	type ExtractorDefinition,
-} from "../domain/extractor-registry.ts";
+import { extractorDefinition, type ExtractorDefinition } from "../domain/extractor-registry.ts";
 
 const SCHEMA_VERSION = 1;
 const SANITISATION_VERSION = 1;
@@ -267,7 +264,15 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 			html: `<!doctype html>${clone.outerHTML}`,
 			pageHeight: document.documentElement.scrollHeight,
 			pageWidth: document.documentElement.scrollWidth,
-			warnings: elements.length === 0 ? [{ code: "no-story-matches", message: `No elements matched ${extractorDefinition.name}` }] : [],
+			warnings:
+				elements.length === 0
+					? [
+							{
+								code: "no-story-matches",
+								message: `No elements matched ${extractorDefinition.name}`,
+							},
+						]
+					: [],
 		});
 	}, extractor);
 

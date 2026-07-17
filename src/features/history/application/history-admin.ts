@@ -136,7 +136,10 @@ async function extractorPreview(env: HistoryAdminEnv, url: URL): Promise<Respons
 	const key = extractionKey(url);
 	const extraction = await readExtraction(env.ARCHIVE_DATA, key);
 	if (!extraction) {
-		return Response.json({ message: "Extraction artefact not found", status: "error" }, { status: 404 });
+		return Response.json(
+			{ message: "Extraction artefact not found", status: "error" },
+			{ status: 404 },
+		);
 	}
 	const site = SITES.find(({ name }) => name === extraction.capture.site);
 	const body = {

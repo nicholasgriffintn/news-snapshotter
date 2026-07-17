@@ -802,7 +802,7 @@ select:focus-visible {
 
 .admin-tabs {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(5, 1fr);
 	gap: 0.5rem;
 }
 
@@ -1121,6 +1121,62 @@ select:focus-visible {
 	display: flex;
 	align-items: center;
 	grid-template-columns: auto 1fr;
+}
+
+.extractor-key-form,
+.extractor-key-form label {
+	display: grid;
+	gap: 0.5rem;
+}
+
+.extractor-key-form {
+	grid-template-columns: 1fr auto;
+	align-items: end;
+}
+
+.extractor-key-form input {
+	padding: 0.75rem;
+	color: var(--cream);
+	background: var(--ink);
+	border: 1px solid var(--cream);
+}
+
+.extractor-preview-summary {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 0.5rem;
+}
+
+.extractor-preview-summary span {
+	display: grid;
+	padding: 0.75rem;
+	background: rgba(255, 247, 215, 0.08);
+}
+
+.extractor-preview-summary strong {
+	color: var(--yellow);
+	font-size: 1.5rem;
+}
+
+.extractor-elements {
+	overflow-x: auto;
+}
+
+.extractor-elements table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.extractor-elements th,
+.extractor-elements td {
+	max-width: 26rem;
+	padding: 0.65rem;
+	overflow: hidden;
+	font-size: 0.72rem;
+	text-align: left;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	border-bottom: 1px solid rgba(255, 247, 215, 0.2);
 }
 
 .disclosure {

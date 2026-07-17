@@ -1,8 +1,4 @@
-import type {
-	CaptureProviderName,
-	Device,
-	SiteDefinition,
-} from "../../../core/domain.ts";
+import type { CaptureProviderName, Device, SiteDefinition } from "../../../core/domain.ts";
 import { DEFAULT_PROGRESSIVE_SCROLL, type ProgressiveScrollConfig } from "./scroll-policy.ts";
 
 export type FailureIndicator = {
@@ -62,9 +58,7 @@ type CaptureProfile = {
 	provider?: CaptureProviderName;
 };
 
-function forBothDevices(
-	config: Partial<DeviceCaptureConfig>,
-): CaptureProfile["deviceConfig"] {
+function forBothDevices(config: Partial<DeviceCaptureConfig>): CaptureProfile["deviceConfig"] {
 	return { desktop: config, mobile: config };
 }
 
@@ -124,11 +118,7 @@ const METRO_CONSENT_SELECTOR = [
 	"#didomi-notice-agree-button",
 ].join(", ");
 
-const METRO_CONSENT_HIDE_SELECTORS = [
-	"#didomi-popup",
-	"#qc-cmp2-container",
-	".qc-cmp-cleanslate",
-];
+const METRO_CONSENT_HIDE_SELECTORS = ["#didomi-popup", "#qc-cmp2-container", ".qc-cmp-cleanslate"];
 
 const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 	desktop: {

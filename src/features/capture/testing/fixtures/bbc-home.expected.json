@@ -22,7 +22,14 @@
 			"elementKey": "https://www.bbc.co.uk/news/articles/bbc-lead",
 			"headline": "Lead BBC fixture headline",
 			"kind": "story",
-			"position": { "height": 320, "left": 0, "pageOrder": 1, "top": 120, "viewportDepth": 0.13, "width": 820 },
+			"position": {
+				"height": 320,
+				"left": 0,
+				"pageOrder": 1,
+				"top": 120,
+				"viewportDepth": 0.13,
+				"width": 820
+			},
 			"prominence": "lead",
 			"selectorHint": "h1",
 			"summary": "Lead BBC fixture summary.",
@@ -33,7 +40,14 @@
 			"elementKey": "https://www.bbc.co.uk/news/articles/bbc-second",
 			"headline": "Second BBC fixture headline",
 			"kind": "story",
-			"position": { "height": 180, "left": 840, "pageOrder": 2, "top": 120, "viewportDepth": 0.13, "width": 560 },
+			"position": {
+				"height": 180,
+				"left": 840,
+				"pageOrder": 2,
+				"top": 120,
+				"viewportDepth": 0.13,
+				"width": 560
+			},
 			"prominence": "major",
 			"selectorHint": "h2",
 			"textFingerprint": "second bbc fixture headline"

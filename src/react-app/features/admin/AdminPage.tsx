@@ -10,14 +10,16 @@ import { BotCheckTool } from "./BotCheckTool";
 import { CaptureTool } from "./CaptureTool";
 import { FailureLog } from "./FailureLog";
 import { HistoryOperationsTool } from "./HistoryOperationsTool.tsx";
+import { ExtractorPreviewTool } from "./ExtractorPreviewTool.tsx";
 
-type AdminView = "capture" | "diagnostics" | "failures" | "history";
+type AdminView = "capture" | "diagnostics" | "extractors" | "failures" | "history";
 
 const VIEWS: Array<{ label: string; value: AdminView }> = [
 	{ label: "Run captures", value: "capture" },
 	{ label: "Browser diagnostic", value: "diagnostics" },
 	{ label: "Failure log", value: "failures" },
 	{ label: "History operations", value: "history" },
+	{ label: "Extractor preview", value: "extractors" },
 ];
 
 export function AdminPage() {
@@ -96,6 +98,7 @@ export function AdminPage() {
 				{view === "diagnostics" ? <BotCheckTool apiKey={apiKey} profiles={profiles} /> : null}
 				{view === "failures" ? <FailureLog apiKey={apiKey} /> : null}
 				{view === "history" ? <HistoryOperationsTool apiKey={apiKey} /> : null}
+				{view === "extractors" ? <ExtractorPreviewTool apiKey={apiKey} /> : null}
 			</div>
 		</section>
 	);

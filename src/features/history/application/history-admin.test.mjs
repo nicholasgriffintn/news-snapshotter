@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { handleHistoryAdminRequest } from "./history-admin.ts";
+import { historyExtraction } from "../testing/extraction-fixture.mjs";
 
 function request(path, body) {
 	return new Request(`https://archive.example${path}`, {
@@ -102,4 +103,32 @@ test("serves bounded indexing status and extraction failures", async () => {
 	assert.equal(body.failures.length, 1);
 	assert.equal(body.failures[0].captureId, "capture-a");
 	sqlite.close();
+});
+
+test("previews a private extraction without returning stored HTML", async () => {
+	const extraction = historyExtraction("capture-preview", "2026-07-17T09:00:00.000Z", {
+		extractorVersion: 2,
+	});
+	const compressed = new Blob([JSON.stringify(extraction)])
+		.stream()
+		.pipeThrough(new CompressionStream("gzip"));
+	const key = "brand=bbc/site=bbc-home/capture.extraction.v1.json.gz";
+	const response = await handleHistoryAdminRequest(
+		request(`/api/admin/history/extractor-preview?key=${encodeURIComponent(key)}`),
+		{
+			ARCHIVE_DATA: {
+				get: async (requestedKey) => {
+					assert.equal(requestedKey, key);
+					return { body: compressed, httpMetadata: { contentEncoding: "gzip" } };
+				},
+			},
+		},
+	);
+	const body = await response.json();
+
+	assert.equal(body.matchedElements, 1);
+	assert.equal(body.expectedMinimum, 20);
+	assert.equal(body.capture.htmlKey, "capture-preview.html.gz");
+	assert.equal(body.html, undefined);
+	assert.equal(body.elements[0].elementKey, extraction.elements[0].elementKey);
 });

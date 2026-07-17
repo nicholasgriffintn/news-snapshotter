@@ -39,7 +39,7 @@ const BBC_SPORT_SITES = [
 	{
 		name: "bbc-sport",
 		url: `${BBC_BASE_URL}/sport`,
-		priority: 1 as const
+		priority: 1 as const,
 	},
 	{ name: "bbc-football", url: `${BBC_BASE_URL}/sport/football` },
 	{ name: "bbc-premier-league", url: `${BBC_BASE_URL}/sport/football/premier-league` },

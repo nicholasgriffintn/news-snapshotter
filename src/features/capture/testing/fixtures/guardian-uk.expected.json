@@ -22,7 +22,14 @@
 			"elementKey": "https://www.theguardian.com/politics/2026/jul/17/fixture-story",
 			"headline": "Guardian fixture headline",
 			"kind": "story",
-			"position": { "height": 260, "left": 0, "pageOrder": 1, "top": 160, "viewportDepth": 0.18, "width": 700 },
+			"position": {
+				"height": 260,
+				"left": 0,
+				"pageOrder": 1,
+				"top": 160,
+				"viewportDepth": 0.18,
+				"width": 700
+			},
 			"prominence": "major",
 			"selectorHint": "h2",
 			"summary": "Guardian fixture standfirst.",
@@ -33,7 +40,14 @@
 			"elementKey": "https://www.theguardian.com/culture/2026/jul/17/fixture-culture",
 			"headline": "Guardian culture fixture",
 			"kind": "story",
-			"position": { "height": 220, "left": 720, "pageOrder": 2, "top": 160, "viewportDepth": 0.18, "width": 700 },
+			"position": {
+				"height": 220,
+				"left": 720,
+				"pageOrder": 2,
+				"top": 160,
+				"viewportDepth": 0.18,
+				"width": 700
+			},
 			"prominence": "standard",
 			"selectorHint": "h3",
 			"textFingerprint": "guardian culture fixture"

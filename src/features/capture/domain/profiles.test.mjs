@@ -93,8 +93,10 @@ test("carries publisher cleaning rules into both device profiles", () => {
 	for (const device of ["desktop", "mobile"]) {
 		assert.ok(
 			guardian.deviceConfig[device].clickActions.some((action) => {
-				return action.frameUrlIncludes?.includes("sourcepoint.theguardian.com") &&
-					action.selector.includes('button[title="Accept all"]');
+				return (
+					action.frameUrlIncludes?.includes("sourcepoint.theguardian.com") &&
+					action.selector.includes('button[title="Accept all"]')
+				);
 			}),
 		);
 	}
@@ -123,9 +125,11 @@ test("carries publisher cleaning rules into both device profiles", () => {
 	assert.ok(times.deviceConfig.desktop.hideSelectors.includes('iframe[id^="sp_message_iframe_"]'));
 	assert.ok(
 		metro.deviceConfig.desktop.clickActions.some((action) => {
-			return action.selector.includes("#qc-cmp2-ui") &&
+			return (
+				action.selector.includes("#qc-cmp2-ui") &&
 				action.selector.includes(".fc-cta-consent") &&
-				action.selector.includes("#didomi-notice-agree-button");
+				action.selector.includes("#didomi-notice-agree-button")
+			);
 		}),
 	);
 	assert.ok(metro.deviceConfig.mobile.hideSelectors.includes("#qc-cmp2-container"));
