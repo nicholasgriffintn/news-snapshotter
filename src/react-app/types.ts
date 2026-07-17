@@ -19,8 +19,10 @@ export type SnapshotGroup = Pick<
 };
 
 export type CapturePriority = 1 | 2 | 3 | 4;
+export type CaptureRegion = "international" | "uk" | "us";
 
 export type CatalogueSite = Pick<Snapshot, "brand" | "category" | "name"> & {
+	captureRegion: CaptureRegion;
 	priority: CapturePriority;
 };
 

@@ -1,11 +1,13 @@
 export type SiteCategory = "news" | "sport";
 export type Device = "desktop" | "mobile";
 export type CapturePriority = 1 | 2 | 3 | 4;
+export type CaptureRegion = "international" | "uk" | "us";
 
 export type SiteDefinition = {
 	analysis?: SiteAnalysisConfig;
 	name: string;
 	brand: string;
+	captureRegion: CaptureRegion;
 	category: SiteCategory;
 	priority: CapturePriority;
 	completion?: {
@@ -29,7 +31,11 @@ export type SiteAnalysisConfig = {
 	version: number;
 };
 
-export type SiteSource = Omit<SiteDefinition, "brand" | "priority"> & {
+export type SiteSource = Omit<
+	SiteDefinition,
+	"brand" | "captureRegion" | "priority"
+> & {
+	captureRegion?: CaptureRegion;
 	priority?: CapturePriority;
 };
 

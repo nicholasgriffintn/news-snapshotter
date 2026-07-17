@@ -21,6 +21,7 @@ export async function runBotCheck(
 	const triggeredAt = new Date().toISOString();
 	const site: SiteDefinition = {
 		brand: "amiabot",
+		captureRegion: "international",
 		category: "news",
 		completion: {
 			selector: "#status",

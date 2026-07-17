@@ -65,6 +65,7 @@ export function withBrand(
 		return {
 			...site,
 			brand,
+			captureRegion: site.captureRegion ?? "uk",
 			priority: resolvePriority(site, priorityGroup),
 		};
 	});
@@ -78,6 +79,7 @@ export function withIndividualBrands(
 		return {
 			...site,
 			brand: site.name,
+			captureRegion: site.captureRegion ?? "uk",
 			priority: resolvePriority(site, priorityGroup),
 		};
 	});

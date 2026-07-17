@@ -7,6 +7,7 @@ import { captureDevice } from "./browser-rendering.ts";
 
 const site = {
 	brand: "example",
+	captureRegion: "uk",
 	category: "news",
 	name: "example-home",
 	runtimeQuietMs: 0,
@@ -49,8 +50,10 @@ function successfulPage(overrides = {}) {
 			options.fullPage ? Buffer.from("full screenshot") : Buffer.from("thumbnail"),
 		profileCalls,
 		runtimeCalls,
+		emulateTimezone: async (...args) => profileCalls.push(["emulateTimezone", ...args]),
 		setCookie: async () => undefined,
 		setExtraHTTPHeaders: async (...args) => profileCalls.push(["setExtraHTTPHeaders", ...args]),
+		setGeolocation: async (...args) => profileCalls.push(["setGeolocation", ...args]),
 		setJavaScriptEnabled: async () => undefined,
 		setUserAgent: async (...args) => profileCalls.push(["setUserAgent", ...args]),
 		setViewport: async () => undefined,
@@ -168,6 +171,21 @@ test("captures full and thumbnail images with metadata and closes the browser", 
 	assert.equal(failures.length, 0);
 	assert.equal(closed, true);
 	assert.ok(page.profileCalls.some(([method]) => method === "setExtraHTTPHeaders"));
+	assert.deepEqual(
+		page.profileCalls.find(([method]) => method === "emulateTimezone"),
+		["emulateTimezone", "Europe/London"],
+	);
+	assert.deepEqual(
+		page.profileCalls.find(([method]) => method === "setGeolocation"),
+		[
+			"setGeolocation",
+			{
+				accuracy: 20,
+				latitude: 51.5074,
+				longitude: -0.1278,
+			},
+		],
+	);
 	assert.ok(page.profileCalls.some(([method]) => method === "evaluateOnNewDocument"));
 	const userAgentCall = page.profileCalls.find(([method]) => method === "setUserAgent");
 	assert.match(userAgentCall[1], /Macintosh/);
@@ -242,9 +260,11 @@ test("records HTTP capture failures without retrying or writing screenshots", as
 		},
 		newPage: async () => ({
 			_client: () => ({ send: async () => undefined }),
+			emulateTimezone: async () => undefined,
 			evaluateOnNewDocument: async () => undefined,
 			goto: async () => ({ status: () => 503 }),
 			setExtraHTTPHeaders: async () => undefined,
+			setGeolocation: async () => undefined,
 			setJavaScriptEnabled: async () => undefined,
 			setUserAgent: async () => undefined,
 			setViewport: async () => undefined,

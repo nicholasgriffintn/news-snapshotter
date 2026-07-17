@@ -29,7 +29,7 @@ test("serves the public site catalogue without authentication", async () => {
 	assert.ok(body.sites.length > 0);
 	assert.deepEqual(
 		Object.keys(body.sites[0]).sort(),
-		["brand", "category", "name", "priority"],
+		["brand", "captureRegion", "category", "name", "priority"],
 	);
 	assert.ok(
 		body.sites.every((site) => {

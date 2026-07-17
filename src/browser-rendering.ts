@@ -1,6 +1,7 @@
 import puppeteer, { type Page } from "@cloudflare/puppeteer";
 
 import { collectAndStoreAnalysis } from "./analysis.ts";
+import { CAPTURE_REGIONS } from "./capture-regions.ts";
 import {
 	resolveCaptureProfile,
 	type ClickAction,
@@ -123,7 +124,13 @@ async function detectFailure(
 	}
 }
 
-async function applyPageProfile(page: Page, config: DeviceCaptureConfig): Promise<void> {
+async function applyPageProfile(
+	page: Page,
+	config: DeviceCaptureConfig,
+	regionName: SiteDefinition["captureRegion"],
+): Promise<void> {
+	const region = CAPTURE_REGIONS[regionName];
+
 	await page.setViewport({
 		...config.viewport,
 		deviceScaleFactor: config.deviceScaleFactor,
@@ -133,8 +140,14 @@ async function applyPageProfile(page: Page, config: DeviceCaptureConfig): Promis
 
 	await page.setJavaScriptEnabled(config.javaScriptEnabled ?? true);
 
-	if (config.extraHTTPHeaders) {
-		await page.setExtraHTTPHeaders(config.extraHTTPHeaders);
+	await page.setExtraHTTPHeaders({
+		...config.extraHTTPHeaders,
+		"accept-language": region.acceptLanguage,
+	});
+	await page.emulateTimezone(region.timezone);
+
+	if (region.geolocation) {
+		await page.setGeolocation(region.geolocation);
 	}
 
 	if (config.userAgent) {
@@ -254,7 +267,7 @@ async function capture(
 
 	try {
 		const page = await browser.newPage();
-		await applyPageProfile(page, config);
+		await applyPageProfile(page, config, site.captureRegion);
 		const response = await navigateWithQuietRuntime(page, site, config);
 
 		if (response && response.status() >= 400) {

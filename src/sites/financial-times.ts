@@ -1,4 +1,17 @@
 export const FINANCIAL_TIMES_SITES = [
-	{ name: "financialtimes-uk", url: "https://www.ft.com/?edition=uk" },
-	{ name: "financialtimes-international", url: "https://www.ft.com/?edition=international" },
-].map((site) => ({ ...site, category: "news" as const }));
+	{
+		captureRegion: "uk" as const,
+		name: "financialtimes-uk",
+		url: "https://www.ft.com/?edition=uk",
+	},
+	{
+		captureRegion: "international" as const,
+		name: "financialtimes-international",
+		url: "https://www.ft.com/?edition=international",
+	},
+].map((site) => {
+	return {
+		...site,
+		category: "news" as const,
+	};
+});

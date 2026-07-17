@@ -78,6 +78,7 @@ async function startWorkflow(request: Request, env: Env): Promise<Response> {
 			selectedSites: sites.map((site) => {
 				return {
 					brand: site.brand,
+					captureRegion: site.captureRegion,
 					category: site.category,
 					name: site.name,
 					priority: site.priority,
@@ -148,6 +149,7 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 			sites: SITES.map((site) => {
 				return {
 					brand: site.brand,
+					captureRegion: site.captureRegion,
 					category: site.category,
 					name: site.name,
 					priority: site.priority,
