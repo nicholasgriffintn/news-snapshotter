@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { HistorySite } from "../../core/types.ts";
 import { fetchHistorySites } from "../../platform/api-client.ts";
 import { displayName } from "../../shared/format.ts";
+import { HistoryNav } from "./HistoryNav.tsx";
 
 export function HistoryIndexPage() {
 	const [sites, setSites] = useState<HistorySite[]>([]);
@@ -20,27 +21,52 @@ export function HistoryIndexPage() {
 
 	return (
 		<div className="history-page history-index-page">
-			<header className="history-heading">
+			<header className="history-heading history-heading--index">
 				<div>
 					<p className="eyebrow">Structured page archive</p>
 					<h1>Site history</h1>
 				</div>
-				<p>Explore how publisher front pages, stories and editorial emphasis changed over time.</p>
+				<div className="history-heading__intro">
+					<p>See what publishers led with, how their pages changed, and which stories persisted.</p>
+				</div>
 			</header>
+			<HistoryNav current="sites" />
 			{loading ? <div className="empty-state">Loading site histories…</div> : null}
 			{error ? <div className="empty-state empty-state--error">{error}</div> : null}
 			{!loading && !error && sites.length === 0 ? (
 				<div className="empty-state">No analysed site histories are available yet.</div>
 			) : null}
-			<div className="history-site-grid">
-				{sites.map((site) => (
-					<a href={`/history/${encodeURIComponent(site.site)}`} key={site.site}>
-						<p className="eyebrow">{site.captureCount} captures</p>
-						<h2>{displayName(site.site)}</h2>
-						<span>{site.storyCount} observed stories</span>
-						<time dateTime={site.lastCaptureAt}>
-							Updated {new Date(site.lastCaptureAt).toLocaleString("en-GB")}
-						</time>
+			<div className="history-site-list">
+				{sites.map((site, index) => (
+					<a
+						className="history-site-row"
+						href={`/history/${encodeURIComponent(site.site)}`}
+						key={site.site}
+					>
+						<span className="history-site-row__index">{String(index + 1).padStart(2, "0")}</span>
+						<div>
+							<p className="eyebrow">Publisher archive</p>
+							<h2>{displayName(site.site)}</h2>
+						</div>
+						<dl>
+							<div>
+								<dt>Captures</dt>
+								<dd>{site.captureCount}</dd>
+							</div>
+							<div>
+								<dt>Stories</dt>
+								<dd>{site.storyCount}</dd>
+							</div>
+							<div className="history-site-row__updated">
+								<dt>Latest</dt>
+								<dd>
+									<time dateTime={site.lastCaptureAt}>
+										{new Date(site.lastCaptureAt).toLocaleString("en-GB")}
+									</time>
+								</dd>
+							</div>
+						</dl>
+						<span className="history-site-row__action">Open history →</span>
 					</a>
 				))}
 			</div>

@@ -1,6 +1,7 @@
 import { displayName } from "../../shared/format.ts";
 import { HistoryCaptureView } from "./HistoryCaptureView";
 import { HistoryChangePanel } from "./HistoryChangePanel";
+import { HistoryNav } from "./HistoryNav.tsx";
 import { HistoryScrubber } from "./HistoryScrubber";
 import { useHistoryPage } from "./useHistoryPage.ts";
 
@@ -10,24 +11,26 @@ export function HistoryPage({ site }: { site: string }) {
 
 	return (
 		<div className="history-page">
-			<header className="history-heading">
+			<header className="history-heading history-heading--archive">
 				<div>
 					<p className="eyebrow">Structured page archive</p>
 					<h1>{displayName(site)} history</h1>
 				</div>
-				<div className="history-heading__disclosure">
-					<a href={`/history/${encodeURIComponent(site)}/research`}>
-						Search and research this archive →
-					</a>
-					<strong>Screenshots remain the visual source of truth.</strong>
-					<p>Story metadata and positions are derived from the publisher’s rendered page.</p>
+				<div className="history-heading__intro">
+					<p>Review each captured front page alongside its extracted stories and layout.</p>
 					{history.capture ? (
-						<a href={history.capture.capture.sourceUrl} rel="noreferrer" target="_blank">
+						<a
+							className="history-text-link"
+							href={history.capture.capture.sourceUrl}
+							rel="noreferrer"
+							target="_blank"
+						>
 							Visit original publisher ↗
 						</a>
 					) : null}
 				</div>
 			</header>
+			<HistoryNav current="captures" site={site} />
 
 			<HistoryScrubber
 				captures={history.captures}

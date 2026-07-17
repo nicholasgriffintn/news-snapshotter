@@ -13,7 +13,7 @@ const site = {
 		device: "desktop",
 		extractor: "bbc-front-page",
 		minimumElements: 2,
-		version: 2,
+		version: 3,
 	},
 	brand: "bbc",
 	category: "news",
@@ -111,6 +111,31 @@ test("keeps visible headline links and rejects navigation or hidden card actions
 	assert.equal(stories[0].summary, undefined);
 });
 
+test("keeps a visible responsive card when a hidden duplicate appears first", () => {
+	const hidden = extractedStory({
+		canonicalUrl: "https://www.bbc.co.uk/news/articles/responsive-story",
+		position: {
+			height: 0,
+			left: 0,
+			pageOrder: 1,
+			top: 0,
+			viewportDepth: 0,
+			width: 0,
+		},
+	});
+	const visible = extractedStory({
+		canonicalUrl: hidden.canonicalUrl,
+		elementKey: "visible-card",
+		position: { ...hidden.position, height: 240, width: 600 },
+	});
+
+	const stories = normaliseStoryElements([hidden, visible]);
+
+	assert.equal(stories.length, 1);
+	assert.equal(stories[0].elementKey, "visible-card");
+	assert.equal(stories[0].position.pageOrder, 1);
+});
+
 test("stores compressed HTML and extraction artefacts", async () => {
 	const writes = [];
 	const page = {
@@ -147,6 +172,53 @@ test("stores compressed HTML and extraction artefacts", async () => {
 	assert.equal(writes[0][2].httpMetadata.contentEncoding, "gzip");
 	assert.match(writes[0][2].customMetadata.contentHash, /^[a-f0-9]{64}$/);
 	assert.match(writes[0][2].customMetadata.structureHash, /^[a-f0-9]{64}$/);
+});
+
+test("optionally stores bounded screenshot-region crops in the screenshot bucket", async () => {
+	const archiveWrites = [];
+	const cropWrites = [];
+	const page = {
+		evaluate: async () =>
+			JSON.stringify({
+				elements: [
+					extractedStory({ image: { sourceUrl: "https://example.com/one.jpg" } }),
+					extractedStory({
+						canonicalUrl: "https://bbc.co.uk/b",
+						elementKey: "b",
+						headline: "Second headline",
+						image: { sourceUrl: "https://example.com/two.jpg" },
+					}),
+				],
+				html: "<html></html>",
+				pageHeight: 2_000,
+				pageWidth: 1_740,
+				warnings: [],
+			}),
+		screenshot: async () => new Uint8Array([1, 2, 3]),
+	};
+	await collectAndStoreAnalysis({
+		bucket: { put: async (...args) => archiveWrites.push(args) },
+		capturedAt: "2026-07-17T09:00:10.000Z",
+		device: "desktop",
+		page,
+		profile: "bbc",
+		screenshotBucket: { put: async (...args) => cropWrites.push(args) },
+		screenshotKey: "screenshot.png",
+		site: {
+			...site,
+			analysis: { ...site.analysis, imageCrops: { maxPerCapture: 1 } },
+		},
+		triggeredAt,
+	});
+
+	assert.equal(cropWrites.length, 1);
+	assert.match(cropWrites[0][0], /\.image-01\.jpeg$/);
+	const extractionStream = new Blob([archiveWrites[1][1]])
+		.stream()
+		.pipeThrough(new DecompressionStream("gzip"));
+	const extraction = await new Response(extractionStream).json();
+	assert.equal(extraction.elements[0].image.cropKey, cropWrites[0][0]);
+	assert.equal(extraction.elements[1].image.cropKey, undefined);
 });
 
 test("stores an explicit failure when extraction is unexpectedly empty", async () => {

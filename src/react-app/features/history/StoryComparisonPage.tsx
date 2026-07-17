@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { StoryHistory } from "../../core/types.ts";
 import { fetchStoryHistory } from "../../platform/api-client.ts";
 import { displayName } from "../../shared/format.ts";
+import { HistoryNav } from "./HistoryNav.tsx";
 import { StoryTimelineChart } from "./StoryTimelineChart.tsx";
 
 export function StoryComparisonPage({ site, storyIds }: { site: string; storyIds: string[] }) {
@@ -24,8 +25,8 @@ export function StoryComparisonPage({ site, storyIds }: { site: string; storyIds
 					<p className="eyebrow">{displayName(site)} comparison</p>
 					<h1>Story trajectories</h1>
 				</div>
-				<a href={`/history/${encodeURIComponent(site)}/research`}>Back to research →</a>
 			</header>
+			<HistoryNav current="research" site={site} />
 			{storyIds.length < 2 ? (
 				<div className="empty-state">Select at least two stories to compare.</div>
 			) : null}

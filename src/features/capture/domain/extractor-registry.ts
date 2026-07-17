@@ -4,6 +4,7 @@ export type { ExtractorName } from "../../../core/domain.ts";
 
 export type ExtractorDefinition = {
 	cardSelector: string;
+	categorySelector?: string;
 	headlineSelector: string;
 	name: ExtractorName;
 	sectionSelector: string;
@@ -24,12 +25,13 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 	},
 	"bbc-front-page": {
 		cardSelector: "article, [data-testid*='card'], li",
+		categorySelector: "[type='attribution']",
 		headlineSelector: "h1, h2, h3, [data-testid*='headline']",
 		name: "bbc-front-page",
 		sectionSelector: "section, [data-testid*='section']",
 		storyLinkSelector: "a[href*='/news/'], a[href*='/sport/'], main a[href]",
 		summarySelector: "p, [data-testid*='summary']",
-		version: 2,
+		version: 3,
 	},
 	"guardian-front-page": {
 		cardSelector: "article, li, [data-link-name*='article']",

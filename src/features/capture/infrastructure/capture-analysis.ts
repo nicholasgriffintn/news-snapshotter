@@ -2,6 +2,7 @@ import type { Page } from "@cloudflare/puppeteer";
 
 import type { Device, SiteDefinition } from "../../../core/domain.ts";
 import type { ElementPosition, PageElement } from "../../history/domain/extraction.ts";
+import { storyCategory } from "../../history/domain/story-classification.ts";
 import { extractorDefinition, type ExtractorDefinition } from "../domain/extractor-registry.ts";
 
 const SCHEMA_VERSION = 1;
@@ -12,7 +13,7 @@ type CollectedElement = PageElement & {
 	headline: string;
 	kind: "story";
 	position: ElementPosition;
-	prominence: "lead" | "major" | "standard";
+	prominence: "lead" | "major" | "minor" | "standard";
 	selectorHint: string;
 };
 
@@ -34,6 +35,7 @@ type AnalysisInput = {
 	device: Device;
 	page: Page;
 	profile: string;
+	screenshotBucket?: R2Bucket;
 	screenshotKey: string;
 	site: SiteDefinition;
 	triggeredAt: string;
@@ -42,28 +44,35 @@ type AnalysisInput = {
 export function normaliseStoryElements(
 	elements: CollectedPage["elements"],
 ): CollectedPage["elements"] {
-	return elements
-		.filter((element) => {
-			return (
-				element.selectorHint !== "a" && element.position.height > 0 && element.position.width > 0
-			);
-		})
-		.map((element, index) => {
-			let summary = element.summary;
+	const visibleStories = elements.filter((element) => {
+		return (
+			element.selectorHint !== "a" && element.position.height > 0 && element.position.width > 0
+		);
+	});
+	const uniqueStories = new Map<string, CollectedElement>();
 
-			if (summary === element.headline) {
-				summary = undefined;
-			}
+	for (const element of visibleStories) {
+		if (!uniqueStories.has(element.canonicalUrl)) {
+			uniqueStories.set(element.canonicalUrl, element);
+		}
+	}
 
-			return {
-				...element,
-				position: {
-					...element.position,
-					pageOrder: index + 1,
-				},
-				summary,
-			};
-		});
+	return [...uniqueStories.values()].map((element, index) => {
+		let summary = element.summary;
+
+		if (summary === element.headline) {
+			summary = undefined;
+		}
+
+		return {
+			...element,
+			position: {
+				...element.position,
+				pageOrder: index + 1,
+			},
+			summary,
+		};
+	});
 }
 
 function safeSegment(value: string): string {
@@ -119,6 +128,60 @@ async function gzip(value: string): Promise<ArrayBuffer> {
 	const stream = source.pipeThrough(compression);
 
 	return new Response(stream).arrayBuffer();
+}
+
+async function storeOptionalImageCrops(
+	input: AnalysisInput,
+	elements: CollectedElement[],
+	extractionKey: string,
+	warnings: CollectedPage["warnings"],
+): Promise<CollectedElement[]> {
+	const cropConfig = input.site.analysis?.imageCrops;
+	if (!cropConfig || !input.screenshotBucket) return elements;
+	const maximum = Math.max(0, Math.min(20, Math.floor(cropConfig.maxPerCapture)));
+	let stored = 0;
+	const prefix = extractionKey.replace(/\.extraction\.v\d+\.json\.gz$/, "");
+	const next: CollectedElement[] = [];
+
+	for (const element of elements) {
+		if (!element.image?.sourceUrl || stored >= maximum) {
+			next.push(element);
+			continue;
+		}
+		const { height, left, top, width } = element.position;
+		if (height < 1 || width < 1 || left < 0 || top < 0) {
+			next.push(element);
+			continue;
+		}
+		const cropKey = `${prefix}.image-${String(stored + 1).padStart(2, "0")}.jpeg`;
+		try {
+			const crop = await input.page.screenshot({
+				captureBeyondViewport: true,
+				clip: { height, width, x: left, y: top },
+				quality: 80,
+				type: "jpeg",
+			});
+			await input.screenshotBucket.put(cropKey, crop, {
+				customMetadata: {
+					capturedAt: input.capturedAt,
+					device: input.device,
+					name: input.site.name,
+					triggeredAt: input.triggeredAt,
+					visibility: input.site.visibility ?? "public",
+				},
+				httpMetadata: { contentType: "image/jpeg" },
+			});
+			stored += 1;
+			next.push({ ...element, image: { ...element.image, cropKey } });
+		} catch {
+			warnings.push({
+				code: "image-crop-failed",
+				message: `Could not preserve a screenshot crop for ${element.elementKey}`,
+			});
+			next.push(element);
+		}
+	}
+	return next;
 }
 
 async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<CollectedPage> {
@@ -183,7 +246,6 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 			}
 		});
 
-		const seen = new Set<string>();
 		const links = Array.from(document.querySelectorAll(extractorDefinition.storyLinkSelector));
 		const elements = links.flatMap((link) => {
 			const card = link.closest(extractorDefinition.cardSelector) ?? link;
@@ -202,19 +264,26 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 
 			const canonicalUrl = new URL(link.href, document.baseURI).toString();
 
-			if (seen.has(canonicalUrl)) {
-				return [];
-			}
-
-			seen.add(canonicalUrl);
-
-			const rect = link.getBoundingClientRect();
+			const rect = card.getBoundingClientRect();
 			const image = card.querySelector("img");
 			const summaryElement = card.querySelector(extractorDefinition.summarySelector);
 			const summary = summaryElement?.textContent?.trim().replace(/\s+/g, " ");
 			const headingName = heading.tagName.toLowerCase();
-			const isLead = headingName === "h1";
-			const majorStoryWidth = document.documentElement.scrollWidth * 0.4;
+			const sectionContainer = card.closest(extractorDefinition.sectionSelector);
+			const sectionHeading = sectionContainer?.querySelector("h1, h2");
+			const sectionText = sectionHeading?.textContent?.trim().replace(/\s+/g, " ");
+			const section = sectionText && sectionText !== headline ? sectionText : undefined;
+			const categoryText = extractorDefinition.categorySelector
+				? card
+						.querySelector(extractorDefinition.categorySelector)
+						?.textContent?.trim()
+						.replace(/\s+/g, " ")
+				: undefined;
+			const isLead =
+				headingName === "h1" ||
+				(rect.top < browser.innerHeight &&
+					rect.width > document.documentElement.scrollWidth * 0.25);
+			const majorStoryWidth = document.documentElement.scrollWidth * 0.25;
 			const isWide = rect.width > majorStoryWidth;
 			const isAboveFold = rect.top < browser.innerHeight;
 			const absoluteTop = rect.top + browser.scrollY;
@@ -225,6 +294,8 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 				prominence = "lead";
 			} else if (isWide && isAboveFold) {
 				prominence = "major";
+			} else if (rect.width < document.documentElement.scrollWidth * 0.16) {
+				prominence = "minor";
 			}
 
 			let imageDetails: CollectedElement["image"];
@@ -240,6 +311,7 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 			return [
 				{
 					canonicalUrl,
+					category: categoryText || section,
 					elementKey: canonicalUrl,
 					headline,
 					image: imageDetails,
@@ -247,13 +319,14 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 					position: {
 						height: rect.height,
 						left: rect.left,
-						pageOrder: seen.size,
+						pageOrder: 0,
 						top: absoluteTop,
 						viewportDepth,
 						width: rect.width,
 					},
 					prominence,
 					selectorHint: headingName,
+					section,
 					summary: summary || undefined,
 					textFingerprint: headline.toLowerCase(),
 				},
@@ -296,10 +369,12 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 		const stories = normaliseStoryElements(collected.elements);
 		const canonicalElements = stories.map((element) => {
 			const canonicalUrl = canonicaliseUrl(element.canonicalUrl);
+			const category = storyCategory(canonicalUrl, element.category ?? element.section);
 
 			return {
 				...element,
 				canonicalUrl,
+				category,
 				elementKey: canonicalUrl,
 			};
 		});
@@ -314,6 +389,12 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 					`found ${collected.elements.length}`,
 			);
 		}
+		collected.elements = await storeOptionalImageCrops(
+			input,
+			collected.elements,
+			keys.extractionKey,
+			collected.warnings,
+		);
 		const contentHash = await sha256(collected.html);
 		const structureSource = collected.elements.map(({ elementKey }) => elementKey).join("\n");
 		const structureHash = await sha256(structureSource);

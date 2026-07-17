@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 
 import type { SavedTimeline } from "../../core/types.ts";
 import { fetchSavedTimeline } from "../../platform/api-client.ts";
+import { historyScreenshotUrl } from "../../platform/api-client.ts";
+import { HistoryNav } from "./HistoryNav.tsx";
 
 export function SavedTimelinePage({ site, slug }: { site: string; slug: string }) {
 	const [timeline, setTimeline] = useState<SavedTimeline>();
@@ -22,14 +24,26 @@ export function SavedTimelinePage({ site, slug }: { site: string; slug: string }
 					<p className="eyebrow">Saved archive timeline</p>
 					<h1>{timeline?.name ?? "Timeline"}</h1>
 				</div>
-				<a href={`/history/${encodeURIComponent(site)}/research`}>Explore the archive →</a>
 			</header>
+			<HistoryNav current="research" site={site} />
 			{error ? <div className="empty-state empty-state--error">{error}</div> : null}
 			{!timeline && !error ? <div className="empty-state">Loading timeline…</div> : null}
+			{timeline?.truncated ? (
+				<div className="history-alert">This view is capped at the first 1,000 observations.</div>
+			) : null}
 			<ol className="saved-timeline">
 				{timeline?.observations.map((observation, index) => (
 					<li key={`${observation.storyId}:${observation.captureId ?? index}`}>
-						{observation.imageSourceUrl ? <img alt="" src={observation.imageSourceUrl} /> : null}
+						{observation.imageCropKey || observation.imageSourceUrl ? (
+							<img
+								alt=""
+								src={
+									observation.imageCropKey
+										? historyScreenshotUrl(observation.imageCropKey)
+										: observation.imageSourceUrl
+								}
+							/>
+						) : null}
 						<div>
 							{observation.capturedAt ? (
 								<time dateTime={observation.capturedAt}>

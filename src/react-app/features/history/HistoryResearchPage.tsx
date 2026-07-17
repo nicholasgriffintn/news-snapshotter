@@ -12,6 +12,7 @@ import {
 } from "../../platform/api-client.ts";
 import { displayName } from "../../shared/format.ts";
 import { HistoryImageTimeline } from "./HistoryImageTimeline.tsx";
+import { HistoryNav } from "./HistoryNav.tsx";
 import { HistorySearchPanel } from "./HistorySearchPanel.tsx";
 import { HistoryTrendPanel } from "./HistoryTrendPanel.tsx";
 
@@ -70,13 +71,16 @@ export function HistoryResearchPage({ site }: { site: string }) {
 
 	return (
 		<div className="history-page research-page">
-			<header className="history-heading">
+			<header className="history-heading history-heading--research">
 				<div>
 					<p className="eyebrow">Archive research</p>
-					<h1>{displayName(site)} signals</h1>
+					<h1>{displayName(site)} research</h1>
 				</div>
-				<a href={`/history/${encodeURIComponent(site)}`}>Browse captures →</a>
+				<div className="history-heading__intro">
+					<p>Search stories, compare their prominence, and trace the imagery used over time.</p>
+				</div>
 			</header>
+			<HistoryNav current="research" site={site} />
 			{error ? <div className="history-alert">{error}</div> : null}
 			<HistorySearchPanel
 				onQuery={(value) => {

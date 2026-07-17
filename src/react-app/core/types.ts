@@ -131,6 +131,7 @@ export type HistoryImageObservation = {
 	alt?: string;
 	captureId: string;
 	capturedAt: string;
+	cropKey?: string;
 	headline?: string;
 	imageId: string;
 	publisherUrl: string;
@@ -159,6 +160,7 @@ export type StoryObservation = {
 	headline?: string;
 	height: number;
 	imageAlt?: string;
+	imageCropKey?: string;
 	imageSourceUrl?: string;
 	left: number;
 	prominence?: string;
@@ -186,6 +188,7 @@ export type SavedTimeline = {
 		capturedAt?: string;
 		headline?: string;
 		imageSourceUrl?: string;
+		imageCropKey?: string;
 		position: number;
 		prominence?: string;
 		rank?: number;
@@ -195,4 +198,5 @@ export type SavedTimeline = {
 	site: string;
 	slug: string;
 	timelineId: string;
+	truncated?: boolean;
 };

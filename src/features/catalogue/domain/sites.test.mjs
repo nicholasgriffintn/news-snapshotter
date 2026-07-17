@@ -29,6 +29,11 @@ test("catalogue priorities distinguish key route types", () => {
 	assert.equal(siteNamed("bbc-cambridgeshire").priority, 4);
 });
 
+test("BBC front pages use the reviewed analysis extractor", () => {
+	assert.equal(siteNamed("bbc-home").analysis?.version, 3);
+	assert.equal(siteNamed("bbc-news").analysis?.version, 3);
+});
+
 test("explicit edition and regional priorities are preserved", () => {
 	assert.equal(siteNamed("guardian-uk").priority, 1);
 	assert.equal(siteNamed("guardian-sport").priority, 2);

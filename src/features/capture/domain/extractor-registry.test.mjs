@@ -24,8 +24,10 @@ for (const fixture of ["bbc-home", "guardian-uk"]) {
 }
 
 test("extractor versions are explicit and authoring has a production gate", () => {
-	assert.equal(extractorDefinition("bbc-front-page", 2).name, "bbc-front-page");
+	const bbc = extractorDefinition("bbc-front-page", 3);
+	assert.equal(bbc.name, "bbc-front-page");
+	assert.equal(bbc.categorySelector, "[type='attribution']");
 	assert.equal(extractorDefinition("guardian-front-page", 1).name, "guardian-front-page");
-	assert.throws(() => extractorDefinition("bbc-front-page", 1), /not registered/);
+	assert.throws(() => extractorDefinition("bbc-front-page", 2), /not registered/);
 	assert.ok(extractorAuthoringChecklist().some((item) => item.includes("shadow capture")));
 });

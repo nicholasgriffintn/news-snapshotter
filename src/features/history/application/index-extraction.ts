@@ -25,7 +25,7 @@ const MAX_EXTRACTION_BYTES = 10 * 1_024 * 1_024;
 async function readBoundedText(
 	stream: ReadableStream<Uint8Array>,
 	maximumBytes: number,
-): Promise<string> {
+): Promise<{ bytes: number; text: string }> {
 	const reader = stream.getReader();
 	const decoder = new TextDecoder();
 	const chunks: string[] = [];
@@ -42,10 +42,13 @@ async function readBoundedText(
 		chunks.push(decoder.decode(result.value, { stream: true }));
 	}
 	chunks.push(decoder.decode());
-	return chunks.join("");
+	return { bytes, text: chunks.join("") };
 }
 
-async function readArchiveJson(bucket: R2Bucket, key: string): Promise<unknown> {
+async function readArchiveJson(
+	bucket: R2Bucket,
+	key: string,
+): Promise<{ compressedBytes: number; decompressedBytes: number; value: unknown }> {
 	const object = await bucket.get(key);
 	if (!object) throw new Error(`Extraction artefact not found: ${key}`);
 	if (object.size > MAX_COMPRESSED_EXTRACTION_BYTES) {
@@ -58,7 +61,11 @@ async function readArchiveJson(bucket: R2Bucket, key: string): Promise<unknown> 
 	const serialised = await readBoundedText(stream, MAX_EXTRACTION_BYTES);
 
 	try {
-		return JSON.parse(serialised);
+		return {
+			compressedBytes: object.size,
+			decompressedBytes: serialised.bytes,
+			value: JSON.parse(serialised.text),
+		};
 	} catch {
 		throw new Error(`Extraction artefact is not valid JSON: ${key}`);
 	}
@@ -162,7 +169,7 @@ export async function indexExtractionArtefact(
 			await indexAnalysisFailure(
 				env.HISTORY_DB,
 				message.failureKey,
-				parseAnalysisFailure(rawFailure),
+				parseAnalysisFailure(rawFailure.value),
 			);
 			return { changeCount: 0 };
 		}
@@ -170,7 +177,7 @@ export async function indexExtractionArtefact(
 			throw new Error("Queue message is invalid");
 		}
 		const rawDocument = await readArchiveJson(env.ARCHIVE_DATA, message.extractionKey);
-		const document = parsePageExtraction(rawDocument);
+		const document = parsePageExtraction(rawDocument.value);
 		if (
 			(message.captureId && document.capture.captureId !== message.captureId) ||
 			(message.site && document.capture.site !== message.site)
@@ -178,7 +185,10 @@ export async function indexExtractionArtefact(
 			throw new Error("Queue message does not match extraction capture identity");
 		}
 
-		return await ingestExtraction(env.HISTORY_DB, message.extractionKey, document);
+		return await ingestExtraction(env.HISTORY_DB, message.extractionKey, document, {
+			compressedBytes: rawDocument.compressedBytes,
+			decompressedBytes: rawDocument.decompressedBytes,
+		});
 	} catch (error) {
 		try {
 			await recordIndexingFailure(env.HISTORY_DB, message, error);

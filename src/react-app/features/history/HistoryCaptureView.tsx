@@ -23,7 +23,7 @@ export function HistoryCaptureView({
 			<div className="history-evidence__screenshot">
 				<header>
 					<div>
-						<span>Visual source of truth</span>
+						<span>Archived screenshot</span>
 						<strong>
 							{capture.capture.pageWidth} × {capture.capture.pageHeight}px
 						</strong>
@@ -61,14 +61,14 @@ export function HistoryCaptureView({
 
 			<aside className="history-story-rail">
 				<header>
-					<span>Structured reading</span>
+					<span>Stories on this page</span>
 					<strong>{stories.length} stories</strong>
 				</header>
 				<ol>
 					{stories.map((story) => (
 						<li key={story.elementKey}>
-							<div>
-								<span>{story.position.pageOrder}</span>
+							<div className="history-story-rank">
+								<span>{String(story.position.pageOrder).padStart(2, "0")}</span>
 								<small>{story.prominence ?? "standard"}</small>
 							</div>
 							<a
@@ -76,7 +76,10 @@ export function HistoryCaptureView({
 							>
 								<strong>{story.headline ?? "Untitled story"}</strong>
 								{story.summary ? <p>{story.summary}</p> : null}
-								<small>{story.section ?? story.category ?? "Uncategorised"}</small>
+								<div className="history-story-tags">
+									<small>{story.section ?? story.category ?? "Front page"}</small>
+									<small>{story.position.viewportDepth.toFixed(1)} pages down</small>
+								</div>
 							</a>
 						</li>
 					))}

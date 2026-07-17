@@ -14,6 +14,7 @@ export type PageElement = {
 	headline?: string;
 	image?: {
 		alt?: string;
+		cropKey?: string;
 		sourceUrl?: string;
 	};
 	kind: "story" | "heading" | "image" | "navigation" | "other";
@@ -83,6 +84,7 @@ function isImage(value: unknown): boolean {
 	const image = value as Record<string, unknown>;
 	return (
 		isOptionalString(image.alt) &&
+		isOptionalString(image.cropKey, MAX_IDENTIFIER_LENGTH) &&
 		isOptionalString(image.sourceUrl, MAX_IDENTIFIER_LENGTH) &&
 		(image.sourceUrl === undefined || isWebUrl(image.sourceUrl))
 	);

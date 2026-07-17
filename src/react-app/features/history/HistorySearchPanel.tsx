@@ -26,8 +26,8 @@ export function HistorySearchPanel({
 		<section className="research-panel research-panel--search">
 			<header>
 				<div>
-					<p className="eyebrow">Exact archive search</p>
-					<h2>Find the language</h2>
+					<p className="eyebrow">Stories and language</p>
+					<h2>Search the archive</h2>
 				</div>
 				{selectedStories.size >= 2 ? (
 					<a href={`/history/${encodeURIComponent(site)}/compare?${compareSearch}`}>
@@ -70,7 +70,7 @@ export function HistorySearchPanel({
 							{result.summary ? <p>{result.summary}</p> : null}
 							<small>
 								{new Date(result.capturedAt).toLocaleString("en-GB")} ·{" "}
-								{result.category ?? "Uncategorised"} · rank {result.rank}
+								{result.category ?? "Front page"} · rank {result.rank}
 							</small>
 						</a>
 					</li>

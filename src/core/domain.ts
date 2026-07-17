@@ -42,6 +42,9 @@ export type ExtractorName = "bbc-front-page" | "generic-baseline" | "guardian-fr
 export type SiteAnalysisConfig = {
 	device: "desktop";
 	extractor: ExtractorName;
+	imageCrops?: {
+		maxPerCapture: number;
+	};
 	minimumElements: number;
 	version: number;
 };

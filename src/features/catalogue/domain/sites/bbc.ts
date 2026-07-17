@@ -9,7 +9,7 @@ const BBC_NEWS_SITES = [
 			device: "desktop" as const,
 			extractor: "bbc-front-page" as const,
 			minimumElements: 20,
-			version: 2,
+			version: 3,
 		},
 	},
 	{
@@ -18,6 +18,12 @@ const BBC_NEWS_SITES = [
 		priority: 1 as const,
 		requestBody: {
 			addStyleTag: ".ssrcss-darju4-ConsentBanner { display: none; }",
+		},
+		analysis: {
+			device: "desktop" as const,
+			extractor: "bbc-front-page" as const,
+			minimumElements: 20,
+			version: 3,
 		},
 	},
 	{ name: "bbc-bbcindepth", url: `${BBC_BASE_URL}/news/bbcindepth` },

@@ -1,5 +1,6 @@
 import { diffAdjacentCaptures, type ChangeEvent } from "../domain/changes.ts";
 import type { PageElement, PageExtraction } from "../domain/extraction.ts";
+import { storyCategory } from "../domain/story-classification.ts";
 
 type CaptureRow = {
 	capture_id: string;
@@ -29,6 +30,7 @@ type ObservationRow = {
 	headline: string | null;
 	height: number;
 	image_alt: string | null;
+	image_crop_key: string | null;
 	image_source_url: string | null;
 	kind: PageElement["kind"];
 	left_position: number;
@@ -77,9 +79,10 @@ function optional<T>(value: T | null): T | undefined {
 
 function rowToElement(row: ObservationRow): PageElement {
 	const image =
-		row.image_alt !== null || row.image_source_url !== null
+		row.image_alt !== null || row.image_crop_key !== null || row.image_source_url !== null
 			? {
 					alt: optional(row.image_alt),
+					cropKey: optional(row.image_crop_key),
 					sourceUrl: optional(row.image_source_url),
 				}
 			: undefined;
@@ -126,6 +129,7 @@ async function loadCaptureExtraction(
 				story_observations.headline,
 				story_observations.height,
 				story_observations.image_alt,
+				story_observations.image_crop_key,
 				story_observations.image_source_url,
 				'story' AS kind,
 				story_observations.left_position,
@@ -154,6 +158,7 @@ async function loadCaptureExtraction(
 				headline,
 				height,
 				NULL AS image_alt,
+				NULL AS image_crop_key,
 				NULL AS image_source_url,
 				kind,
 				left_position,
@@ -258,6 +263,7 @@ function storyStatements(database: D1Database, document: PageExtraction): D1Prep
 		const id = storyId(document.capture.site, element);
 		const sourceUrl = element.image?.sourceUrl;
 		const currentImageId = sourceUrl ? imageId(document.capture.site, sourceUrl) : null;
+		const category = storyCategory(element.canonicalUrl, element.category ?? element.section);
 
 		statements.push(
 			database
@@ -281,12 +287,17 @@ function storyStatements(database: D1Database, document: PageExtraction): D1Prep
 			statements.push(
 				database
 					.prepare(
-						`INSERT INTO images (image_id, site, source_url, first_seen_at, last_seen_at, latest_alt)
-						VALUES (?, ?, ?, ?, ?, ?)
+						`INSERT INTO images (
+							image_id, site, source_url, first_seen_at, last_seen_at,
+							latest_alt, screenshot_crop_key
+						) VALUES (?, ?, ?, ?, ?, ?, ?)
 						ON CONFLICT(image_id) DO UPDATE SET
 							first_seen_at = MIN(first_seen_at, excluded.first_seen_at),
 							last_seen_at = MAX(last_seen_at, excluded.last_seen_at),
-							latest_alt = COALESCE(excluded.latest_alt, images.latest_alt)`,
+							latest_alt = COALESCE(excluded.latest_alt, images.latest_alt),
+							screenshot_crop_key = COALESCE(
+								excluded.screenshot_crop_key, images.screenshot_crop_key
+							)`,
 					)
 					.bind(
 						currentImageId,
@@ -295,6 +306,7 @@ function storyStatements(database: D1Database, document: PageExtraction): D1Prep
 						document.capture.capturedAt,
 						document.capture.capturedAt,
 						element.image?.alt ?? null,
+						element.image?.cropKey ?? null,
 					),
 			);
 		}
@@ -303,9 +315,9 @@ function storyStatements(database: D1Database, document: PageExtraction): D1Prep
 				.prepare(
 					`INSERT INTO story_observations (
 						capture_id, story_id, element_key, headline, summary, image_id,
-						image_source_url, image_alt, category, section, prominence, rank,
+						image_source_url, image_alt, image_crop_key, category, section, prominence, rank,
 						top, left_position, width, height, viewport_depth, text_fingerprint
-					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 				)
 				.bind(
 					document.capture.captureId,
@@ -316,7 +328,8 @@ function storyStatements(database: D1Database, document: PageExtraction): D1Prep
 					currentImageId,
 					sourceUrl ?? null,
 					element.image?.alt ?? null,
-					element.category ?? null,
+					element.image?.cropKey ?? null,
+					category,
 					element.section ?? null,
 					element.prominence ?? null,
 					element.position.pageOrder,
@@ -339,7 +352,7 @@ function storyStatements(database: D1Database, document: PageExtraction): D1Prep
 					document.capture.site,
 					element.headline ?? "",
 					element.summary ?? "",
-					element.category ?? "",
+					category,
 					element.image?.alt ?? "",
 				),
 		);
@@ -487,6 +500,7 @@ export async function ingestExtraction(
 	database: D1Database,
 	extractionKey: string,
 	document: PageExtraction,
+	artefactMetrics?: { compressedBytes: number; decompressedBytes: number },
 ): Promise<{ changeCount: number }> {
 	await database.exec("PRAGMA foreign_keys = ON");
 	const captureId = document.capture.captureId;
@@ -499,8 +513,46 @@ export async function ingestExtraction(
 		...pageElementStatements(database, document),
 	];
 	await database.batch(resetStatements);
+	const changeCount = await replaceAdjacentEdges(database, document);
 
-	return { changeCount: await replaceAdjacentEdges(database, document) };
+	if (artefactMetrics) {
+		const stories = document.elements.filter(({ kind }) => kind === "story");
+		const imageCount = new Set(
+			stories.flatMap(({ image }) => (image?.sourceUrl ? [image.sourceUrl] : [])),
+		).size;
+		const d1StatementCount = resetStatements.length + changeCount + 2;
+		await database
+			.prepare(
+				`INSERT INTO history_ingestion_metrics (
+					capture_id, site, compressed_bytes, decompressed_bytes, element_count,
+					story_count, image_count, change_count, d1_statement_count, indexed_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				ON CONFLICT(capture_id) DO UPDATE SET
+					compressed_bytes = excluded.compressed_bytes,
+					decompressed_bytes = excluded.decompressed_bytes,
+					element_count = excluded.element_count,
+					story_count = excluded.story_count,
+					image_count = excluded.image_count,
+					change_count = excluded.change_count,
+					d1_statement_count = excluded.d1_statement_count,
+					indexed_at = excluded.indexed_at`,
+			)
+			.bind(
+				document.capture.captureId,
+				document.capture.site,
+				artefactMetrics.compressedBytes,
+				artefactMetrics.decompressedBytes,
+				document.elements.length,
+				stories.length,
+				imageCount,
+				changeCount,
+				d1StatementCount,
+				new Date().toISOString(),
+			)
+			.run();
+	}
+
+	return { changeCount };
 }
 
 export async function listCaptures(
@@ -617,6 +669,7 @@ export async function getStory(
 				story_observations.capture_id AS captureId,
 				analysed_captures.captured_at AS capturedAt,
 				headline, summary, image_source_url AS imageSourceUrl, image_alt AS imageAlt,
+				image_crop_key AS imageCropKey,
 				category, section, prominence, rank, top, left_position AS left,
 				width, height, viewport_depth AS viewportDepth
 			FROM story_observations

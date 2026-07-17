@@ -1,4 +1,5 @@
 import type { HistoryImageObservation } from "../../core/types.ts";
+import { historyScreenshotUrl } from "../../platform/api-client.ts";
 
 export function HistoryImageTimeline({
 	images,
@@ -16,7 +17,7 @@ export function HistoryImageTimeline({
 			<header>
 				<div>
 					<p className="eyebrow">Publisher imagery</p>
-					<h2>Image timeline</h2>
+					<h2>Images through the month</h2>
 				</div>
 				<label>
 					<span>Month</span>
@@ -29,7 +30,11 @@ export function HistoryImageTimeline({
 						href={`/history/${encodeURIComponent(site)}/stories/${encodeURIComponent(image.storyId)}`}
 						key={`${image.captureId}:${image.imageId}`}
 					>
-						<img alt={image.alt ?? "Publisher story image"} loading="lazy" src={image.sourceUrl} />
+						<img
+							alt={image.alt ?? "Publisher story image"}
+							loading="lazy"
+							src={image.cropKey ? historyScreenshotUrl(image.cropKey) : image.sourceUrl}
+						/>
 						<strong>{image.headline ?? image.alt ?? "Untitled image"}</strong>
 						<time dateTime={image.capturedAt}>
 							{new Date(image.capturedAt).toLocaleString("en-GB")}

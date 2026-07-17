@@ -30,8 +30,8 @@ export function HistoryTrendPanel({
 		<section className="research-panel research-panel--trends">
 			<header>
 				<div>
-					<p className="eyebrow">Time-weighted signals</p>
-					<h2>Front-page pressure</h2>
+					<p className="eyebrow">Time-weighted view</p>
+					<h2>Coverage over time</h2>
 				</div>
 				<div className="research-controls">
 					<label>
@@ -62,15 +62,32 @@ export function HistoryTrendPanel({
 
 			{latest ? (
 				mode === "category" ? (
-					<div className="trend-bars">
-						{latest.values.slice(0, 12).map((value) => (
-							<div key={value.label}>
-								<span>{value.label}</span>
-								<i style={weightedStyle("--bar", value.weightSeconds / maximum)} />
-								<small>{Math.round(value.weightSeconds / 3_600)} weighted hours</small>
+					<>
+						<div className="trend-bars">
+							{latest.values.slice(0, 12).map((value) => (
+								<div key={value.label}>
+									<span>{value.label}</span>
+									<i style={weightedStyle("--bar", value.weightSeconds / maximum)} />
+									<small>{Math.round(value.weightSeconds / 3_600)} weighted hours</small>
+								</div>
+							))}
+						</div>
+						{trends && trends.periods.length > 1 ? (
+							<div className="trend-periods">
+								{trends.periods.map((trendPeriod) => (
+									<div key={trendPeriod.period}>
+										<time>{trendPeriod.period}</time>
+										<p>
+											{trendPeriod.values
+												.slice(0, 3)
+												.map(({ label }) => label)
+												.join(" · ")}
+										</p>
+									</div>
+								))}
 							</div>
-						))}
-					</div>
+						) : null}
+					</>
 				) : (
 					<div className="word-cloud" aria-label="Weighted headline words">
 						{latest.values.slice(0, 40).map((value) => (

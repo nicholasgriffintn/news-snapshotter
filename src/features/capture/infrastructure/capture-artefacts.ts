@@ -29,6 +29,7 @@ export async function storeCaptureArtefacts(input: {
 					device,
 					page,
 					profile: profileName,
+					screenshotBucket: env.SCREENSHOTS,
 					screenshotKey: key,
 					site,
 					triggeredAt,

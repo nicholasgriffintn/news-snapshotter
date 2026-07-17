@@ -4,6 +4,7 @@ import test from "node:test";
 import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { handleHistoryAdminRequest } from "./history-admin.ts";
 import { historyExtraction } from "../testing/extraction-fixture.mjs";
+import { ingestExtraction } from "../infrastructure/history-repository.ts";
 
 function request(path, body) {
 	return new Request(`https://archive.example${path}`, {
@@ -102,6 +103,35 @@ test("serves bounded indexing status and extraction failures", async () => {
 	const body = await failures.json();
 	assert.equal(body.failures.length, 1);
 	assert.equal(body.failures[0].captureId, "capture-a");
+	sqlite.close();
+});
+
+test("lists indexed extractions with bounded ordering and site filtering", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const older = historyExtraction("older", "2026-07-17T08:00:00.000Z");
+	const newer = historyExtraction("newer", "2026-07-17T10:00:00.000Z");
+	newer.capture.site = "bbc-news";
+	await ingestExtraction(database, "older.extraction.v1.json.gz", older);
+	await ingestExtraction(database, "newer.extraction.v1.json.gz", newer);
+
+	const newestResponse = await handleHistoryAdminRequest(
+		request("/api/admin/history/extractions?limit=1&sort=newest"),
+		{ HISTORY_DB: database },
+	);
+	const newest = await newestResponse.json();
+	assert.equal(newest.extractions.length, 1);
+	assert.equal(newest.extractions[0].captureId, "newer");
+	assert.equal(newest.extractions[0].matchedElements, 1);
+
+	const siteResponse = await handleHistoryAdminRequest(
+		request("/api/admin/history/extractions?limit=10&sort=oldest&site=bbc-home"),
+		{ HISTORY_DB: database },
+	);
+	const site = await siteResponse.json();
+	assert.deepEqual(
+		site.extractions.map(({ captureId }) => captureId),
+		["older"],
+	);
 	sqlite.close();
 });
 

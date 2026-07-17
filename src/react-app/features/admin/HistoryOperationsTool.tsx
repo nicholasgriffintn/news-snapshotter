@@ -4,10 +4,14 @@ import {
 	createHistoryTimeline,
 	fetchHistoryAdminStatus,
 	indexHistoryArchivePage,
+	materialiseHistoryAggregates,
 	type HistoryAdminStatus,
 } from "../../platform/api-client.ts";
 
 export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
+	const [aggregateMonth, setAggregateMonth] = useState(new Date().toISOString().slice(0, 7));
+	const [aggregateSite, setAggregateSite] = useState("");
+	const [aggregateStatus, setAggregateStatus] = useState("");
 	const [indexSite, setIndexSite] = useState("");
 	const [indexStatus, setIndexStatus] = useState("");
 	const [mode, setMode] = useState<"backfill" | "reindex">("backfill");
@@ -81,6 +85,19 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 			);
 		} catch (reason) {
 			setTimelineStatus(reason instanceof Error ? reason.message : "Could not save timeline.");
+		}
+	}
+
+	async function buildAggregates(): Promise<void> {
+		if (!apiKey) return;
+		try {
+			const result = await materialiseHistoryAggregates(apiKey, {
+				month: aggregateMonth,
+				site: aggregateSite.trim(),
+			});
+			setAggregateStatus(`Materialised ${result.rows} aggregate rows.`);
+		} catch (reason) {
+			setAggregateStatus(reason instanceof Error ? reason.message : "Could not build aggregates.");
 		}
 	}
 
@@ -183,6 +200,68 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 					{timelineStatus}
 				</p>
 			</section>
+
+			<section className="admin-tool">
+				<header className="admin-tool__header">
+					<p className="eyebrow">Bounded research queries</p>
+					<h2>Monthly aggregates</h2>
+				</header>
+				<div className="history-operation-form">
+					<label>
+						<span>Site</span>
+						<input
+							onChange={(event) => setAggregateSite(event.target.value)}
+							placeholder="bbc-home"
+							value={aggregateSite}
+						/>
+					</label>
+					<label>
+						<span>Month</span>
+						<input
+							onChange={(event) => setAggregateMonth(event.target.value)}
+							type="month"
+							value={aggregateMonth}
+						/>
+					</label>
+					<button
+						className="impact-button"
+						disabled={!apiKey || !aggregateSite.trim()}
+						onClick={() => void buildAggregates()}
+						type="button"
+					>
+						Materialise month
+					</button>
+				</div>
+				<p aria-live="polite" className="admin-status">
+					{aggregateStatus}
+				</p>
+			</section>
+
+			{status?.resourceUsage.map((usage) => (
+				<section className="admin-tool" key={usage.site}>
+					<header className="admin-tool__header">
+						<p className="eyebrow">Measured ingestion</p>
+						<h2>{usage.site}</h2>
+					</header>
+					<div className="history-admin-totals">
+						<span>
+							<strong>{usage.indexedCaptures}</strong>captures
+						</span>
+						<span>
+							<strong>{Math.round(usage.compressedExtractionBytes / 1024)}</strong>compressed KiB
+						</span>
+						<span>
+							<strong>{usage.indexedElements}</strong>elements
+						</span>
+						<span>
+							<strong>{usage.indexedChanges}</strong>changes
+						</span>
+						<span>
+							<strong>{usage.d1WriteStatements}</strong>D1 writes
+						</span>
+					</div>
+				</section>
+			))}
 		</div>
 	);
 }

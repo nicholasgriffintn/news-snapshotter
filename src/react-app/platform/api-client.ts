@@ -204,6 +204,18 @@ export async function fetchSavedTimeline(slug: string): Promise<SavedTimeline> {
 }
 
 export type HistoryAdminStatus = {
+	resourceUsage: Array<{
+		compressedExtractionBytes: number;
+		d1WriteStatements: number;
+		decompressedExtractionBytes: number;
+		indexedCaptures: number;
+		indexedChanges: number;
+		indexedElements: number;
+		indexedImages: number;
+		indexedStories: number;
+		measuredAt: string;
+		site: string;
+	}>;
 	sites: Array<{
 		captureCount: number;
 		firstCaptureAt: string;
@@ -260,6 +272,18 @@ export async function createHistoryTimeline(
 	return readJson(response);
 }
 
+export async function materialiseHistoryAggregates(
+	apiKey: string,
+	input: { month: string; site: string },
+): Promise<{ rows: number }> {
+	const response = await fetch("/api/admin/history/aggregates", {
+		body: JSON.stringify(input),
+		headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+		method: "POST",
+	});
+	return readJson(response);
+}
+
 export type ExtractorPreview = {
 	capture: HistoryCapture["capture"];
 	elements: HistoryCapture["elements"];
@@ -268,6 +292,32 @@ export type ExtractorPreview = {
 	matchedElements: number;
 	warnings: Array<{ code: string; message: string }>;
 };
+
+export type ExtractionSummary = {
+	captureId: string;
+	capturedAt: string;
+	device: "desktop" | "mobile";
+	extractionKey: string;
+	extractorName: string;
+	extractorVersion: number;
+	matchedElements: number;
+	site: string;
+};
+
+export async function fetchHistoryExtractions(
+	apiKey: string,
+	options: { limit: number; site?: string; sort: "newest" | "oldest" },
+): Promise<ExtractionSummary[]> {
+	const search = new URLSearchParams({
+		limit: String(options.limit),
+		sort: options.sort,
+	});
+	if (options.site) search.set("site", options.site);
+	const response = await fetch(`/api/admin/history/extractions?${search}`, {
+		headers: { authorization: `Bearer ${apiKey}` },
+	});
+	return (await readJson<{ extractions: ExtractionSummary[] }>(response)).extractions;
+}
 
 export async function fetchExtractorChecklist(apiKey: string): Promise<string[]> {
 	const response = await fetch("/api/admin/history/extractor-checklist", {

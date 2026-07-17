@@ -2,10 +2,15 @@ import { decodeCursor, encodeCursor } from "../../../core/cursor.ts";
 import type { HistoryIndexMessage } from "./index-extraction.ts";
 import {
 	historyIndexStatus,
+	type ExtractionListOptions,
+	listIndexedExtractions,
 	listExtractionFailures,
 	resetHistoryIndex,
 } from "../infrastructure/history-admin-repository.ts";
-import { createSavedTimeline } from "../infrastructure/history-research-repository.ts";
+import {
+	createSavedTimeline,
+	materialiseHistoryMonth,
+} from "../infrastructure/history-research-repository.ts";
 import { parsePageExtraction } from "../domain/extraction.ts";
 import { SITES } from "../../catalogue/domain/sites.ts";
 import { extractorAuthoringChecklist } from "../../capture/domain/extractor-registry.ts";
@@ -205,6 +210,23 @@ function failureOptions(url: URL) {
 	return { cursor, limit, site: url.searchParams.get("site") ?? undefined };
 }
 
+function extractionListOptions(url: URL): ExtractionListOptions {
+	const limitValue = url.searchParams.get("limit");
+	const limit = limitValue === null ? 25 : Number(limitValue);
+	if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+		throw new Error("limit must be between 1 and 100");
+	}
+	const sortValue = url.searchParams.get("sort") ?? "newest";
+	if (sortValue !== "newest" && sortValue !== "oldest") {
+		throw new Error("sort must be newest or oldest");
+	}
+	const sort = sortValue === "oldest" ? "oldest" : "newest";
+	const siteValue = url.searchParams.get("site")?.trim();
+	if (siteValue && siteValue.length > 200) throw new Error("site is invalid");
+
+	return { limit, site: siteValue || undefined, sort };
+}
+
 export async function handleHistoryAdminRequest(
 	request: Request,
 	env: HistoryAdminEnv,
@@ -215,6 +237,11 @@ export async function handleHistoryAdminRequest(
 	}
 	if (request.method === "GET" && url.pathname === "/api/admin/history/extractor-checklist") {
 		return Response.json({ checklist: extractorAuthoringChecklist() });
+	}
+	if (request.method === "GET" && url.pathname === "/api/admin/history/extractions") {
+		return Response.json({
+			extractions: await listIndexedExtractions(env.HISTORY_DB, extractionListOptions(url)),
+		});
 	}
 	if (request.method === "GET" && url.pathname === "/api/admin/history/extractor-preview") {
 		return extractorPreview(env, url);
@@ -274,6 +301,24 @@ export async function handleHistoryAdminRequest(
 			}),
 			{ status: 201 },
 		);
+	}
+	if (request.method === "POST" && url.pathname === "/api/admin/history/aggregates") {
+		const body: unknown = await request.json();
+		if (!body || typeof body !== "object" || Array.isArray(body)) {
+			throw new Error("Aggregate request must be an object");
+		}
+		const record = body as Record<string, unknown>;
+		if (
+			typeof record.site !== "string" ||
+			record.site.length === 0 ||
+			record.site.length > 200 ||
+			typeof record.month !== "string"
+		) {
+			throw new Error("Aggregate request requires a site and month");
+		}
+		return Response.json(await materialiseHistoryMonth(env.HISTORY_DB, record.site, record.month), {
+			status: 201,
+		});
 	}
 	return null;
 }

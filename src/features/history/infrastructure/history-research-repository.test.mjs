@@ -9,6 +9,7 @@ import {
 	getSavedTimeline,
 	historyTrends,
 	listHistoryImages,
+	materialiseHistoryMonth,
 	searchHistory,
 } from "./history-research-repository.ts";
 
@@ -52,7 +53,8 @@ test("searches FTS fields and builds image and time-weighted trend timelines", a
 	assert.equal(search.results.length, 2);
 
 	const images = await listHistoryImages(database, "bbc-home", "2026-07", { limit: 10 });
-	assert.equal(images.images.length, 4);
+	assert.equal(images.images.length, 2);
+	assert.equal(new Set(images.images.map(({ imageId }) => imageId)).size, 2);
 
 	const category = await historyTrends(
 		database,
@@ -72,6 +74,11 @@ test("searches FTS fields and builds image and time-weighted trend timelines", a
 		new Date("2026-07-17T11:00:00.000Z"),
 	);
 	assert.ok(words.periods[0].values.some(({ label }) => label === "election"));
+	const materialised = await materialiseHistoryMonth(database, "bbc-home", "2026-07");
+	assert.ok(materialised.rows > 0);
+	const cachedTrend = await historyTrends(database, "bbc-home", "all", "category");
+	assert.equal(cachedTrend.materialised, true);
+	assert.equal(cachedTrend.periods[0].period, "2026-07");
 	sqlite.close();
 });
 

@@ -4,13 +4,22 @@ import {
 	downloadExtractorFixture,
 	fetchExtractorChecklist,
 	fetchExtractorPreview,
+	fetchHistoryExtractions,
+	type ExtractionSummary,
 	type ExtractorPreview,
 } from "../../platform/api-client.ts";
+import { displayName } from "../../shared/format.ts";
 
 export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 	const [checklist, setChecklist] = useState<string[]>([]);
-	const [key, setKey] = useState("");
+	const [extractions, setExtractions] = useState<ExtractionSummary[]>([]);
+	const [limit, setLimit] = useState(25);
+	const [listStatus, setListStatus] = useState("");
+	const [loadingKey, setLoadingKey] = useState("");
 	const [preview, setPreview] = useState<ExtractorPreview>();
+	const [selectedKey, setSelectedKey] = useState("");
+	const [site, setSite] = useState("");
+	const [sort, setSort] = useState<"newest" | "oldest">("newest");
 	const [status, setStatus] = useState("");
 
 	useEffect(() => {
@@ -18,18 +27,49 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 		fetchExtractorChecklist(apiKey)
 			.then(setChecklist)
 			.catch(() => setChecklist([]));
+		setListStatus("Loading extractions…");
+		fetchHistoryExtractions(apiKey, { limit: 25, sort: "newest" })
+			.then((results) => {
+				setExtractions(results);
+				setListStatus("");
+			})
+			.catch((reason: unknown) => {
+				setExtractions([]);
+				setListStatus(reason instanceof Error ? reason.message : "Could not list extractions.");
+			});
 	}, [apiKey]);
 
-	async function loadPreview(): Promise<void> {
-		if (!apiKey || !key.trim()) return;
+	async function listExtractions(): Promise<void> {
+		if (!apiKey) return;
+		setListStatus("Loading extractions…");
+		try {
+			const results = await fetchHistoryExtractions(apiKey, {
+				limit,
+				site: site.trim() || undefined,
+				sort,
+			});
+			setExtractions(results);
+			setListStatus(results.length === 0 ? "No indexed extractions match these filters." : "");
+		} catch (reason) {
+			setExtractions([]);
+			setListStatus(reason instanceof Error ? reason.message : "Could not list extractions.");
+		}
+	}
+
+	async function loadPreview(key: string): Promise<void> {
+		if (!apiKey) return;
+		setSelectedKey(key);
+		setLoadingKey(key);
 		setStatus("Loading private extraction artefact…");
 		try {
-			const result = await fetchExtractorPreview(apiKey, key.trim());
+			const result = await fetchExtractorPreview(apiKey, key);
 			setPreview(result);
 			setStatus("");
 		} catch (reason) {
 			setPreview(undefined);
 			setStatus(reason instanceof Error ? reason.message : "Could not load extractor preview.");
+		} finally {
+			setLoadingKey("");
 		}
 	}
 
@@ -39,30 +79,83 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 				<p className="eyebrow">Private archive inspection</p>
 				<h2>Extractor preview</h2>
 				<p>
-					Run a live capture in the capture tab, then inspect its stored extraction here. Archived
-					HTML remains private and is never executed.
+					Select an indexed capture to inspect its extraction. Archived HTML remains private and is
+					never executed.
 				</p>
 			</header>
-			<div className="extractor-key-form">
+			<form
+				className="extractor-list-controls"
+				onSubmit={(event) => {
+					event.preventDefault();
+					void listExtractions();
+				}}
+			>
 				<label>
-					<span>Extraction R2 key</span>
+					<span>Site</span>
 					<input
-						onChange={(event) => setKey(event.target.value)}
-						placeholder="brand=…/capture.extraction.v1.json.gz"
-						value={key}
+						onChange={(event) => setSite(event.target.value)}
+						placeholder="All sites"
+						value={site}
 					/>
 				</label>
-				<button
-					className="impact-button"
-					disabled={!apiKey || !key.trim()}
-					onClick={() => void loadPreview()}
-					type="button"
-				>
-					Preview extraction
+				<label>
+					<span>Order</span>
+					<select
+						onChange={(event) => setSort(event.target.value === "oldest" ? "oldest" : "newest")}
+						value={sort}
+					>
+						<option value="newest">Newest first</option>
+						<option value="oldest">Oldest first</option>
+					</select>
+				</label>
+				<label>
+					<span>Limit</span>
+					<select onChange={(event) => setLimit(Number(event.target.value))} value={limit}>
+						<option value={10}>10</option>
+						<option value={25}>25</option>
+						<option value={50}>50</option>
+						<option value={100}>100</option>
+					</select>
+				</label>
+				<button className="impact-button" disabled={!apiKey} type="submit">
+					Refresh list
 				</button>
-			</div>
+			</form>
 			<p aria-live="polite" className="admin-status">
-				{!apiKey ? "Enter the API key above to inspect private extraction artefacts." : status}
+				{!apiKey ? "Enter the API key above to list private extractions." : listStatus}
+			</p>
+			{extractions.length > 0 ? (
+				<ul className="extractor-list">
+					{extractions.map((extraction) => (
+						<li
+							aria-current={selectedKey === extraction.extractionKey ? "true" : undefined}
+							key={extraction.captureId}
+						>
+							<div>
+								<strong>{displayName(extraction.site)}</strong>
+								<time dateTime={extraction.capturedAt}>
+									{new Date(extraction.capturedAt).toLocaleString("en-GB")}
+								</time>
+								<small>
+									{extraction.device} · {extraction.extractorName} v{extraction.extractorVersion}
+								</small>
+							</div>
+							<span>
+								<strong>{extraction.matchedElements}</strong> elements
+							</span>
+							<button
+								className="admin-secondary-button"
+								onClick={() => void loadPreview(extraction.extractionKey)}
+								type="button"
+							>
+								{loadingKey === extraction.extractionKey ? "Loading…" : "Preview"}
+							</button>
+						</li>
+					))}
+				</ul>
+			) : null}
+			<p aria-live="polite" className="admin-status">
+				{status}
 			</p>
 			{preview ? (
 				<>

@@ -1,5 +1,6 @@
 import { historySearchQuery } from "../domain/search-query.ts";
 import { weightedWordFrequency } from "../domain/word-frequency.ts";
+import { groupBy } from "../../../core/collections.ts";
 
 export type ResearchCursor = {
 	capturedAt: string;
@@ -27,6 +28,8 @@ type TrendRow = {
 	next_captured_at: string | null;
 	prominence: string | null;
 };
+
+type TrendMode = "category" | "main-headline-words" | "all-headline-words";
 
 export async function searchHistory(
 	database: D1Database,
@@ -70,6 +73,7 @@ export async function searchHistory(
 				story_observations.category,
 				story_observations.section,
 				story_observations.image_alt AS imageAlt,
+				story_observations.image_crop_key AS imageCropKey,
 				story_observations.image_source_url AS imageSourceUrl,
 				story_observations.prominence,
 				story_observations.rank
@@ -113,28 +117,43 @@ export async function listHistoryImages(
 		conditions.push("analysed_captures.captured_at >= ?", "analysed_captures.captured_at < ?");
 		parameters.push(from.toISOString(), to.toISOString());
 	}
+	const cursorCondition = options.cursor
+		? "AND (capturedAt < ? OR (capturedAt = ? AND imageId < ?))"
+		: "";
 	if (options.cursor) {
-		conditions.push(
-			"(analysed_captures.captured_at < ? OR (analysed_captures.captured_at = ? AND story_observations.image_id < ?))",
-		);
 		parameters.push(options.cursor.capturedAt, options.cursor.capturedAt, options.cursor.id);
 	}
 	parameters.push(options.limit + 1);
 	const result = await database
 		.prepare(
-			`SELECT
-				story_observations.image_id AS imageId,
-				story_observations.image_source_url AS sourceUrl,
-				story_observations.image_alt AS alt,
-				story_observations.story_id AS storyId,
-				story_observations.headline,
-				story_observations.capture_id AS captureId,
-				analysed_captures.captured_at AS capturedAt,
-				analysed_captures.source_url AS publisherUrl
-			FROM story_observations
-			JOIN analysed_captures ON analysed_captures.capture_id = story_observations.capture_id
-			WHERE ${conditions.join(" AND ")}
-			ORDER BY analysed_captures.captured_at DESC, story_observations.image_id DESC
+			`WITH ranked_images AS (
+				SELECT
+					story_observations.image_id AS imageId,
+					story_observations.image_source_url AS sourceUrl,
+					story_observations.image_crop_key AS cropKey,
+					story_observations.image_alt AS alt,
+					story_observations.story_id AS storyId,
+					story_observations.headline,
+					story_observations.capture_id AS captureId,
+					analysed_captures.captured_at AS capturedAt,
+					analysed_captures.source_url AS publisherUrl,
+					ROW_NUMBER() OVER (
+						PARTITION BY story_observations.image_id
+						ORDER BY analysed_captures.captured_at DESC,
+							story_observations.capture_id DESC,
+							story_observations.story_id DESC
+					) AS imageRank
+				FROM story_observations
+				JOIN analysed_captures
+					ON analysed_captures.capture_id = story_observations.capture_id
+				WHERE ${conditions.join(" AND ")}
+			)
+			SELECT
+				imageId, sourceUrl, cropKey, alt, storyId, headline,
+				captureId, capturedAt, publisherUrl
+			FROM ranked_images
+			WHERE imageRank = 1 ${cursorCondition}
+			ORDER BY capturedAt DESC, imageId DESC
 			LIMIT ?`,
 		)
 		.bind(...parameters)
@@ -169,9 +188,39 @@ export async function historyTrends(
 	database: D1Database,
 	site: string,
 	period: "24h" | "7d" | "30d" | "90d" | "all",
-	mode: "category" | "main-headline-words" | "all-headline-words",
+	mode: TrendMode,
 	now = new Date(),
 ): Promise<Record<string, unknown>> {
+	if (period === "all") {
+		const materialised = await database
+			.prepare(
+				`SELECT
+					month AS period, label, observation_count AS count,
+					weighted_seconds AS weightSeconds
+				FROM history_monthly_aggregates
+				WHERE site = ? AND mode = ?
+				ORDER BY month, weighted_seconds DESC, label`,
+			)
+			.bind(site, mode)
+			.all<{ count: number; label: string; period: string; weightSeconds: number }>();
+		if (materialised.results.length > 0) {
+			return {
+				materialised: true,
+				mode,
+				period,
+				periods: [...groupBy(materialised.results, (row) => row.period)].map(([month, rows]) => ({
+					period: month,
+					values: rows.map(({ count, label, weightSeconds }) => ({
+						count,
+						label,
+						weightSeconds,
+					})),
+				})),
+				site,
+				timeWeighted: true,
+			};
+		}
+	}
 	const start = trendStart(period, now);
 	const conditions = ["capture_windows.site = ?"];
 	const parameters: string[] = [site];
@@ -200,7 +249,8 @@ export async function historyTrends(
 			FROM capture_windows
 			JOIN story_observations ON story_observations.capture_id = capture_windows.capture_id
 			WHERE ${conditions.join(" AND ")}
-			ORDER BY capture_windows.captured_at`,
+			ORDER BY capture_windows.captured_at
+			LIMIT 10000`,
 		)
 		.bind(...parameters)
 		.all<TrendRow>();
@@ -214,7 +264,7 @@ export async function historyTrends(
 		const bucket = bucketPeriod(row.captured_at, period);
 		if (mode === "category") {
 			const values = buckets.get(bucket) ?? new Map();
-			const label = row.category ?? "Uncategorised";
+			const label = row.category ?? "Front page";
 			const current = values.get(label) ?? { count: 0, weightSeconds: 0 };
 			current.count += 1;
 			current.weightSeconds += weightSeconds;
@@ -241,6 +291,89 @@ export async function historyTrends(
 				}));
 
 	return { mode, period, periods, site, timeWeighted: true };
+}
+
+export async function materialiseHistoryMonth(
+	database: D1Database,
+	site: string,
+	month: string,
+): Promise<{ rows: number }> {
+	if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error("month must use YYYY-MM");
+	const from = `${month}-01T00:00:00.000Z`;
+	const toDate = new Date(from);
+	toDate.setUTCMonth(toDate.getUTCMonth() + 1);
+	const monthEnd = toDate.getTime();
+	const result = await database
+		.prepare(
+			`WITH capture_windows AS (
+				SELECT
+					capture_id, site, captured_at,
+					LEAD(captured_at) OVER (
+						PARTITION BY site, device ORDER BY captured_at, capture_id
+					) AS next_captured_at
+				FROM analysed_captures
+				WHERE status = 'indexed' AND site = ?
+			)
+			SELECT
+				capture_windows.capture_id,
+				capture_windows.captured_at,
+				capture_windows.next_captured_at,
+				story_observations.category,
+				story_observations.headline,
+				story_observations.prominence
+			FROM capture_windows
+			JOIN story_observations ON story_observations.capture_id = capture_windows.capture_id
+			WHERE capture_windows.captured_at >= ? AND capture_windows.captured_at < ?
+			ORDER BY capture_windows.captured_at
+			LIMIT 10000`,
+		)
+		.bind(site, from, toDate.toISOString())
+		.all<TrendRow>();
+	const aggregate = (mode: TrendMode) => {
+		const categories = new Map<string, { count: number; weightSeconds: number }>();
+		const headlines: Array<{ headline: string; weightSeconds: number }> = [];
+		for (const row of result.results) {
+			const weightSeconds = row.next_captured_at
+				? Math.max(
+						0,
+						(Math.min(Date.parse(row.next_captured_at), monthEnd) - Date.parse(row.captured_at)) /
+							1_000,
+					)
+				: 0;
+			if (mode === "category") {
+				const label = row.category ?? "Front page";
+				const current = categories.get(label) ?? { count: 0, weightSeconds: 0 };
+				current.count += 1;
+				current.weightSeconds += weightSeconds;
+				categories.set(label, current);
+			} else if (row.headline && (mode === "all-headline-words" || row.prominence === "lead")) {
+				headlines.push({ headline: row.headline, weightSeconds });
+			}
+		}
+		return mode === "category"
+			? [...categories].map(([label, value]) => ({ label, ...value }))
+			: weightedWordFrequency(headlines).slice(0, 50);
+	};
+	const modes: TrendMode[] = ["category", "main-headline-words", "all-headline-words"];
+	const generatedAt = new Date().toISOString();
+	const statements = [
+		database
+			.prepare("DELETE FROM history_monthly_aggregates WHERE site = ? AND month = ?")
+			.bind(site, month),
+		...modes.flatMap((mode) =>
+			aggregate(mode).map((value) =>
+				database
+					.prepare(
+						`INSERT INTO history_monthly_aggregates (
+							site, month, mode, label, observation_count, weighted_seconds, generated_at
+						) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+					)
+					.bind(site, month, mode, value.label, value.count, value.weightSeconds, generatedAt),
+			),
+		),
+	];
+	await database.batch(statements);
+	return { rows: statements.length - 1 };
 }
 
 export async function createSavedTimeline(
@@ -302,6 +435,7 @@ export async function getSavedTimeline(
 				analysed_captures.captured_at AS capturedAt,
 				story_observations.headline,
 				story_observations.image_source_url AS imageSourceUrl,
+				story_observations.image_crop_key AS imageCropKey,
 				story_observations.rank,
 				story_observations.top,
 				story_observations.prominence
@@ -310,9 +444,14 @@ export async function getSavedTimeline(
 			LEFT JOIN story_observations ON story_observations.story_id = stories.story_id
 			LEFT JOIN analysed_captures ON analysed_captures.capture_id = story_observations.capture_id
 			WHERE saved_timeline_stories.timeline_id = ?
-			ORDER BY saved_timeline_stories.position, analysed_captures.captured_at`,
+			ORDER BY saved_timeline_stories.position, analysed_captures.captured_at
+			LIMIT 1001`,
 		)
 		.bind(String(timeline.timelineId))
 		.all<Record<string, unknown>>();
-	return { ...timeline, observations: observations.results };
+	return {
+		...timeline,
+		observations: observations.results.slice(0, 1_000),
+		truncated: observations.results.length > 1_000,
+	};
 }

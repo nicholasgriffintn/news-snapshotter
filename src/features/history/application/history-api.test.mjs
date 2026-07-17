@@ -61,6 +61,44 @@ test("serves bounded capture history without private archive keys", async () => 
 	sqlite.close();
 });
 
+test("serves a reindexed capture immediately instead of an edge-cached stale response", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const stored = new Map();
+	const previous = Object.getOwnPropertyDescriptor(globalThis, "caches");
+	Object.defineProperty(globalThis, "caches", {
+		configurable: true,
+		value: {
+			default: {
+				match: async (cacheRequest) => stored.get(cacheRequest.url)?.clone(),
+				put: async (cacheRequest, response) => stored.set(cacheRequest.url, response.clone()),
+			},
+		},
+	});
+	try {
+		const detailRequest = request("/api/history/bbc-home/captures/capture-a");
+		await ingestExtraction(
+			database,
+			"capture-a.json.gz",
+			historyExtraction("capture-a", "2026-07-17T09:00:00.000Z"),
+		);
+		await handleHistoryRequest(detailRequest, database);
+		await ingestExtraction(
+			database,
+			"capture-a.json.gz",
+			historyExtraction("capture-a", "2026-07-17T09:00:00.000Z", {
+				elements: [historyStory({ headline: "Corrected after reindex" })],
+			}),
+		);
+
+		const refreshed = await handleHistoryRequest(detailRequest, database);
+		assert.equal((await refreshed.json()).elements[0].headline, "Corrected after reindex");
+	} finally {
+		if (previous) Object.defineProperty(globalThis, "caches", previous);
+		else Reflect.deleteProperty(globalThis, "caches");
+		sqlite.close();
+	}
+});
+
 test("serves story observations and filtered adjacent changes", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	const storyId = "bbc-home:https://www.bbc.co.uk/news/articles/story-one";
