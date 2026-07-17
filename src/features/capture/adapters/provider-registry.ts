@@ -5,6 +5,10 @@ import puppeteer, {
 } from "@cloudflare/puppeteer";
 
 import type { DeviceCaptureConfig } from "../domain/profiles.ts";
+import {
+	createNativeWebSocketTransport,
+	type WebSocketTransport,
+} from "../../../core/native-websocket-transport.ts";
 import type { Env } from "../../../platform/cloudflare/env.ts";
 import type {
 	CaptureProviderName,
@@ -81,6 +85,24 @@ const HYPERBROWSER_MINIMUM_SCREEN_SIZE = 500;
 type BrowserConnector = (
 	wsEndpoint: string,
 ) => Promise<Browser>;
+
+type PuppeteerConnector = (
+	options: Parameters<typeof connect>[0],
+) => Promise<Browser>;
+
+export async function connectToRemoteBrowser(
+	wsEndpoint: string,
+	connector: PuppeteerConnector = connect,
+	createTransport: (endpoint: string) => Promise<WebSocketTransport>
+		= createNativeWebSocketTransport,
+): Promise<Browser> {
+	const transport = await createTransport(wsEndpoint);
+
+	return connector({
+		defaultViewport: null,
+		transport,
+	});
+}
 
 function hyperbrowserLocation(
 	site: SiteDefinition,
@@ -286,12 +308,7 @@ async function hyperbrowserProvider(
 	return openHyperbrowserCaptureBrowser(
 		context,
 		client,
-		async (wsEndpoint) => {
-			return connect({
-				browserWSEndpoint: wsEndpoint,
-				defaultViewport: null,
-			});
-		},
+		connectToRemoteBrowser,
 	);
 }
 

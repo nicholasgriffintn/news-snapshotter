@@ -24,7 +24,7 @@ test("every catalogue page has a valid capture priority", () => {
 
 test("catalogue priorities distinguish key route types", () => {
 	assert.equal(siteNamed("bbc-home").priority, 1);
-	assert.equal(siteNamed("bbc-news").priority, 2);
+	assert.equal(siteNamed("bbc-news").priority, 1);
 	assert.equal(siteNamed("bbc-war-in-ukraine").priority, 3);
 	assert.equal(siteNamed("bbc-cambridgeshire").priority, 4);
 });

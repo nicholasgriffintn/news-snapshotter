@@ -4,6 +4,7 @@ const BBC_NEWS_SITES = [
 	{
 		name: "bbc-home",
 		url: `${BBC_BASE_URL}/`,
+		priority: 1 as const,
 		analysis: {
 			device: "desktop" as const,
 			extractor: "bbc-front-page" as const,
@@ -14,6 +15,7 @@ const BBC_NEWS_SITES = [
 	{
 		name: "bbc-news",
 		url: `${BBC_BASE_URL}/news`,
+		priority: 1 as const,
 		requestBody: {
 			addStyleTag: ".ssrcss-darju4-ConsentBanner { display: none; }",
 		},
@@ -40,7 +42,11 @@ const BBC_NEWS_SITES = [
 ].map((site) => ({ ...site, category: "news" as const }));
 
 const BBC_SPORT_SITES = [
-	{ name: "bbc-sport", url: `${BBC_BASE_URL}/sport` },
+	{
+		name: "bbc-sport",
+		url: `${BBC_BASE_URL}/sport`,
+		priority: 1 as const
+	},
 	{ name: "bbc-football", url: `${BBC_BASE_URL}/sport/football` },
 	{ name: "bbc-premier-league", url: `${BBC_BASE_URL}/sport/football/premier-league` },
 	{ name: "bbc-cricket", url: `${BBC_BASE_URL}/sport/cricket` },

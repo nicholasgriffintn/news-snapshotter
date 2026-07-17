@@ -3,6 +3,7 @@ export const CNN_SITES = [
 		captureRegion: "international" as const,
 		name: "cnn-com",
 		url: "https://edition.cnn.com/",
+		priority: 1 as const
 	},
 	{
 		captureRegion: "us" as const,

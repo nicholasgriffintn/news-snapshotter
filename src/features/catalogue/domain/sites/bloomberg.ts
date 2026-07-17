@@ -8,6 +8,7 @@ export const BLOOMBERG_SITES = [
 		captureRegion: "uk" as const,
 		name: "bloomberg-uk",
 		url: "https://www.bloomberg.com/",
+		priority: 1 as const
 	},
 ].map((site) => {
 	return {

@@ -72,6 +72,7 @@ test("merges brand overrides without dropping default protection", () => {
 test("carries publisher cleaning rules into both device profiles", () => {
 	const bbc = resolveCaptureProfile(site({ brand: "bbc" }));
 	const dailymail = resolveCaptureProfile(site({ brand: "dailymail" }));
+	const guardian = resolveCaptureProfile(site({ brand: "guardian" }));
 	const newsquest = resolveCaptureProfile(site({ brand: "newsquest" }));
 	const reach = resolveCaptureProfile(site({ brand: "reach" }));
 	const sky = resolveCaptureProfile(site({ brand: "sky" }));
@@ -87,6 +88,14 @@ test("carries publisher cleaning rules into both device profiles", () => {
 			return action.frameUrlIncludes?.includes("cmp.dmgmediaprivacy.co.uk");
 		}),
 	);
+	for (const device of ["desktop", "mobile"]) {
+		assert.ok(
+			guardian.deviceConfig[device].clickActions.some((action) => {
+				return action.frameUrlIncludes?.includes("sourcepoint.theguardian.com") &&
+					action.selector.includes('button[title="Accept all"]');
+			}),
+		);
+	}
 	assert.ok(
 		newsquest.deviceConfig.desktop.clickActions.some((action) => {
 			return action.frameUrlIncludes?.includes("privacy-mgmt.com");

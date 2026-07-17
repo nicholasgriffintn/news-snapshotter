@@ -3,11 +3,40 @@ import test from "node:test";
 
 import {
 	captureProviderManagesFingerprint,
+	connectToRemoteBrowser,
 	createHyperbrowserClient,
 	hasCaptureProvider,
 	openCaptureBrowser,
 	openHyperbrowserCaptureBrowser,
 } from "./provider-registry.ts";
+
+test("connects to remote browsers with the runtime's native WebSocket", async () => {
+	const transport = {
+		close: () => {},
+		send: () => {},
+	};
+	let receivedOptions;
+	const browser = {};
+
+	const result = await connectToRemoteBrowser(
+		"wss://session.example",
+		async (options) => {
+			receivedOptions = options;
+			return browser;
+		},
+		async (endpoint) => {
+			assert.equal(endpoint, "wss://session.example");
+			return transport;
+		},
+	);
+
+	assert.equal(result, browser);
+	assert.deepEqual(receivedOptions, {
+		defaultViewport: null,
+		transport,
+	});
+	assert.equal(receivedOptions.browserWSEndpoint, undefined);
+});
 
 test("preserves fingerprints managed by remote stealth providers", () => {
 	assert.equal(captureProviderManagesFingerprint("cloudflare"), false);

@@ -233,6 +233,18 @@ const PROFILES: Record<string, CaptureProfile> = {
 			},
 		},
 	},
+	guardian: {
+		deviceConfig: forBothDevices({
+			clickActions: [
+				{
+					frameUrlIncludes: ["sourcepoint.theguardian.com"],
+					selector: 'button[title="Accept all"]',
+					timeoutMs: 5_000,
+					waitAfterMs: 1_000,
+				},
+			],
+		}),
+	},
 	sky: {
 		deviceConfig: {
 			desktop: {

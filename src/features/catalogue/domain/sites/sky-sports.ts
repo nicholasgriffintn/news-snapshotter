@@ -2,6 +2,7 @@ export const SKY_SPORTS_SITES = [
 	{
 		name: "skysports-com",
 		url: "https://www.skysports.com/",
+		priority: 1 as const,
 		category: "sport" as const,
 	},
 	{

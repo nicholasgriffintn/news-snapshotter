@@ -4,19 +4,8 @@ import { collectAndStoreAnalysis } from "./capture-analysis.ts";
 import type { DeviceCaptureConfig } from "../domain/profiles.ts";
 import type { Env } from "../../../platform/cloudflare/env.ts";
 import { screenshotKey, thumbnailKey } from "../../../core/storage-key.ts";
+import { takeFullScreenshot } from "./full-page-screenshot.ts";
 import type { Device, ScreenshotResult, SiteDefinition } from "../../../core/domain.ts";
-
-async function takeFullScreenshot(page: Page, config: DeviceCaptureConfig) {
-	const screenshot = config.screenshot ?? { type: "png" as const, fullPage: true };
-	if (screenshot.type === "png") {
-		return page.screenshot({ fullPage: screenshot.fullPage, type: "png" });
-	}
-	return page.screenshot({
-		fullPage: screenshot.fullPage,
-		quality: screenshot.quality ?? 85,
-		type: screenshot.type,
-	});
-}
 
 export async function storeCaptureArtefacts(input: {
 	config: DeviceCaptureConfig;
