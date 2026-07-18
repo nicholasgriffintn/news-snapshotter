@@ -6,6 +6,9 @@ import { progressivelyRenderPage } from "./rendering-scroll.ts";
 import type { SiteDefinition } from "../../../core/domain.ts";
 import { urlsMatchIgnoringHash } from "../../../core/urls.ts";
 
+const FULL_PAGE_LAYOUT_STYLE =
+	"html, body { height: auto !important; max-height: none !important; overflow-y: visible !important; }";
+
 export class DetectedCaptureError extends Error {
 	readonly reason: string;
 
@@ -263,7 +266,12 @@ export async function preparePageForCapture(input: {
 	const profileStyles = (config.hideSelectors ?? [])
 		.map((selector) => `${selector} { display: none !important; }`)
 		.join("\n");
-	const styles = [profileStyles, ...(config.styles ?? []), site.requestBody?.addStyleTag]
+	const styles = [
+		profileStyles,
+		FULL_PAGE_LAYOUT_STYLE,
+		...(config.styles ?? []),
+		site.requestBody?.addStyleTag,
+	]
 		.filter(Boolean)
 		.join("\n");
 	if (styles) {

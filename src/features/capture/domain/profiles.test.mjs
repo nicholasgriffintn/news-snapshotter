@@ -78,6 +78,7 @@ test("carries publisher cleaning rules into both device profiles", () => {
 	const sky = resolveCaptureProfile(site({ brand: "sky" }));
 	const times = resolveCaptureProfile(site({ brand: "times" }));
 	const metro = resolveCaptureProfile(site({ brand: "metro" }));
+	const nytimes = resolveCaptureProfile(site({ brand: "nytimes" }));
 	assert.ok(
 		bbc.deviceConfig.desktop.cookies.some((cookie) => {
 			return cookie.name === "ckns_policy" && cookie.url === "https://www.bbc.com";
@@ -138,15 +139,24 @@ test("carries publisher cleaning rules into both device profiles", () => {
 	);
 	assert.ok(times.deviceConfig.desktop.hideSelectors.includes('iframe[id^="sp_message_iframe_"]'));
 	assert.ok(
+		nytimes.deviceConfig.desktop.clickActions.some(({ selector }) =>
+			selector.includes("#fides-reject-all-button"),
+		),
+	);
+	assert.ok(nytimes.deviceConfig.mobile.hideSelectors.includes("#fides-overlay"));
+	assert.ok(
 		metro.deviceConfig.desktop.clickActions.some((action) => {
 			return (
-				action.selector.includes("#qc-cmp2-ui") &&
-				action.selector.includes(".fc-cta-consent") &&
-				action.selector.includes("#didomi-notice-agree-button")
+				action.frameUrlIncludes?.includes("cmp.dmgmediaprivacy.co.uk") &&
+				action.selector.includes('button[aria-label="Accept all"]')
 			);
 		}),
 	);
-	assert.ok(metro.deviceConfig.mobile.hideSelectors.includes("#qc-cmp2-container"));
+	assert.ok(
+		metro.deviceConfig.mobile.hideSelectors.includes(
+			'iframe[src^="https://cmp.dmgmediaprivacy.co.uk/"]',
+		),
+	);
 });
 
 test("falls back to defaults for an unknown profile", () => {

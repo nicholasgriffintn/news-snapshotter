@@ -116,13 +116,22 @@ const GENERIC_CONSENT_SELECTORS = [
 	'[id*="smartbanner"]',
 ];
 
-const METRO_CONSENT_SELECTOR = [
-	'#qc-cmp2-ui button[mode="primary"]',
-	".fc-consent-root .fc-cta-consent",
-	"#didomi-notice-agree-button",
-].join(", ");
+const DMG_CONSENT_ACTIONS: ClickAction[] = [
+	{
+		frameUrlIncludes: ["cmp.dmgmediaprivacy.co.uk"],
+		selector: [
+			'button[aria-label="Accept all"]',
+			'button[title="Accept all"]',
+			'button[data-testid="accept-all"]',
+		].join(", "),
+		timeoutMs: 5_000,
+	},
+];
 
-const METRO_CONSENT_HIDE_SELECTORS = ["#didomi-popup", "#qc-cmp2-container", ".qc-cmp-cleanslate"];
+const DMG_CONSENT_HIDE_SELECTORS = [
+	'[data-project="mol-fe-cmp"]',
+	'iframe[src^="https://cmp.dmgmediaprivacy.co.uk/"]',
+];
 
 const BBC_USERINFO_OVERRIDE = {
 	body: {
@@ -447,26 +456,22 @@ const PROFILES: Record<string, CaptureProfile> = {
 		}),
 	},
 	metro: {
-		deviceConfig: {
-			desktop: {
-				clickActions: [
-					{
-						selector: METRO_CONSENT_SELECTOR,
-						timeoutMs: 5_000,
-					},
-				],
-				hideSelectors: METRO_CONSENT_HIDE_SELECTORS,
-			},
-			mobile: {
-				clickActions: [
-					{
-						selector: METRO_CONSENT_SELECTOR,
-						timeoutMs: 5_000,
-					},
-				],
-				hideSelectors: METRO_CONSENT_HIDE_SELECTORS,
-			},
-		},
+		deviceConfig: forBothDevices({
+			clickActions: DMG_CONSENT_ACTIONS,
+			hideSelectors: DMG_CONSENT_HIDE_SELECTORS,
+		}),
+	},
+	nytimes: {
+		deviceConfig: forBothDevices({
+			clickActions: [
+				{
+					selector: "#fides-reject-all-button, #fides-accept-all-button",
+					timeoutMs: 5_000,
+				},
+			],
+			hideSelectors: ["#fides-overlay", "#fides-overlay-wrapper"],
+			styles: ["body.fides-no-scroll { overflow: auto !important; }"],
+		}),
 	},
 	stv: {
 		deviceConfig: forBothDevices({ hideSelectors: ["#cassie-widget"] }),
@@ -474,39 +479,17 @@ const PROFILES: Record<string, CaptureProfile> = {
 	dailymail: {
 		deviceConfig: {
 			desktop: {
-				clickActions: [
-					{
-						frameUrlIncludes: ["cmp.dmgmediaprivacy.co.uk"],
-						selector: [
-							'button[aria-label="Accept all"]',
-							'button[title="Accept all"]',
-							'button[data-testid="accept-all"]',
-						].join(", "),
-						timeoutMs: 5_000,
-					},
-				],
+				clickActions: DMG_CONSENT_ACTIONS,
 				hideSelectors: [
 					".billboard-container",
-					'[data-project="mol-fe-cmp"]',
-					'iframe[src^="https://cmp.dmgmediaprivacy.co.uk/"]',
+					...DMG_CONSENT_HIDE_SELECTORS,
 				],
 			},
 			mobile: {
-				clickActions: [
-					{
-						frameUrlIncludes: ["cmp.dmgmediaprivacy.co.uk"],
-						selector: [
-							'button[aria-label="Accept all"]',
-							'button[title="Accept all"]',
-							'button[data-testid="accept-all"]',
-						].join(", "),
-						timeoutMs: 5_000,
-					},
-				],
+				clickActions: DMG_CONSENT_ACTIONS,
 				hideSelectors: [
 					".billboard-container",
-					'[data-project="mol-fe-cmp"]',
-					'iframe[src^="https://cmp.dmgmediaprivacy.co.uk/"]',
+					...DMG_CONSENT_HIDE_SELECTORS,
 				],
 			},
 		},

@@ -256,6 +256,29 @@ test("runs optional profile clicks before applying cleanup styles", async (conte
 	assert.deepEqual(events.slice(0, 2), ["click", "styles"]);
 });
 
+test("unlocks the document layout before progressively scrolling a full-page capture", async (context) => {
+	const appliedStyles = [];
+	const page = successfulPage({
+		addStyleTag: async ({ content }) => {
+			appliedStyles.push(content);
+			return undefined;
+		},
+	});
+	context.mock.method(puppeteer, "launch", async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { env } = environment();
+
+	const result = await captureDevice(env, site, "desktop", triggeredAt);
+
+	assert.equal(result.status, "success");
+	assert.match(
+		appliedStyles[0],
+		/html, body \{ height: auto !important; max-height: none !important; overflow-y: visible !important; \}/,
+	);
+});
+
 test("runs consent actions inside matching iframes", async (context) => {
 	const clicked = [];
 	const consentFrame = {
