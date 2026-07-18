@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 import {
 	downloadExtractorFixture,
-	fetchExtractorChecklist,
 	fetchExtractorPreview,
 	fetchHistoryExtractions,
 	type ExtractionSummary,
@@ -11,7 +10,6 @@ import {
 import { displayName } from "../../shared/format.ts";
 
 export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
-	const [checklist, setChecklist] = useState<string[]>([]);
 	const [extractions, setExtractions] = useState<ExtractionSummary[]>([]);
 	const [limit, setLimit] = useState(25);
 	const [listStatus, setListStatus] = useState("");
@@ -24,9 +22,6 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 
 	useEffect(() => {
 		if (!apiKey) return;
-		fetchExtractorChecklist(apiKey)
-			.then(setChecklist)
-			.catch(() => setChecklist([]));
 		setListStatus("Loading extractions…");
 		fetchHistoryExtractions(apiKey, { limit: 25, sort: "newest" })
 			.then((results) => {
@@ -215,16 +210,6 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 						</table>
 					</div>
 				</>
-			) : null}
-			{checklist.length > 0 ? (
-				<details>
-					<summary>Extractor authoring checklist</summary>
-					<ul>
-						{checklist.map((item) => (
-							<li key={item}>{item}</li>
-						))}
-					</ul>
-				</details>
 			) : null}
 		</section>
 	);

@@ -8,7 +8,7 @@ export const TIMES_SITES = [
 			device: "desktop" as const,
 			extractor: "generic-baseline" as const,
 			minimumElements: 20,
-			version: 3,
+			version: 1,
 		},
 	},
 	{ name: "times-sport", url: "https://www.thetimes.com/sport", category: "sport" as const },

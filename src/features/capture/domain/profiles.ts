@@ -30,6 +30,10 @@ export type DeviceCaptureConfig = {
 	isMobile?: boolean;
 	javaScriptEnabled?: boolean;
 	navigationTimeoutMs?: number;
+	responseOverrides?: Array<{
+		body: Record<string, string>;
+		url: string;
+	}>;
 	runtimeQuietMs?: number;
 	scroll?: ProgressiveScrollConfig;
 	screenshot?: { fullPage: boolean; type: "jpeg" | "png" | "webp"; quality?: number };
@@ -120,6 +124,15 @@ const METRO_CONSENT_SELECTOR = [
 
 const METRO_CONSENT_HIDE_SELECTORS = ["#didomi-popup", "#qc-cmp2-container", ".qc-cmp-cleanslate"];
 
+const BBC_USERINFO_OVERRIDE = {
+	body: {
+		"X-Country": "gb",
+		"X-Ip_is_uk_combined": "yes",
+		"X-Ip_is_advertise_combined": "no",
+	},
+	url: "https://www.bbc.co.uk/userinfo",
+};
+
 const DEFAULT_DEVICE_CONFIG: Record<Device, DeviceCaptureConfig> = {
 	desktop: {
 		clickActions: [
@@ -207,6 +220,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 					'[class*="MenuListContainer"]',
 					'[class*="MoreMenuWrapper"]',
 				],
+				responseOverrides: [BBC_USERINFO_OVERRIDE],
 			},
 			mobile: {
 				cookies: [
@@ -220,6 +234,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 					'[class*="MenuListContainer"]',
 					'[class*="MoreMenuWrapper"]',
 				],
+				responseOverrides: [BBC_USERINFO_OVERRIDE],
 			},
 		},
 	},
@@ -587,6 +602,7 @@ function mergeDeviceConfig(
 		cookies: [...(base.cookies ?? []), ...(overrides?.cookies ?? [])],
 		extraHTTPHeaders: { ...base.extraHTTPHeaders, ...overrides?.extraHTTPHeaders },
 		hideSelectors: [...(base.hideSelectors ?? []), ...(overrides?.hideSelectors ?? [])],
+		responseOverrides: [...(base.responseOverrides ?? []), ...(overrides?.responseOverrides ?? [])],
 		styles: [...(base.styles ?? []), ...(overrides?.styles ?? [])],
 		viewport: overrides?.viewport ?? base.viewport,
 	};

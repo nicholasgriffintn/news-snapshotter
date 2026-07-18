@@ -13,7 +13,6 @@ import {
 } from "../infrastructure/history-research-repository.ts";
 import { parsePageExtraction } from "../domain/extraction.ts";
 import { SITES } from "../../catalogue/domain/sites.ts";
-import { extractorAuthoringChecklist } from "../../capture/domain/extractor-registry.ts";
 
 type HistoryAdminEnv = {
 	ARCHIVE_DATA: R2Bucket;
@@ -234,9 +233,6 @@ export async function handleHistoryAdminRequest(
 	const url = new URL(request.url);
 	if (request.method === "GET" && url.pathname === "/api/admin/history/status") {
 		return Response.json(await historyIndexStatus(env.HISTORY_DB));
-	}
-	if (request.method === "GET" && url.pathname === "/api/admin/history/extractor-checklist") {
-		return Response.json({ checklist: extractorAuthoringChecklist() });
 	}
 	if (request.method === "GET" && url.pathname === "/api/admin/history/extractions") {
 		return Response.json({

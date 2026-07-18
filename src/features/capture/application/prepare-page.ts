@@ -175,6 +175,24 @@ async function waitForCompletion(
 	}
 }
 
+async function applyResponseOverrides(page: Page, config: DeviceCaptureConfig): Promise<void> {
+	if (!config.responseOverrides?.length) return;
+
+	await page.setRequestInterception(true);
+	page.on("request", async (request) => {
+		const override = config.responseOverrides?.find(({ url }) => url === request.url());
+		if (!override) {
+			await request.continue();
+			return;
+		}
+		await request.respond({
+			body: JSON.stringify(override.body),
+			contentType: "application/json; charset=utf-8",
+			status: 200,
+		});
+	});
+}
+
 async function navigateWithQuietRuntime(
 	page: Page,
 	site: SiteDefinition,
@@ -228,6 +246,7 @@ export async function preparePageForCapture(input: {
 }): Promise<void> {
 	const { config, failureIndicators, page, providerManagesFingerprint, site } = input;
 	await applyPageProfile(page, config, site.captureRegion, providerManagesFingerprint);
+	await applyResponseOverrides(page, config);
 	const response = await navigateWithQuietRuntime(page, site, config);
 	if (response && response.status() >= 400) {
 		throw new DetectedCaptureError("http-error", `Navigation returned HTTP ${response.status()}`);
@@ -253,7 +272,8 @@ export async function preparePageForCapture(input: {
 		}
 	}
 
-	if (config.waitAfterLoadMs) await new Promise((resolve) => setTimeout(resolve, config.waitAfterLoadMs));
+	if (config.waitAfterLoadMs)
+		await new Promise((resolve) => setTimeout(resolve, config.waitAfterLoadMs));
 	if (config.waitForImagesMs) await waitForImages(page, config.waitForImagesMs);
 	if (config.scroll) {
 		await progressivelyRenderPage(page, config.scroll);

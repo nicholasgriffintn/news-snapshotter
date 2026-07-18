@@ -83,6 +83,20 @@ test("carries publisher cleaning rules into both device profiles", () => {
 			return cookie.name === "ckns_policy" && cookie.url === "https://www.bbc.com";
 		}),
 	);
+	assert.deepEqual(bbc.deviceConfig.desktop.responseOverrides, [
+		{
+			body: {
+				"X-Country": "gb",
+				"X-Ip_is_uk_combined": "yes",
+				"X-Ip_is_advertise_combined": "no",
+			},
+			url: "https://www.bbc.co.uk/userinfo",
+		},
+	]);
+	assert.deepEqual(
+		bbc.deviceConfig.mobile.responseOverrides,
+		bbc.deviceConfig.desktop.responseOverrides,
+	);
 	assert.ok(
 		dailymail.deviceConfig.desktop.clickActions.some((action) => {
 			return action.frameUrlIncludes?.includes("cmp.dmgmediaprivacy.co.uk");

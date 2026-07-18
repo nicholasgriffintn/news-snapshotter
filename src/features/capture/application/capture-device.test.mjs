@@ -46,6 +46,7 @@ function successfulPage(overrides = {}) {
 		frames: () => [],
 		goto: async () => ({ status: () => 200 }),
 		layoutCalls,
+		on: () => undefined,
 		screenshot: async (options) =>
 			options.fullPage ? Buffer.from("full screenshot") : Buffer.from("thumbnail"),
 		profileCalls,
@@ -55,6 +56,7 @@ function successfulPage(overrides = {}) {
 		setExtraHTTPHeaders: async (...args) => profileCalls.push(["setExtraHTTPHeaders", ...args]),
 		setGeolocation: async (...args) => profileCalls.push(["setGeolocation", ...args]),
 		setJavaScriptEnabled: async () => undefined,
+		setRequestInterception: async () => undefined,
 		setUserAgent: async (...args) => profileCalls.push(["setUserAgent", ...args]),
 		setViewport: async () => undefined,
 		waitForFunction: async () => undefined,

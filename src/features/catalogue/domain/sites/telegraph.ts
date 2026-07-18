@@ -8,7 +8,7 @@ export const TELEGRAPH_SITES = [
 			device: "desktop" as const,
 			extractor: "generic-baseline" as const,
 			minimumElements: 20,
-			version: 3,
+			version: 1,
 		},
 	},
 	{ name: "telegraph-sport", url: "https://www.telegraph.co.uk/sport", category: "sport" as const },

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { extractorDefinition } from "../../capture/domain/extractor-registry.ts";
 import { SITES } from "./sites.ts";
 
 function siteNamed(name) {
@@ -32,6 +33,16 @@ test("catalogue priorities distinguish key route types", () => {
 test("BBC front pages use the reviewed analysis extractor", () => {
 	assert.equal(siteNamed("bbc-home").analysis?.version, 3);
 	assert.equal(siteNamed("bbc-news").analysis?.version, 3);
+});
+
+test("every configured analysis uses a registered extractor version", () => {
+	for (const site of SITES) {
+		if (!site.analysis) continue;
+		assert.doesNotThrow(
+			() => extractorDefinition(site.analysis.extractor, site.analysis.version),
+			site.name,
+		);
+	}
 });
 
 test("explicit edition and regional priorities are preserved", () => {

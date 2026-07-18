@@ -13,7 +13,7 @@ export const BLOOMBERG_SITES = [
 			device: "desktop" as const,
 			extractor: "generic-baseline" as const,
 			minimumElements: 20,
-			version: 3,
+			version: 1,
 		},
 	},
 ].map((site) => {

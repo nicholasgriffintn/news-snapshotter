@@ -53,15 +53,3 @@ export function extractorDefinition(name: ExtractorName, version: number): Extra
 	}
 	return definition;
 }
-
-export function extractorAuthoringChecklist(): string[] {
-	return [
-		"Save representative rendered HTML and a reviewed expected extraction fixture.",
-		"Choose story links from the publisher content area, excluding navigation and hidden actions.",
-		"Prefer canonical publisher URLs as stable story keys; never use headline text alone.",
-		"Record headline, summary, image, section, prominence, and live rendered geometry.",
-		"Set and test a realistic minimum element count so DOM breakage fails explicitly.",
-		"Run a production shadow capture and inspect warnings before enabling the site.",
-		"Increment the extractor version whenever selectors or interpretation change.",
-	];
-}

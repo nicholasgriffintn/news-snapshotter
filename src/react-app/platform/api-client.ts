@@ -319,13 +319,6 @@ export async function fetchHistoryExtractions(
 	return (await readJson<{ extractions: ExtractionSummary[] }>(response)).extractions;
 }
 
-export async function fetchExtractorChecklist(apiKey: string): Promise<string[]> {
-	const response = await fetch("/api/admin/history/extractor-checklist", {
-		headers: { authorization: `Bearer ${apiKey}` },
-	});
-	return (await readJson<{ checklist: string[] }>(response)).checklist;
-}
-
 export async function fetchExtractorPreview(
 	apiKey: string,
 	key: string,
