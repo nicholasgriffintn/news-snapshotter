@@ -2,6 +2,7 @@ export const NEW_YORK_TIMES_SITES = [
 	{
 		captureRegion: "us" as const,
 		name: "nytimes-us",
+		displayName: "The New York Times",
 		url: "https://www.nytimes.com/",
 		category: "news" as const,
 		priority: 1 as const,
@@ -15,6 +16,7 @@ export const NEW_YORK_TIMES_SITES = [
 	{
 		captureRegion: "international" as const,
 		name: "nytimes-international",
+		displayName: "The New York Times International",
 		url: "https://www.nytimes.com/international",
 		category: "news" as const,
 		priority: 1 as const,
@@ -22,6 +24,7 @@ export const NEW_YORK_TIMES_SITES = [
 	{
 		captureRegion: "uk" as const,
 		name: "nytimes-athleticuk",
+		displayName: "The New York Times Athletic UK",
 		url: "https://www.nytimes.com/athletic/uk/",
 		category: "sport" as const,
 		priority: 2 as const,

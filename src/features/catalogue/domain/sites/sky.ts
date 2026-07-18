@@ -1,6 +1,7 @@
 export const SKY_SITES = [
 	{
 		name: "sky-com",
+		displayName: "Sky News",
 		url: "https://news.sky.com/",
 		priority: 1 as const,
 		requestBody: { addStyleTag: "#notice { display: none; }" },

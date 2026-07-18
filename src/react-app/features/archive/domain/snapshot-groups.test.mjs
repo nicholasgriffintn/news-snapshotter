@@ -13,6 +13,7 @@ function snapshot(
 		capturedAt,
 		category: "news",
 		device,
+		displayName: "BBC",
 		fullImageUrl: `/full-${device}.png`,
 		key: `bbc-home-${device}-${capturedAt}`,
 		name: "bbc-home",
@@ -33,6 +34,7 @@ test("combines desktop and mobile variants from the same site capture", () => {
 	assert.equal(groups[0].variants.mobile.device, "mobile");
 	assert.equal(preferredVariant(groups[0]).device, "desktop");
 	assert.equal(groups[0].capturedAt, "2026-07-17T09:00:10.000Z");
+	assert.equal(groups[0].displayName, "BBC");
 });
 
 test("keeps separate runs from the same five-minute window as separate cards", () => {

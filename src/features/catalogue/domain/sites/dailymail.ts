@@ -1,6 +1,7 @@
 export const DAILYMAIL_SITES = [
 	{
 		name: "dailymail-home",
+		displayName: "Daily Mail",
 		url: "https://www.dailymail.com/home/index.html",
 		category: "news" as const,
 		priority: 1 as const,
@@ -13,6 +14,7 @@ export const DAILYMAIL_SITES = [
 	},
 	{
 		name: "dailymail-sport",
+		displayName: "Daily Mail Sport",
 		url: "https://www.dailymail.com/sport/index.html",
 		category: "sport" as const,
 		priority: 1 as const,

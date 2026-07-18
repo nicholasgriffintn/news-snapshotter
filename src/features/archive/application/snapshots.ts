@@ -10,7 +10,10 @@ export function screenshotImageUrl(key: string): string {
 	return `/api/screenshots/image?key=${encodeURIComponent(key)}`;
 }
 
-export async function listScreenshots(bucket: R2Bucket): Promise<{
+export async function listScreenshots(
+	bucket: R2Bucket,
+	displayNames: ReadonlyMap<string, string> = new Map(),
+): Promise<{
 	screenshots: ScreenshotSummary[];
 	truncated: boolean;
 }> {
@@ -53,6 +56,7 @@ export async function listScreenshots(bucket: R2Bucket): Promise<{
 				capturedAt: metadata.capturedAt,
 				category: metadata.category as SiteCategory,
 				device: (metadata.device as Device | undefined) ?? "desktop",
+				displayName: metadata.displayName ?? displayNames.get(metadata.name),
 				fullImageUrl: screenshotImageUrl(object.key),
 				key: object.key,
 				name: metadata.name,

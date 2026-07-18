@@ -1,6 +1,7 @@
 export const GUARDIAN_SITES = [
 	{
 		name: "guardian-uk",
+		displayName: "The Guardian UK",
 		url: "https://www.theguardian.com/uk",
 		category: "news" as const,
 		priority: 1 as const,
@@ -16,6 +17,7 @@ export const GUARDIAN_SITES = [
 	},
 	{
 		name: "guardian-sport",
+		displayName: "The Guardian Sport",
 		url: "https://www.theguardian.com/uk/sport",
 		category: "sport" as const,
 		priority: 2 as const,

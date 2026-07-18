@@ -16,6 +16,7 @@ const snapshots = [
 		brand: "sky",
 		capturedAt: new Date(2026, 6, 16, 10).toISOString(),
 		category: "sport",
+		displayName: "Sky Sports",
 		name: "sky-sports",
 	},
 ];
@@ -49,9 +50,11 @@ test("category filtering separates news and sport snapshots", () => {
 test("search is case-insensitive and ignores surrounding whitespace", () => {
 	const byName = filterSnapshots(snapshots, { ...defaultFilters, query: "  SKY-SPORTS " }, now);
 	const byBrand = filterSnapshots(snapshots, { ...defaultFilters, query: " BBC " }, now);
+	const byDisplayName = filterSnapshots(snapshots, { ...defaultFilters, query: "sky sports" }, now);
 
 	assert.deepEqual(byName, [snapshots[1]]);
 	assert.deepEqual(byBrand, [snapshots[0]]);
+	assert.deepEqual(byDisplayName, [snapshots[1]]);
 });
 
 test("brand, category, search, and date filters compose", () => {

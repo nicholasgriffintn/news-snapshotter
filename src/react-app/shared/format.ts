@@ -1,5 +1,29 @@
-export function displayName(value: string): string {
-	return value.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const DISPLAY_WORDS: Readonly<Record<string, string>> = {
+	bbc: "BBC",
+	cnn: "CNN",
+	itv: "ITV",
+	skysports: "Sky Sports",
+	stv: "STV",
+	uk: "UK",
+	us: "US",
+};
+
+export function displayName(value: string, preferred?: string): string {
+	if (preferred) {
+		return preferred;
+	}
+
+	const words = value
+		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+		.split(/[-_\s]+/)
+		.filter(Boolean);
+
+	return words
+		.filter((word, index) => !(words.length > 1 && index === words.length - 1 && word === "com"))
+		.map((word) => {
+			return DISPLAY_WORDS[word.toLowerCase()] ?? word[0].toUpperCase() + word.slice(1);
+		})
+		.join(" ");
 }
 
 const CAPTURE_WINDOW_MS = 5 * 60 * 1_000;

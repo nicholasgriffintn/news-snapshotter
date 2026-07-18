@@ -142,7 +142,7 @@ export function CaptureTool({ apiKey, catalogue, providers }: CaptureToolProps) 
 					<select onChange={(event) => setName(event.target.value)} value={name}>
 						{catalogue.map((site) => (
 							<option key={site.name} value={site.name}>
-								{displayName(site.name)} · {site.category}
+								{displayName(site.name, site.displayName)} · {site.category}
 							</option>
 						))}
 					</select>

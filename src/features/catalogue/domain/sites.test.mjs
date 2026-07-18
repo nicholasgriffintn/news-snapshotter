@@ -30,6 +30,13 @@ test("catalogue priorities distinguish key route types", () => {
 	assert.equal(siteNamed("bbc-cambridgeshire").priority, 4);
 });
 
+test("publisher homepages can define reader-facing names", () => {
+	assert.equal(siteNamed("bbc-home").displayName, "BBC");
+	assert.equal(siteNamed("skysports-com").displayName, "Sky Sports");
+	assert.equal(siteNamed("times-com").displayName, "The Times");
+	assert.ok(SITES.every((site) => site.displayName === undefined || site.displayName.trim().length > 0));
+});
+
 test("BBC front pages use the reviewed analysis extractor", () => {
 	assert.equal(siteNamed("bbc-home").analysis?.version, 5);
 	assert.equal(siteNamed("bbc-news").analysis?.version, 5);

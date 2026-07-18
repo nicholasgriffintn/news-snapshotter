@@ -17,7 +17,7 @@ export type {
 
 export type SnapshotGroup = Pick<
 	Snapshot,
-	"brand" | "capturedAt" | "category" | "name" | "triggeredAt" | "url"
+	"brand" | "capturedAt" | "category" | "displayName" | "name" | "triggeredAt" | "url"
 > & {
 	variants: Partial<Record<Snapshot["device"], Snapshot>>;
 };

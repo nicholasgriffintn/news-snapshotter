@@ -17,6 +17,7 @@ export type {
 
 export type SiteDefinition = {
 	analysis?: SiteAnalysisConfig;
+	displayName?: string;
 	name: string;
 	provider?: CaptureProviderName;
 	brand: string;

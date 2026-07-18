@@ -40,13 +40,14 @@ test("lists valid full screenshots newest first with image URLs", async () => {
 		}),
 	};
 
-	const result = await listScreenshots(bucket);
+	const result = await listScreenshots(bucket, new Map([["bbc-home", "BBC"]]));
 
 	assert.deepEqual(
 		result.screenshots.map(({ brand }) => brand),
 		["bbc", "sky"],
 	);
 	assert.equal(result.screenshots[0].device, "mobile");
+	assert.equal(result.screenshots[0].displayName, "BBC");
 	assert.equal(result.screenshots[0].triggeredAt, newerMetadata.triggeredAt);
 	assert.equal(result.screenshots[1].triggeredAt, olderMetadata.triggeredAt);
 	assert.match(result.screenshots[0].fullImageUrl, /\/api\/screenshots\/image\?key=/);

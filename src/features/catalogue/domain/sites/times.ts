@@ -1,5 +1,6 @@
 export const TIMES_SITES = [
 	{
+		displayName: "The Times",
 		name: "times-com",
 		url: "https://www.thetimes.com/",
 		priority: 1 as const,

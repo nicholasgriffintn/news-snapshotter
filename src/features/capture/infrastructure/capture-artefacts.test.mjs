@@ -62,6 +62,7 @@ test("keeps a stored screenshot successful when indexing cannot be queued", asyn
 			brand: "bbc",
 			captureRegion: "uk",
 			category: "news",
+			displayName: "BBC",
 			name: "bbc-home",
 			priority: 1,
 			url: "https://www.bbc.co.uk/",
@@ -73,4 +74,5 @@ test("keeps a stored screenshot successful when indexing cannot be queued", asyn
 	assert.equal(result.analysis.status, "stored");
 	assert.equal(result.analysis.indexingStatus, "not-queued");
 	assert.equal(screenshots.length, 2);
+	assert.equal(screenshots[0][2].customMetadata.displayName, "BBC");
 });

@@ -9,6 +9,7 @@ export type Snapshot = {
 	capturedAt: string;
 	category: SiteCategory;
 	device: Device;
+	displayName?: string;
 	fullImageUrl: string;
 	key: string;
 	name: string;
@@ -17,7 +18,7 @@ export type Snapshot = {
 	url: string;
 };
 
-export type CatalogueSite = Pick<Snapshot, "brand" | "category" | "name"> & {
+export type CatalogueSite = Pick<Snapshot, "brand" | "category" | "displayName" | "name"> & {
 	captureRegion: CaptureRegion;
 	priority: CapturePriority;
 	provider: CaptureProviderName;

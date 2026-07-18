@@ -51,6 +51,7 @@ export async function storeCaptureArtefacts(input: {
 		capturedAt,
 		category: site.category,
 		device,
+		...(site.displayName ? { displayName: site.displayName } : {}),
 		name: site.name,
 		triggeredAt,
 		url: site.url,

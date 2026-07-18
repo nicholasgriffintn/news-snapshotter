@@ -25,6 +25,13 @@ import { handleHistoryRequest } from "../../features/history/application/history
 import { handleHistoryAdminRequest } from "../../features/history/application/history-admin.ts";
 import { handleHistoryResearchRequest } from "../../features/history/application/history-research-api.ts";
 
+const SITE_DISPLAY_NAMES = new Map<string, string>();
+for (const site of SITES) {
+	if (site.displayName) {
+		SITE_DISPLAY_NAMES.set(site.name, site.displayName);
+	}
+}
+
 function jsonError(message: string, status: number): Response {
 	return Response.json({ status: "error", message }, { status });
 }
@@ -80,7 +87,7 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url);
 
 	if (request.method === "GET" && url.pathname === "/api/screenshots") {
-		return Response.json(await listScreenshots(env.SCREENSHOTS));
+		return Response.json(await listScreenshots(env.SCREENSHOTS, SITE_DISPLAY_NAMES));
 	}
 
 	if (request.method === "GET" && url.pathname === "/api/screenshots/image") {
@@ -94,6 +101,7 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 					brand: site.brand,
 					captureRegion: site.captureRegion,
 					category: site.category,
+					displayName: site.displayName,
 					name: site.name,
 					priority: site.priority,
 					provider: resolveCaptureProfile(site).provider,

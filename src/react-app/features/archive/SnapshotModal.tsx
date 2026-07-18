@@ -10,6 +10,7 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 	const [device, setDevice] = useState<Snapshot["device"]>(initialDevice);
 	const devices = (["desktop", "mobile"] as const).filter((candidate) => group.variants[candidate]);
 	const snapshot = group.variants[device] ?? preferredVariant(group);
+	const title = displayName(group.name, group.displayName);
 
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
@@ -48,7 +49,7 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 						<p>
 							{displayName(group.brand)} / {group.category}
 						</p>
-						<h2>{displayName(group.name)}</h2>
+						<h2>{title}</h2>
 						<time dateTime={group.capturedAt}>
 							{timeLabel(group.capturedAt)} ·{" "}
 							{new Date(group.capturedAt).toLocaleDateString("en-GB")}
@@ -88,7 +89,7 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 
 				<div className={`modal__image modal__image--${snapshot.device}`} role="tabpanel">
 					<img
-						alt={`Full ${snapshot.device} screenshot of ${displayName(group.name)}`}
+						alt={`Full ${snapshot.device} screenshot of ${title}`}
 						key={snapshot.key}
 						src={snapshot.fullImageUrl}
 					/>

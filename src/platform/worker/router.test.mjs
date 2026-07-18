@@ -27,10 +27,12 @@ test("serves the public site catalogue without authentication", async () => {
 
 	assert.equal(response.status, 200);
 	assert.ok(body.sites.length > 0);
+	assert.equal(body.sites.find(({ name }) => name === "bbc-home").displayName, "BBC");
 	assert.deepEqual(Object.keys(body.sites[0]).sort(), [
 		"brand",
 		"captureRegion",
 		"category",
+		"displayName",
 		"name",
 		"priority",
 		"provider",

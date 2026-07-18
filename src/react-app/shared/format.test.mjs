@@ -5,7 +5,9 @@ import { captureWindowKey, displayName, groupLabel, timeLabel } from "./format.t
 
 test("turns storage identifiers into display names", () => {
 	assert.equal(displayName("belfast-telegraph"), "Belfast Telegraph");
-	assert.equal(displayName("bbc"), "Bbc");
+	assert.equal(displayName("bbc"), "BBC");
+	assert.equal(displayName("skysports"), "Sky Sports");
+	assert.equal(displayName("times-com", "The Times"), "The Times");
 });
 
 test("formats capture times using the local 24-hour clock", () => {

@@ -8,7 +8,10 @@ export type SnapshotFilter = ArchivePeriodFilter & {
 	query: string;
 };
 
-type FilterableSnapshot = Pick<Snapshot, "brand" | "capturedAt" | "category" | "name">;
+type FilterableSnapshot = Pick<
+	Snapshot,
+	"brand" | "capturedAt" | "category" | "displayName" | "name"
+>;
 
 export function filterSnapshots<T extends FilterableSnapshot>(
 	snapshots: T[],
@@ -21,7 +24,10 @@ export function filterSnapshots<T extends FilterableSnapshot>(
 		const matchesBrand = !filters.brand || snapshot.brand === filters.brand;
 		const matchesCategory = !filters.category || snapshot.category === filters.category;
 		const matchesQuery =
-			!query || `${snapshot.name} ${snapshot.brand}`.toLowerCase().includes(query);
+			!query ||
+			`${snapshot.name} ${snapshot.brand} ${snapshot.displayName ?? ""}`
+				.toLowerCase()
+				.includes(query);
 
 		return (
 			matchesBrand &&

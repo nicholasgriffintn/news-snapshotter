@@ -2,11 +2,13 @@ export const BLOOMBERG_SITES = [
 	{
 		captureRegion: "us" as const,
 		name: "bloomberg-us",
+		displayName: "Bloomberg US",
 		url: "https://www.bloomberg.com/",
 	},
 	{
 		captureRegion: "uk" as const,
 		name: "bloomberg-uk",
+		displayName: "Bloomberg UK",
 		url: "https://www.bloomberg.com/uk",
 		priority: 1 as const,
 		analysis: {

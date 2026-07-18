@@ -14,13 +14,14 @@ export function SnapshotCard({
 }) {
 	const preview = preferredVariant(group);
 	const devices = (["desktop", "mobile"] as const).filter((device) => group.variants[device]);
+	const title = displayName(group.name, group.displayName);
 
 	return (
 		<article className="snapshot-card">
 			<button className="snapshot-card__open" onClick={onSelect} type="button">
 				<div className="snapshot-card__image">
 					<img
-						alt={`Thumbnail of ${displayName(group.name)}`}
+						alt={`Thumbnail of ${title}`}
 						loading="lazy"
 						onError={(event) => {
 							event.currentTarget.src = preview.fullImageUrl;
@@ -38,7 +39,7 @@ export function SnapshotCard({
 				</div>
 				<div className="snapshot-card__copy">
 					<span className="snapshot-card__brand">{displayName(group.brand)}</span>
-					<h3>{displayName(group.name)}</h3>
+					<h3>{title}</h3>
 					<span className="snapshot-card__url">{group.url}</span>
 					<time dateTime={group.capturedAt}>{timeLabel(group.capturedAt)}</time>
 				</div>

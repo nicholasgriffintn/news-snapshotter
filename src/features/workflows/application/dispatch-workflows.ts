@@ -38,6 +38,7 @@ export async function dispatchCaptureWorkflows(
 				brand: site.brand,
 				captureRegion: site.captureRegion,
 				category: site.category,
+				displayName: site.displayName,
 				name: site.name,
 				priority: site.priority,
 				provider: resolveCaptureProfile(site).provider,

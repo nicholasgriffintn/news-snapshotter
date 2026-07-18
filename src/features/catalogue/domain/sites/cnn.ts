@@ -2,6 +2,7 @@ export const CNN_SITES = [
 	{
 		captureRegion: "international" as const,
 		name: "cnn-com",
+		displayName: "CNN International",
 		url: "https://edition.cnn.com/",
 		priority: 1 as const,
 		analysis: {
@@ -14,12 +15,8 @@ export const CNN_SITES = [
 	{
 		captureRegion: "us" as const,
 		name: "cnn-us",
+		displayName: "CNN US",
 		url: "https://us.cnn.com/?hpt=header_edition-picker",
-	},
-	{
-		captureRegion: "international" as const,
-		name: "cnn-international",
-		url: "https://edition.cnn.com/?hpt=header_edition-picker",
 	},
 ].map((site) => {
 	return {

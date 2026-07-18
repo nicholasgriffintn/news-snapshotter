@@ -13,11 +13,15 @@ export function groupSnapshotVariants(snapshots: Snapshot[]): SnapshotGroup[] {
 			brand: snapshot.brand,
 			capturedAt: snapshot.capturedAt,
 			category: snapshot.category,
+			displayName: snapshot.displayName,
 			name: snapshot.name,
 			triggeredAt: snapshot.triggeredAt,
 			url: snapshot.url,
 			variants: {},
 		};
+		if (!group.displayName && snapshot.displayName) {
+			group.displayName = snapshot.displayName;
+		}
 		group.variants[snapshot.device] = snapshot;
 		groups.set(key, group);
 	}

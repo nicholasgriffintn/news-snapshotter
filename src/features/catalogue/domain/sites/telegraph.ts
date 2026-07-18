@@ -1,6 +1,7 @@
 export const TELEGRAPH_SITES = [
 	{
 		name: "telegraph-uk",
+		displayName: "The Telegraph",
 		url: "https://www.telegraph.co.uk/",
 		priority: 1 as const,
 		category: "news" as const,
