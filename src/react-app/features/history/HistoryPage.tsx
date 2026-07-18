@@ -13,7 +13,6 @@ export function HistoryPage({ site }: { site: string }) {
 		<div className="history-page">
 			<header className="history-heading history-heading--archive">
 				<div>
-					<p className="eyebrow">Structured page archive</p>
 					<h1>{displayName(site)} history</h1>
 				</div>
 				<div className="history-heading__intro">

@@ -76,7 +76,6 @@ export function HistoryResearchPage({ site }: { site: string }) {
 		<div className="history-page research-page">
 			<header className="history-heading history-heading--research">
 				<div>
-					<p className="eyebrow">Archive research</p>
 					<h1>{displayName(site)} research</h1>
 				</div>
 				<div className="history-heading__intro">

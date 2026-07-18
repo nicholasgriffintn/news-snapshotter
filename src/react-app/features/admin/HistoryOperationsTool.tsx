@@ -112,8 +112,7 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 		<div className="history-operations">
 			<section className="admin-tool">
 				<header className="admin-tool__header">
-					<p className="eyebrow">Deployed index</p>
-					<h2>History operations</h2>
+					<h3>Archive index</h3>
 				</header>
 				{status ? (
 					<div className="history-admin-totals">
@@ -170,8 +169,7 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 
 			<section className="admin-tool">
 				<header className="admin-tool__header">
-					<p className="eyebrow">Editorial research</p>
-					<h2>Save a timeline</h2>
+					<h3>Save a timeline</h3>
 				</header>
 				<div className="history-operation-form">
 					<label>
@@ -210,8 +208,7 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 
 			<section className="admin-tool">
 				<header className="admin-tool__header">
-					<p className="eyebrow">Bounded research queries</p>
-					<h2>Monthly aggregates</h2>
+					<h3>Monthly aggregates</h3>
 				</header>
 				<div className="history-operation-form">
 					<label>
@@ -247,8 +244,7 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 			{status?.resourceUsage.map((usage) => (
 				<section className="admin-tool" key={usage.site}>
 					<header className="admin-tool__header">
-						<p className="eyebrow">Measured ingestion</p>
-						<h2>{usage.site}</h2>
+						<h3>{usage.site}</h3>
 					</header>
 					<div className="history-admin-totals">
 						<span>

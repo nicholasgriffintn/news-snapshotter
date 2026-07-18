@@ -21,7 +21,6 @@ export function SavedTimelinePage({ site, slug }: { site: string; slug: string }
 		<div className="history-page saved-timeline-page">
 			<header className="history-heading">
 				<div>
-					<p className="eyebrow">Saved archive timeline</p>
 					<h1>{timeline?.name ?? "Timeline"}</h1>
 				</div>
 			</header>

@@ -76,7 +76,7 @@ export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: s
 		<>
 			<form className="admin-tool bot-check" onSubmit={submit}>
 				<header className="admin-tool__header">
-					<h2>Bot detection check</h2>
+					<h3>Test a capture profile</h3>
 				</header>
 
 				<label>

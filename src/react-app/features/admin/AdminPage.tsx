@@ -1,104 +1,68 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import {
-	fetchCaptureProfiles,
-	fetchCaptureProviders,
-	fetchCatalogue,
-} from "../../platform/api-client.ts";
-import type { CaptureProviderName, CatalogueSite } from "../../core/types.ts";
+import { AdminAccessPanel } from "./AdminAccessPanel.tsx";
+import { AdminNavigation } from "./AdminNavigation.tsx";
 import { BotCheckTool } from "./BotCheckTool";
 import { CaptureTool } from "./CaptureTool";
+import { ADMIN_TOOL_DETAILS, DEFAULT_ADMIN_TOOL, type AdminToolId } from "./admin-tools.ts";
 import { FailureLog } from "./FailureLog";
 import { HistoryOperationsTool } from "./HistoryOperationsTool.tsx";
 import { ExtractorPreviewTool } from "./ExtractorPreviewTool.tsx";
-
-type AdminView = "capture" | "diagnostics" | "extractors" | "failures" | "history";
-
-const VIEWS: Array<{ label: string; value: AdminView }> = [
-	{ label: "Run captures", value: "capture" },
-	{ label: "Browser diagnostic", value: "diagnostics" },
-	{ label: "Failure log", value: "failures" },
-	{ label: "History operations", value: "history" },
-	{ label: "Extractor preview", value: "extractors" },
-];
+import { useAdminConfiguration } from "./useAdminConfiguration.ts";
 
 export function AdminPage() {
-	const [apiKeyDraft, setApiKeyDraft] = useState("");
 	const [apiKey, setApiKey] = useState("");
-	const [catalogue, setCatalogue] = useState<CatalogueSite[]>([]);
-	const [profiles, setProfiles] = useState<string[]>([]);
-	const [providers, setProviders] = useState<CaptureProviderName[]>([]);
-	const [view, setView] = useState<AdminView>("capture");
-	const [setupStatus, setSetupStatus] = useState("Loading capture configuration…");
-
-	useEffect(() => {
-		Promise.all([fetchCatalogue(), fetchCaptureProfiles(), fetchCaptureProviders()])
-			.then(([sites, captureProfiles, captureProviders]) => {
-				setCatalogue(sites);
-				setProfiles(captureProfiles);
-				setProviders(captureProviders);
-				setSetupStatus("");
-			})
-			.catch(() => setSetupStatus("Could not load the capture configuration."));
-	}, []);
+	const [activeTool, setActiveTool] = useState<AdminToolId>(DEFAULT_ADMIN_TOOL);
+	const configuration = useAdminConfiguration();
+	const activeToolDetails = ADMIN_TOOL_DETAILS[activeTool];
 
 	return (
 		<section className="admin-panel">
-			<div className="admin-credentials">
-				<form
-					className="admin-key-form"
-					onSubmit={(event) => {
-						event.preventDefault();
-						setApiKey(apiKeyDraft.trim());
-					}}
+			<header className="admin-console-header">
+				<div className="admin-console-header__intro">
+					<h1>
+						Control the <em>press.</em>
+					</h1>
+					<p>Run capture workflows, investigate failures and maintain the research archive.</p>
+				</div>
+				<AdminAccessPanel apiKey={apiKey} onChange={setApiKey} />
+			</header>
+
+			<div className="admin-console-layout">
+				<AdminNavigation activeTool={activeTool} onChange={setActiveTool} />
+				<section
+					aria-labelledby="admin-workspace-title"
+					className="admin-workspace"
+					id="admin-workspace-panel"
 				>
-					<label className="admin-key">
-						<span>API key</span>
-						<input
-							autoComplete="off"
-							onChange={(event) => setApiKeyDraft(event.target.value)}
-							placeholder="Enter API key"
-							type="password"
-							value={apiKeyDraft}
-						/>
-					</label>
-					<button className="admin-secondary-button" type="submit">
-						{apiKey ? "Update key" : "Enable actions"}
-					</button>
-					<small>
-						{apiKey
-							? "Admin actions enabled for this session."
-							: "Required for every admin action."}
-					</small>
-				</form>
-			</div>
-
-			<nav aria-label="Admin tools" className="admin-tabs">
-				{VIEWS.map((item) => (
-					<button
-						aria-current={view === item.value ? "page" : undefined}
-						key={item.value}
-						onClick={() => setView(item.value)}
-						type="button"
-					>
-						{item.label}
-					</button>
-				))}
-			</nav>
-
-			{setupStatus ? (
-				<p aria-live="polite" className="admin-status">
-					{setupStatus}
-				</p>
-			) : null}
-			<div className="admin-workspace">
-				{view === "capture" ? (
-					<CaptureTool apiKey={apiKey} catalogue={catalogue} providers={providers} />
-				) : null}
-				{view === "diagnostics" ? <BotCheckTool apiKey={apiKey} profiles={profiles} /> : null}
-				{view === "failures" ? <FailureLog apiKey={apiKey} /> : null}
-				{view === "history" ? <HistoryOperationsTool apiKey={apiKey} /> : null}
-				{view === "extractors" ? <ExtractorPreviewTool apiKey={apiKey} /> : null}
+					<header className="admin-workspace__header">
+						<div>
+							<h2 id="admin-workspace-title">{activeToolDetails.label}</h2>
+							<p>{activeToolDetails.description}</p>
+						</div>
+					</header>
+					<div className="admin-workspace__body">
+						{configuration.status === "error" &&
+							(activeTool === "capture" || activeTool === "diagnostics") ? (
+							<p className="admin-configuration-error" role="alert">
+								Capture options could not be loaded. Refresh the page to try again.
+							</p>
+						) : null}
+						{activeTool === "capture" ? (
+							<CaptureTool
+								apiKey={apiKey}
+								catalogue={configuration.catalogue}
+								providers={configuration.providers}
+							/>
+						) : null}
+						{activeTool === "diagnostics" ? (
+							<BotCheckTool apiKey={apiKey} profiles={configuration.profiles} />
+						) : null}
+						{activeTool === "failures" ? <FailureLog apiKey={apiKey} /> : null}
+						{activeTool === "history" ? <HistoryOperationsTool apiKey={apiKey} /> : null}
+						{activeTool === "extractors" ? <ExtractorPreviewTool apiKey={apiKey} /> : null}
+					</div>
+				</section>
 			</div>
 		</section>
 	);

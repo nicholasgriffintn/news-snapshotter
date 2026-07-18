@@ -77,8 +77,7 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 	return (
 		<section className="admin-tool extractor-preview-tool">
 			<header className="admin-tool__header">
-				<p className="eyebrow">Private archive inspection</p>
-				<h2>Extractor preview</h2>
+				<h3>Inspect an extraction</h3>
 				<p>
 					Select an indexed capture to inspect its extraction. Archived HTML remains private and is
 					never executed.

@@ -10,7 +10,6 @@ export function HistoryChangePanel({ changes }: { changes: HistoryChange[] }) {
 		<section className="history-changes">
 			<header>
 				<div>
-					<p className="eyebrow">Compared with the previous valid capture</p>
 					<h2>What changed</h2>
 				</div>
 				<strong>{changes.length} events</strong>

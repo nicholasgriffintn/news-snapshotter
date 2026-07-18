@@ -17,7 +17,6 @@ export function HistoryImageTimeline({
 		<section className="research-panel research-panel--images">
 			<header>
 				<div>
-					<p className="eyebrow">Publisher imagery</p>
 					<h2>Images through the month</h2>
 				</div>
 				<label>

@@ -14,7 +14,6 @@ export default function App() {
 	const page = resolveAppPage(window.location.pathname);
 	const historySite =
 		page === "history" ? decodeURIComponent(window.location.pathname.split("/")[2] ?? "") : "";
-	const isApplicationPage = page === "admin" || page === "archive";
 
 	return (
 		<main className="shell">
@@ -25,40 +24,25 @@ export default function App() {
 				</a>
 			</header>
 
-			{isApplicationPage ? (
+			{page === "archive" ? (
 				<section className="hero">
 					<div>
-						{page === "archive" ? <p className="eyebrow">The front page, frozen in time</p> : null}
 						<h1>
-							{page === "admin" ? (
-								<>
-									Run the
-									<br />
-									<em>press.</em>
-								</>
-							) : (
-								<>
-									Today’s news.
-									<br />
-									<em>Captured.</em>
-								</>
-							)}
+							Today’s news.
+							<br />
+							<em>Captured.</em>
 						</h1>
 					</div>
 					<div className="hero__intro">
-						{page === "archive" ? (
-							<p>Browse full-page records of the stories, layouts and moments shaping the day.</p>
-						) : null}
-						{page === "archive" ? (
-							<button
-								className="hero__disclosure-action"
-								onClick={() => setDisclosureOpen(true)}
-								type="button"
-							>
-								About this site
-								<span aria-hidden="true">↗</span>
-							</button>
-						) : null}
+						<p>Browse full-page records of the stories, layouts and moments shaping the day.</p>
+						<button
+							className="hero__disclosure-action"
+							onClick={() => setDisclosureOpen(true)}
+							type="button"
+						>
+							About this site
+							<span aria-hidden="true">↗</span>
+						</button>
 					</div>
 				</section>
 			) : null}

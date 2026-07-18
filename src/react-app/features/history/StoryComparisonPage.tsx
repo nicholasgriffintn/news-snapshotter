@@ -23,7 +23,6 @@ export function StoryComparisonPage({ site, storyIds }: { site: string; storyIds
 		<div className="history-page comparison-page">
 			<header className="history-heading">
 				<div>
-					<p className="eyebrow">{displayName(site)} comparison</p>
 					<h1>Story trajectories</h1>
 				</div>
 			</header>

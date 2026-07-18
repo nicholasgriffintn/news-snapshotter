@@ -63,7 +63,6 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
 			<div className="contact-modal__panel">
 				<header className="contact-modal__header">
 					<div>
-						<p className="eyebrow">Contact the archive</p>
 						<h2 id="contact-title">Send a message</h2>
 					</div>
 					<button

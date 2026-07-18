@@ -29,7 +29,6 @@ export function HistorySearchPanel({
 		<section className="research-panel research-panel--search">
 			<header>
 				<div>
-					<p className="eyebrow">Stories and language</p>
 					<h2>Search the archive</h2>
 				</div>
 				{selectedStories.size >= 2 ? (

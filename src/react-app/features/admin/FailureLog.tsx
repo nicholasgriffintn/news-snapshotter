@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { fetchCaptureFailures } from "../../platform/api-client.ts";
 import { dateTimeLabel, displayName } from "../../shared/format.ts";
@@ -32,24 +32,27 @@ export function FailureLog({ apiKey }: { apiKey: string }) {
 		});
 	}, [failures, query, reason]);
 
-	async function load(nextCursor?: string, append = false) {
-		if (!apiKey) {
-			return;
-		}
-		setLoading(true);
-		setStatus(append ? "Loading more failures…" : "Loading failures…");
-		try {
-			const page = await fetchCaptureFailures(apiKey, nextCursor);
-			setFailures((current) => (append ? [...current, ...page.failures] : page.failures));
-			setCursor(page.cursor);
-			setHasMore(page.hasMore);
-			setStatus(page.failures.length === 0 && !append ? "No capture failures found." : "");
-		} catch (error) {
-			setStatus(error instanceof Error ? error.message : "Could not load capture failures.");
-		} finally {
-			setLoading(false);
-		}
-	}
+	const load = useCallback(
+		async (nextCursor?: string, append = false) => {
+			if (!apiKey) {
+				return;
+			}
+			setLoading(true);
+			setStatus(append ? "Loading more failures…" : "Loading failures…");
+			try {
+				const page = await fetchCaptureFailures(apiKey, nextCursor);
+				setFailures((current) => (append ? [...current, ...page.failures] : page.failures));
+				setCursor(page.cursor);
+				setHasMore(page.hasMore);
+				setStatus(page.failures.length === 0 && !append ? "No capture failures found." : "");
+			} catch (error) {
+				setStatus(error instanceof Error ? error.message : "Could not load capture failures.");
+			} finally {
+				setLoading(false);
+			}
+		},
+		[apiKey],
+	);
 
 	useEffect(() => {
 		setFailures([]);
@@ -58,12 +61,12 @@ export function FailureLog({ apiKey }: { apiKey: string }) {
 		if (apiKey) {
 			void load();
 		}
-	}, [apiKey]);
+	}, [apiKey, load]);
 
 	return (
 		<section className="admin-tool failure-log">
 			<header className="admin-tool__header admin-tool__header--action">
-				<h2>Failure log</h2>
+				<h3>Recent capture failures</h3>
 				<button
 					className="admin-secondary-button"
 					disabled={!apiKey || loading}

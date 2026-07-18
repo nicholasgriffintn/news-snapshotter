@@ -30,7 +30,6 @@ export function HistoryTrendPanel({
 		<section className="research-panel research-panel--trends">
 			<header>
 				<div>
-					<p className="eyebrow">Time-weighted view</p>
 					<h2>Coverage over time</h2>
 				</div>
 				<div className="research-controls">

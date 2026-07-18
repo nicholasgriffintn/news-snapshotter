@@ -23,7 +23,6 @@ export function HistoryIndexPage() {
 		<div className="history-page history-index-page">
 			<header className="history-heading history-heading--index">
 				<div>
-					<p className="eyebrow">Structured page archive</p>
 					<h1>Site history</h1>
 				</div>
 				<div className="history-heading__intro">
@@ -45,7 +44,6 @@ export function HistoryIndexPage() {
 					>
 						<span className="history-site-row__index">{String(index + 1).padStart(2, "0")}</span>
 						<div>
-							<p className="eyebrow">Publisher archive</p>
 							<h2>{displayName(site.site)}</h2>
 						</div>
 						<dl>

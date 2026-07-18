@@ -85,7 +85,7 @@ export function CaptureTool({ apiKey, catalogue, providers }: CaptureToolProps) 
 	return (
 		<form className="admin-tool" onSubmit={submit}>
 			<header className="admin-tool__header">
-				<h2>Run captures</h2>
+				<h3>Configure the next run</h3>
 			</header>
 
 			<fieldset>
