@@ -21,7 +21,9 @@ export function HistorySearchPanel({
 	const [draft, setDraft] = useState(query);
 	useEffect(() => setDraft(query), [query]);
 	const compareSearch = new URLSearchParams();
-	for (const storyId of selectedStories) compareSearch.append("story", storyId);
+	for (const storyId of selectedStories) {
+		compareSearch.append("story", storyId);
+	}
 
 	return (
 		<section className="research-panel research-panel--search">

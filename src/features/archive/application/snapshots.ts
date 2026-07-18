@@ -20,17 +20,20 @@ export async function listScreenshots(bucket: R2Bucket): Promise<{
 
 	do {
 		const page = await bucket.list({ cursor, include: ["customMetadata"], limit: 1_000 });
+
 		objects.push(
 			...page.objects.filter((object) => {
 				return !object.key.includes("-thumbnail.") && /\.(?:jpe?g|png|webp)$/.test(object.key);
 			}),
 		);
+
 		cursor = page.truncated ? page.cursor : undefined;
 		truncated = objects.length >= MAX_SCREENSHOTS && Boolean(cursor);
 	} while (cursor && objects.length < MAX_SCREENSHOTS);
 
 	const screenshots = objects.flatMap((object): ScreenshotSummary[] => {
 		const metadata = object.customMetadata;
+
 		if (
 			metadata?.visibility === "admin" ||
 			!metadata?.brand ||

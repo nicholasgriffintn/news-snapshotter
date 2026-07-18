@@ -23,8 +23,11 @@ function initialMonth(): string {
 function updateUrl(values: Record<string, string>): void {
 	const url = new URL(window.location.href);
 	for (const [name, value] of Object.entries(values)) {
-		if (value) url.searchParams.set(name, value);
-		else url.searchParams.delete(name);
+		if (value) {
+			url.searchParams.set(name, value);
+		} else {
+			url.searchParams.delete(name);
+		}
 	}
 	window.history.replaceState(null, "", url);
 }
@@ -90,8 +93,11 @@ export function HistoryResearchPage({ site }: { site: string }) {
 				onToggleStory={(storyId) => {
 					setSelectedStories((current) => {
 						const next = new Set(current);
-						if (next.has(storyId)) next.delete(storyId);
-						else next.add(storyId);
+						if (next.has(storyId)) {
+							next.delete(storyId);
+						} else {
+							next.add(storyId);
+						}
 						return next;
 					});
 				}}

@@ -39,7 +39,9 @@ export class SQLiteD1 {
 		this.database.exec("BEGIN");
 		try {
 			const results = [];
-			for (const statement of statements) results.push(await statement.run());
+			for (const statement of statements) {
+				results.push(await statement.run());
+			}
 			this.database.exec("COMMIT");
 			return results;
 		} catch (error) {

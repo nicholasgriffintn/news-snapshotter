@@ -113,11 +113,17 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 	}
 
 	if (url.pathname.startsWith("/api/history/")) {
-		if (!env.HISTORY_DB) return jsonError("History storage is not configured", 503);
+		if (!env.HISTORY_DB) {
+			return jsonError("History storage is not configured", 503);
+		}
 		const researchResponse = await handleHistoryResearchRequest(request, env.HISTORY_DB);
-		if (researchResponse) return researchResponse;
+		if (researchResponse) {
+			return researchResponse;
+		}
 		const historyResponse = await handleHistoryRequest(request, env.HISTORY_DB);
-		if (historyResponse) return historyResponse;
+		if (historyResponse) {
+			return historyResponse;
+		}
 		return jsonError("Not found", 404);
 	}
 
@@ -144,7 +150,9 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
 	if (url.pathname.startsWith("/api/admin/history/")) {
 		const historyAdminResponse = await handleHistoryAdminRequest(request, env);
-		if (historyAdminResponse) return historyAdminResponse;
+		if (historyAdminResponse) {
+			return historyAdminResponse;
+		}
 	}
 
 	if (request.method === "GET" && url.pathname.startsWith("/api/workflows/")) {

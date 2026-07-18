@@ -18,11 +18,14 @@ export async function storeCaptureArtefacts(input: {
 	triggeredAt: string;
 }): Promise<ScreenshotResult> {
 	const { config, device, env, page, profileName, site, triggeredAt } = input;
+
 	const capturedAt = new Date().toISOString();
 	const extension = config.screenshot?.type ?? "png";
 	const key = screenshotKey(site, triggeredAt, device, extension);
+
+	const allowAllAnalysis = false;
 	let analysis =
-		site.analysis && site.analysis.device === device
+		allowAllAnalysis || (site.analysis && site.analysis.device === device)
 			? await collectAndStoreAnalysis({
 					bucket: env.ARCHIVE_DATA,
 					capturedAt,
@@ -35,6 +38,7 @@ export async function storeCaptureArtefacts(input: {
 					triggeredAt,
 				})
 			: undefined;
+
 	const screenshot = await takeFullScreenshot(page, config);
 	const thumbnailConfig = config.thumbnail ?? { type: "jpeg" as const, quality: 72 };
 	const thumbnail = await page.screenshot({

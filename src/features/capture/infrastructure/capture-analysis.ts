@@ -109,6 +109,7 @@ export function analysisKeys(site: SiteDefinition, device: Device, triggeredAt: 
 		`site=${safeSegment(site.name)}`,
 		`device=${device}`,
 	].join("/");
+
 	return {
 		extractionKey: `${prefix}/${timestamp}.extraction.v${SCHEMA_VERSION}.json.gz`,
 		failureKey: `${prefix}/${timestamp}.analysis-failure.json`,
@@ -138,7 +139,11 @@ async function storeOptionalImageCrops(
 	warnings: CollectedPage["warnings"],
 ): Promise<CollectedElement[]> {
 	const cropConfig = input.site.analysis?.imageCrops;
-	if (!cropConfig || !input.screenshotBucket) return elements;
+
+	if (!cropConfig || !input.screenshotBucket) {
+		return elements;
+	}
+
 	const maximum = Math.max(0, Math.min(20, Math.floor(cropConfig.maxPerCapture)));
 	let stored = 0;
 	const prefix = extractionKey.replace(/\.extraction\.v\d+\.json\.gz$/, "");
@@ -149,12 +154,16 @@ async function storeOptionalImageCrops(
 			next.push(element);
 			continue;
 		}
+
 		const { height, left, top, width } = element.position;
+
 		if (height < 1 || width < 1 || left < 0 || top < 0) {
 			next.push(element);
 			continue;
 		}
+
 		const cropKey = `${prefix}.image-${String(stored + 1).padStart(2, "0")}.jpeg`;
+
 		try {
 			const crop = await input.page.screenshot({
 				captureBeyondViewport: true,
@@ -162,6 +171,7 @@ async function storeOptionalImageCrops(
 				quality: 80,
 				type: "jpeg",
 			});
+
 			await input.screenshotBucket.put(cropKey, crop, {
 				customMetadata: {
 					capturedAt: input.capturedAt,
@@ -172,6 +182,7 @@ async function storeOptionalImageCrops(
 				},
 				httpMetadata: { contentType: "image/jpeg" },
 			});
+
 			stored += 1;
 			next.push({ ...element, image: { ...element.image, cropKey } });
 		} catch {
@@ -212,6 +223,7 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 			textContent: string | null;
 			matches: (selector: string) => boolean;
 		};
+
 		const browser = globalThis as unknown as {
 			document: {
 				baseURI: string;
@@ -221,6 +233,7 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 			innerHeight: number;
 			scrollY: number;
 		};
+
 		const { document } = browser;
 		const clone = document.documentElement.cloneNode(true);
 		const unsafeNodes = clone.querySelectorAll("script, [data-pashi-cleanup]");
@@ -323,6 +336,7 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 				},
 			];
 		});
+
 		return JSON.stringify({
 			elements,
 			html: `<!doctype html>${clone.outerHTML}`,
@@ -345,7 +359,9 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 
 export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<AnalysisOutcome> {
 	const { bucket, capturedAt, device, page, profile, screenshotKey, site, triggeredAt } = input;
-	if (!site.analysis || site.analysis.device !== device) {
+
+	const allowAllAnalysis = false;
+	if (!allowAllAnalysis && (!site.analysis || site.analysis?.device !== device)) {
 		return {
 			status: "failed",
 		};
@@ -355,12 +371,16 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 	const captureId = `${site.name}:${device}:${triggeredAt}`;
 
 	try {
-		const extractor = extractorDefinition(site.analysis.extractor, site.analysis.version);
+		const extractorToUse = site.analysis?.extractor ? site.analysis.extractor : "generic-baseline";
+		const versionToUse = site.analysis?.version ? site.analysis.version : 1;
+		const extractor = extractorDefinition(extractorToUse, versionToUse);
+
 		const collected = await collectPage(page, extractor);
 		const stories = determineStoryProminence(
 			normaliseStoryElements(collected.elements),
 			collected.pageWidth,
 		);
+
 		const canonicalElements = stories.map((element) => {
 			const canonicalUrl = canonicaliseUrl(element.canonicalUrl);
 			const category = storyCategory(canonicalUrl, element.category ?? element.section);
@@ -377,12 +397,13 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 			...new Map(canonicalElements.map((element) => [element.elementKey, element])).values(),
 		];
 
-		if (collected.elements.length < site.analysis.minimumElements) {
+		const minimumElements = site?.analysis?.minimumElements ?? 0;
+		if (collected.elements.length < minimumElements) {
 			throw new Error(
-				`Expected at least ${site.analysis.minimumElements} elements, ` +
-					`found ${collected.elements.length}`,
+				`Expected at least ${minimumElements} elements, ` + `found ${collected.elements.length}`,
 			);
 		}
+
 		collected.elements = await storeOptionalImageCrops(
 			input,
 			collected.elements,
@@ -399,8 +420,8 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 				capturedAt,
 				device,
 				extractor: {
-					name: site.analysis.extractor,
-					version: site.analysis.version,
+					name: extractorToUse,
+					version: versionToUse,
 				},
 				htmlKey: keys.htmlKey,
 				pageHeight: collected.pageHeight,
@@ -424,8 +445,8 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 			capturedAt,
 			category: site.category,
 			device,
-			extractor: site.analysis.extractor,
-			extractorVersion: String(site.analysis.version),
+			extractor: extractorToUse,
+			extractorVersion: String(versionToUse),
 			profile,
 			schemaVersion: String(SCHEMA_VERSION),
 			site: site.name,

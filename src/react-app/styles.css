@@ -770,6 +770,11 @@ select:focus-visible {
 	height: auto;
 }
 
+.modal__image--mobile img {
+	width: min(100%, 412px);
+	margin-inline: auto;
+}
+
 .admin-panel {
 	display: grid;
 	gap: 1.25rem;

@@ -3,7 +3,7 @@ export const INDEPENDENT_SITES = [
 		name: "independent",
 		url: "https://www.independent.co.uk/",
 		priority: 1 as const,
-		category: "sport" as const,
+		category: "news" as const,
 	},
 	{
 		name: "independent-sport",

@@ -13,6 +13,7 @@
 		"start": "vite",
 		"test": "node --test",
 		"cf-typegen": "wrangler types",
+		"lint": "vp lint --fix",
 		"format": "vp fmt"
 	},
 	"dependencies": {

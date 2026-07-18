@@ -35,8 +35,12 @@ export function CaptureTool({ apiKey, catalogue, providers }: CaptureToolProps) 
 	);
 
 	useEffect(() => {
-		if (!brands.includes(brand)) setBrand(brands[0] ?? "");
-		if (!catalogue.some((site) => site.name === name)) setName(catalogue[0]?.name ?? "");
+		if (!brands.includes(brand)) {
+			setBrand(brands[0] ?? "");
+		}
+		if (!catalogue.some((site) => site.name === name)) {
+			setName(catalogue[0]?.name ?? "");
+		}
 	}, [brand, brands, catalogue, name]);
 
 	async function submit(event: React.FormEvent) {

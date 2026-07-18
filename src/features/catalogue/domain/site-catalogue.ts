@@ -1,8 +1,4 @@
-import type {
-	CapturePriority,
-	SiteDefinition,
-	SiteSource,
-} from "../../../core/domain.ts";
+import type { CapturePriority, SiteDefinition, SiteSource } from "../../../core/domain.ts";
 
 export type SiteSelection = {
 	brand?: string;
@@ -18,21 +14,17 @@ function routePriority(site: SiteSource): CapturePriority {
 	}
 
 	const url = new URL(site.url);
-	const segments = url.pathname
-		.split("/")
-		.filter(Boolean);
+	const segments = url.pathname.split("/").filter(Boolean);
 	const isRoot = segments.length === 0;
-	const isHomeIndex = segments.length === 2 &&
-		segments[0] === "home" &&
-		segments[1] === "index.html";
+	const isHomeIndex =
+		segments.length === 2 && segments[0] === "home" && segments[1] === "index.html";
 
 	if (isRoot || isHomeIndex) {
 		return 1;
 	}
 
 	const isTopic = segments.includes("topics");
-	const isMajorPublisherSection = ["news", "sport"].includes(segments[0]) &&
-		segments.length <= 2;
+	const isMajorPublisherSection = ["news", "sport"].includes(segments[0]) && segments.length <= 2;
 
 	if (!isTopic && (segments.length === 1 || isMajorPublisherSection)) {
 		return 2;
@@ -41,10 +33,7 @@ function routePriority(site: SiteSource): CapturePriority {
 	return 3;
 }
 
-function resolvePriority(
-	site: SiteSource,
-	group: PriorityGroup,
-): CapturePriority {
+function resolvePriority(site: SiteSource, group: PriorityGroup): CapturePriority {
 	if (site.priority) {
 		return site.priority;
 	}
@@ -90,18 +79,12 @@ export function withoutDuplicateNames(
 	existingSites: SiteSource[],
 ): SiteSource[] {
 	const existingNames = new Set(existingSites.map((site) => site.name));
+
 	return sites.filter((site) => !existingNames.has(site.name));
 }
 
-export function selectSites(
-	sites: SiteDefinition[],
-	selection: SiteSelection,
-): SiteDefinition[] {
-	const selectors = [
-		selection.brand,
-		selection.name,
-		selection.priority,
-	].filter((value) => {
+export function selectSites(sites: SiteDefinition[], selection: SiteSelection): SiteDefinition[] {
+	const selectors = [selection.brand, selection.name, selection.priority].filter((value) => {
 		return value !== undefined;
 	});
 

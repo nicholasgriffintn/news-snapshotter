@@ -111,3 +111,72 @@ test("allows lazy content a full settle delay when reaching the bottom", async (
 	assert.ok(delays.includes(config.settleDelayMs));
 	assert.equal(page.positions.at(-1), 0);
 });
+
+test("prefers the page content scroller over navigation overlays", async (context) => {
+	const documentScroller = {
+		clientHeight: 1_008,
+		clientWidth: 1_740,
+		scrollHeight: 1_008,
+		scrollTop: 0,
+	};
+	const overlayScroller = {
+		clientHeight: 1_008,
+		clientWidth: 1_740,
+		closest: () => null,
+		querySelector: () => null,
+		scrollHeight: 20_000,
+		scrollTop: 0,
+	};
+	const contentScroller = {
+		clientHeight: 1_008,
+		clientWidth: 1_620,
+		closest: (selector) => (selector.includes("main") ? contentScroller : null),
+		querySelector: () => null,
+		scrollHeight: 14_000,
+		scrollTop: 0,
+	};
+	const originalDocument = globalThis.document;
+	const originalGetComputedStyle = globalThis.getComputedStyle;
+	const originalInnerHeight = globalThis.innerHeight;
+	const originalScrollY = globalThis.scrollY;
+	context.after(() => {
+		globalThis.document = originalDocument;
+		globalThis.getComputedStyle = originalGetComputedStyle;
+		globalThis.innerHeight = originalInnerHeight;
+		globalThis.scrollY = originalScrollY;
+		delete globalThis.__snapshotterScrollTarget;
+		delete globalThis.__snapshotterScrollTargetResolved;
+	});
+	globalThis.document = {
+		documentElement: documentScroller,
+		querySelectorAll: () => [overlayScroller, contentScroller],
+		scrollingElement: documentScroller,
+	};
+	globalThis.getComputedStyle = () => ({
+		display: "block",
+		overflowY: "hidden",
+		visibility: "visible",
+	});
+	globalThis.innerHeight = 1_008;
+	globalThis.scrollY = 0;
+
+	const page = {
+		evaluate: async (callback, command) => {
+			if (command.action === "measure") {
+				return callback();
+			}
+			return undefined;
+		},
+	};
+
+	await progressivelyRenderPage(
+		page,
+		{ ...config, maxSteps: 0 },
+		{
+			now: () => 0,
+			sleep: async () => undefined,
+		},
+	);
+
+	assert.equal(globalThis.__snapshotterScrollTarget, contentScroller);
+});

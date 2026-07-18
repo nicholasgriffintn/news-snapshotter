@@ -5,8 +5,12 @@ export type TimelinePoint = {
 };
 
 export function timelinePoints(values: number[]): TimelinePoint[] {
-	if (values.length === 0) return [];
-	if (values.length === 1) return [{ value: values[0], x: 50, y: 50 }];
+	if (values.length === 0) {
+		return [];
+	}
+	if (values.length === 1) {
+		return [{ value: values[0], x: 50, y: 50 }];
+	}
 
 	const minimum = Math.min(...values);
 	const maximum = Math.max(...values);

@@ -11,15 +11,20 @@ export function determineStoryProminence<T extends PageElement>(
 	pageWidth: number,
 ): Array<T & { prominence: Prominence }> {
 	const width = pageWidth > 0 ? pageWidth : Number.POSITIVE_INFINITY;
+
 	const classified = stories.map((story) => {
 		const widthRatio = story.position.width / width;
 		let prominence: Prominence = "standard";
 
-		if (widthRatio >= MAJOR_WIDTH_RATIO) prominence = "major";
-		else if (widthRatio < MINOR_WIDTH_RATIO) prominence = "minor";
+		if (widthRatio >= MAJOR_WIDTH_RATIO) {
+			prominence = "major";
+		} else if (widthRatio < MINOR_WIDTH_RATIO) {
+			prominence = "minor";
+		}
 
 		return { ...story, prominence };
 	});
+
 	const lead = classified
 		.filter((story) => {
 			return (
@@ -30,9 +35,13 @@ export function determineStoryProminence<T extends PageElement>(
 		.sort((left, right) => {
 			const headingDifference =
 				Number(right.selectorHint === "h1") - Number(left.selectorHint === "h1");
-			if (headingDifference !== 0) return headingDifference;
+			if (headingDifference !== 0) {
+				return headingDifference;
+			}
 			const widthDifference = right.position.width - left.position.width;
-			if (widthDifference !== 0) return widthDifference;
+			if (widthDifference !== 0) {
+				return widthDifference;
+			}
 			return left.position.top - right.position.top;
 		})[0];
 

@@ -33,7 +33,9 @@ async function readBoundedText(
 
 	while (true) {
 		const result = await reader.read();
-		if (result.done) break;
+		if (result.done) {
+			break;
+		}
 		bytes += result.value.byteLength;
 		if (bytes > maximumBytes) {
 			await reader.cancel();
@@ -50,7 +52,9 @@ async function readArchiveJson(
 	key: string,
 ): Promise<{ compressedBytes: number; decompressedBytes: number; value: unknown }> {
 	const object = await bucket.get(key);
-	if (!object) throw new Error(`Extraction artefact not found: ${key}`);
+	if (!object) {
+		throw new Error(`Extraction artefact not found: ${key}`);
+	}
 	if (object.size > MAX_COMPRESSED_EXTRACTION_BYTES) {
 		throw new Error("Extraction artefact exceeds the compressed size limit");
 	}

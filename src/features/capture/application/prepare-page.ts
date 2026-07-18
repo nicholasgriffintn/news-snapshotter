@@ -7,7 +7,8 @@ import type { SiteDefinition } from "../../../core/domain.ts";
 import { urlsMatchIgnoringHash } from "../../../core/urls.ts";
 
 const FULL_PAGE_LAYOUT_STYLE =
-	"html, body { height: auto !important; max-height: none !important; overflow-y: visible !important; }";
+	"html, body { height: auto !important; max-height: none !important; overflow-y: visible !important; } " +
+	"body * { content-visibility: visible !important; }";
 
 export class DetectedCaptureError extends Error {
 	readonly reason: string;
@@ -47,7 +48,9 @@ async function runClickAction(context: ClickContext, action: ClickAction): Promi
 			timeout: action.timeoutMs ?? 3_000,
 			visible: true,
 		});
-		if (!element) return;
+		if (!element) {
+			return;
+		}
 		await element.click();
 		await new Promise((resolve) => setTimeout(resolve, action.waitAfterMs ?? 500));
 	} catch {
@@ -66,7 +69,9 @@ async function runClickActions(page: Page, actions: ClickAction[]): Promise<void
 			const url = candidate.url();
 			return action.frameUrlIncludes?.some((part) => url.includes(part));
 		});
-		if (frame) await runClickAction(frame, action);
+		if (frame) {
+			await runClickAction(frame, action);
+		}
 	}
 }
 
@@ -140,7 +145,9 @@ async function applyPageProfile(
 	});
 	await page.emulateTimezone(region.timezone);
 
-	if (region.geolocation) await page.setGeolocation(region.geolocation);
+	if (region.geolocation) {
+		await page.setGeolocation(region.geolocation);
+	}
 	if (!providerManagesFingerprint && config.userAgent) {
 		await page.setUserAgent(config.userAgent, config.userAgentMetadata);
 	}
@@ -148,10 +155,14 @@ async function applyPageProfile(
 		await page.evaluateOnNewDocument(() => {
 			const browser = globalThis as unknown as { navigator: object };
 			const navigatorPrototype = Object.getPrototypeOf(browser.navigator) as object | null;
-			if (navigatorPrototype) Reflect.deleteProperty(navigatorPrototype, "webdriver");
+			if (navigatorPrototype) {
+				Reflect.deleteProperty(navigatorPrototype, "webdriver");
+			}
 		});
 	}
-	if (config.cookies?.length) await page.setCookie(...config.cookies);
+	if (config.cookies?.length) {
+		await page.setCookie(...config.cookies);
+	}
 }
 
 async function waitForCompletion(
@@ -164,7 +175,9 @@ async function waitForCompletion(
 				const browser = globalThis as unknown as {
 					document: { querySelector: (value: string) => { textContent?: string } | null };
 				};
+
 				const text = browser.document.querySelector(selector)?.textContent?.trim() ?? "";
+
 				return text.startsWith(textStartsWith);
 			},
 			{ timeout: completion.timeoutMs },
@@ -180,15 +193,19 @@ async function waitForCompletion(
 }
 
 async function applyResponseOverrides(page: Page, config: DeviceCaptureConfig): Promise<void> {
-	if (!config.responseOverrides?.length) return;
+	if (!config.responseOverrides?.length) {
+		return;
+	}
 
 	await page.setRequestInterception(true);
 	page.on("request", async (request) => {
 		const override = config.responseOverrides?.find(({ url }) => url === request.url());
+
 		if (!override) {
 			await request.continue();
 			return;
 		}
+
 		await request.respond({
 			body: JSON.stringify(override.body),
 			contentType: "application/json; charset=utf-8",
@@ -213,7 +230,11 @@ async function navigateWithQuietRuntime(
 			waitUntil: "domcontentloaded",
 			timeout: config.navigationTimeoutMs,
 		});
-		if (quietMs > 0) await new Promise((resolve) => setTimeout(resolve, quietMs));
+
+		if (quietMs > 0) {
+			await new Promise((resolve) => setTimeout(resolve, quietMs));
+		}
+
 		return response;
 	} finally {
 		await runtime.send("Runtime.enable");
@@ -225,16 +246,39 @@ async function expandScrollableLayout(page: Page): Promise<void> {
 		() => {
 			type BrowserElement = {
 				parentElement?: BrowserElement;
-				scrollHeight: number;
 				style: { setProperty: (name: string, value: string, priority?: string) => void };
 			};
-			const browser = globalThis as unknown as { __snapshotterScrollTarget?: BrowserElement };
+
+			const browser = globalThis as unknown as {
+				__snapshotterScrollTarget?: BrowserElement;
+				document: {
+					body?: BrowserElement;
+					documentElement: BrowserElement & {
+						classList?: { remove: (name: string) => void };
+					};
+				};
+			};
+
+			browser.document.documentElement.classList?.remove("sp-message-open");
+			const documentElements = [browser.document.documentElement, browser.document.body].filter(
+				(element): element is BrowserElement => Boolean(element),
+			);
+			for (const element of documentElements) {
+				element.style.setProperty("position", "static", "important");
+				element.style.setProperty("inset", "auto", "important");
+			}
+
+			const expanded = new Set(documentElements);
 			let element = browser.__snapshotterScrollTarget;
 			while (element) {
-				element.style.setProperty("height", "auto", "important");
-				element.style.setProperty("max-height", "none", "important");
-				element.style.setProperty("overflow-y", "visible", "important");
+				expanded.add(element);
 				element = element.parentElement;
+			}
+
+			for (const candidate of expanded) {
+				candidate.style.setProperty("height", "auto", "important");
+				candidate.style.setProperty("max-height", "none", "important");
+				candidate.style.setProperty("overflow-y", "visible", "important");
 			}
 		},
 		{ action: "expand-scroll-layout" },
@@ -249,14 +293,18 @@ export async function preparePageForCapture(input: {
 	site: SiteDefinition;
 }): Promise<void> {
 	const { config, failureIndicators, page, providerManagesFingerprint, site } = input;
+
 	await applyPageProfile(page, config, site.captureRegion, providerManagesFingerprint);
 	await applyResponseOverrides(page, config);
+
 	const response = await navigateWithQuietRuntime(page, site, config);
+
 	if (response && response.status() >= 400) {
 		throw new DetectedCaptureError("http-error", `Navigation returned HTTP ${response.status()}`);
 	}
 
 	await runClickActions(page, config.clickActions ?? []);
+
 	if (config.waitForSelector) {
 		await page.waitForSelector(config.waitForSelector.selector, {
 			timeout: config.waitForSelector.timeoutMs,
@@ -266,6 +314,7 @@ export async function preparePageForCapture(input: {
 	const profileStyles = (config.hideSelectors ?? [])
 		.map((selector) => `${selector} { display: none !important; }`)
 		.join("\n");
+
 	const styles = [
 		profileStyles,
 		FULL_PAGE_LAYOUT_STYLE,
@@ -274,6 +323,7 @@ export async function preparePageForCapture(input: {
 	]
 		.filter(Boolean)
 		.join("\n");
+
 	if (styles) {
 		const cleanupStyles = await page.addStyleTag({ content: styles });
 		if (cleanupStyles) {
@@ -281,21 +331,33 @@ export async function preparePageForCapture(input: {
 		}
 	}
 
-	if (config.waitAfterLoadMs)
+	if (config.waitAfterLoadMs) {
 		await new Promise((resolve) => setTimeout(resolve, config.waitAfterLoadMs));
-	if (config.waitForImagesMs) await waitForImages(page, config.waitForImagesMs);
+	}
+
+	if (config.waitForImagesMs) {
+		await waitForImages(page, config.waitForImagesMs);
+	}
+
 	if (config.scroll) {
+		await expandScrollableLayout(page);
 		await progressivelyRenderPage(page, config.scroll);
 		await expandScrollableLayout(page);
 		await waitForImages(page, config.waitForImagesMs ?? 5_000);
 	}
-	if (site.completion) await waitForCompletion(page, site.completion);
+
+	if (site.completion) {
+		await waitForCompletion(page, site.completion);
+	}
+
 	const loadedUrl = page.url();
+
 	if (!urlsMatchIgnoringHash(site.url, loadedUrl)) {
 		throw new DetectedCaptureError(
 			"unexpected-url",
 			`Navigation loaded ${loadedUrl} instead of ${site.url}`,
 		);
 	}
+
 	await detectFailure(page, config, failureIndicators);
 }

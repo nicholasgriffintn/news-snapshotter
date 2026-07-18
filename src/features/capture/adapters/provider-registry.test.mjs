@@ -45,20 +45,17 @@ test("preserves fingerprints managed by remote stealth providers", () => {
 
 test("uses the Worker fetch API for Hyperbrowser session lifecycle", async () => {
 	const requests = [];
-	const client = createHyperbrowserClient(
-		"secret-key",
-		async (input, init) => {
-			requests.push({ input, init });
-			if (init.method === "PUT") {
-				return new Response(null, { status: 204 });
-			}
+	const client = createHyperbrowserClient("secret-key", async (input, init) => {
+		requests.push({ input, init });
+		if (init.method === "PUT") {
+			return new Response(null, { status: 204 });
+		}
 
-			return Response.json({
-				id: "session-123",
-				wsEndpoint: "wss://session.example",
-			});
-		},
-	);
+		return Response.json({
+			id: "session-123",
+			wsEndpoint: "wss://session.example",
+		});
+	});
 	const session = await client.sessions.create({ useStealth: true });
 	await client.sessions.stop(session.id);
 
@@ -68,47 +65,35 @@ test("uses the Worker fetch API for Hyperbrowser session lifecycle", async () =>
 	assert.deepEqual(JSON.parse(requests[0].init.body), {
 		useStealth: true,
 	});
-	assert.equal(
-		requests[1].input,
-		"https://api.hyperbrowser.ai/api/session/session-123/stop",
-	);
+	assert.equal(requests[1].input, "https://api.hyperbrowser.ai/api/session/session-123/stop");
 	assert.equal(requests[1].init.method, "PUT");
 });
 
 test("reports Hyperbrowser API errors without exposing credentials", async () => {
-	const client = createHyperbrowserClient(
-		"do-not-expose",
-		async () => Response.json(
-			{ message: "Invalid session configuration" },
-			{ status: 400 },
-		),
+	const client = createHyperbrowserClient("do-not-expose", async () =>
+		Response.json({ message: "Invalid session configuration" }, { status: 400 }),
 	);
 
-	await assert.rejects(
-		client.sessions.create({ useStealth: true }),
-		(error) => {
-			assert.match(error.message, /Invalid session configuration/);
-			assert.doesNotMatch(error.message, /do-not-expose/);
-			return true;
-		},
-	);
+	await assert.rejects(client.sessions.create({ useStealth: true }), (error) => {
+		assert.match(error.message, /Invalid session configuration/);
+		assert.doesNotMatch(error.message, /do-not-expose/);
+		return true;
+	});
 });
 
-function providerContext(
-	captureRegion = "uk",
-	device = "desktop",
-) {
+function providerContext(captureRegion = "uk", device = "desktop") {
 	return {
 		config: {
-			viewport: device === "mobile"
-				? {
-					height: 915,
-					width: 412,
-				}
-				: {
-					height: 1_008,
-					width: 1_740,
-				},
+			viewport:
+				device === "mobile"
+					? {
+							height: 915,
+							width: 412,
+						}
+					: {
+							height: 1_008,
+							width: 1_740,
+						},
 		},
 		device,
 		env: {
@@ -151,10 +136,7 @@ test("only accepts registered capture providers", () => {
 
 test("requires a configured Hyperbrowser secret", async () => {
 	await assert.rejects(
-		openCaptureBrowser(
-			"hyperbrowser",
-			providerContext(),
-		),
+		openCaptureBrowser("hyperbrowser", providerContext()),
 		/Hyperbrowser provider is not configured/,
 	);
 });

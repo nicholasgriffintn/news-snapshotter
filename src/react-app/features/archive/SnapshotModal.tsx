@@ -13,7 +13,9 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === "Escape") onClose();
+			if (event.key === "Escape") {
+				onClose();
+			}
 		}
 		document.body.classList.add("modal-open");
 		window.addEventListener("keydown", closeOnEscape);
@@ -24,7 +26,9 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 	}, [onClose]);
 
 	function selectAdjacentDevice(event: React.KeyboardEvent, currentIndex: number) {
-		if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+		if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+			return;
+		}
 		event.preventDefault();
 		const direction = event.key === "ArrowRight" ? 1 : -1;
 		const nextIndex = (currentIndex + direction + devices.length) % devices.length;
@@ -82,7 +86,7 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 					</div>
 				) : null}
 
-				<div className="modal__image" role="tabpanel">
+				<div className={`modal__image modal__image--${snapshot.device}`} role="tabpanel">
 					<img
 						alt={`Full ${snapshot.device} screenshot of ${displayName(group.name)}`}
 						key={snapshot.key}

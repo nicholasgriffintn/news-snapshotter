@@ -93,8 +93,11 @@ test("serves a reindexed capture immediately instead of an edge-cached stale res
 		const refreshed = await handleHistoryRequest(detailRequest, database);
 		assert.equal((await refreshed.json()).elements[0].headline, "Corrected after reindex");
 	} finally {
-		if (previous) Object.defineProperty(globalThis, "caches", previous);
-		else Reflect.deleteProperty(globalThis, "caches");
+		if (previous) {
+			Object.defineProperty(globalThis, "caches", previous);
+		} else {
+			Reflect.deleteProperty(globalThis, "caches");
+		}
 		sqlite.close();
 	}
 });

@@ -23,10 +23,7 @@ export function parseCaptureSelection(body: unknown): CaptureSelection {
 	) {
 		throw new Error("priority must be 1, 2, 3, or 4");
 	}
-	if (
-		provider !== undefined &&
-		(typeof provider !== "string" || !hasCaptureProvider(provider))
-	) {
+	if (provider !== undefined && (typeof provider !== "string" || !hasCaptureProvider(provider))) {
 		throw new Error("provider must be cloudflare or hyperbrowser");
 	}
 

@@ -40,8 +40,12 @@ const PRODUCT_LABELS: Array<[string, string]> = [
 
 export function storyCategory(canonicalUrl?: string, extracted?: string): string {
 	const label = extracted?.trim().replace(/\s+headlines?$/i, "");
-	if (label && label.length <= 80) return displayLabel(label);
-	if (!canonicalUrl) return "Front page";
+	if (label && label.length <= 80) {
+		return displayLabel(label);
+	}
+	if (!canonicalUrl) {
+		return "Front page";
+	}
 
 	try {
 		const path = new URL(canonicalUrl).pathname.toLocaleLowerCase("en-GB");

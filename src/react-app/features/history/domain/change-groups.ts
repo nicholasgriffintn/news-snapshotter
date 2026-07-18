@@ -30,7 +30,11 @@ export function changeLabel(type: string): string {
 }
 
 export function changeValue(value: unknown): string {
-	if (value === null || value === undefined || value === "") return "None";
-	if (typeof value === "string" || typeof value === "number") return String(value);
+	if (value === null || value === undefined || value === "") {
+		return "None";
+	}
+	if (typeof value === "string" || typeof value === "number") {
+		return String(value);
+	}
 	return JSON.stringify(value);
 }

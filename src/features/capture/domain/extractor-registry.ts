@@ -61,9 +61,10 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		headlineSelector: "h1, h2, h3, [data-gu-name='headline']",
 		name: "guardian-front-page",
 		sectionSelector: "section[data-component]",
-		storyLinkSelector: "a[data-link-name='article'][href], li[data-link-name^='sublinks'] a[href]",
+		storyLinkSelector:
+			"a[data-link-name='article'][href], a[data-link-name*=' | card-@'][href]:not([data-link-name*='media-']), li[data-link-name^='sublinks'] a[href]",
 		summarySelector: "p, [data-link-name='standfirst']",
-		version: 4,
+		version: 5,
 	},
 	"nytimes-front-page": {
 		cardSelector: "[data-tpl='sli']",
@@ -105,10 +106,12 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 
 export function extractorDefinition(name: ExtractorName, version: number): ExtractorDefinition {
 	const definition = EXTRACTORS[name];
+
 	if (definition.version !== version) {
 		throw new Error(
 			`Extractor ${name} v${version} is not registered; current version is v${definition.version}`,
 		);
 	}
+
 	return definition;
 }

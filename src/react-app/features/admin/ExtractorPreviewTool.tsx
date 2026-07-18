@@ -21,7 +21,9 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 	const [status, setStatus] = useState("");
 
 	useEffect(() => {
-		if (!apiKey) return;
+		if (!apiKey) {
+			return;
+		}
 		setListStatus("Loading extractions…");
 		fetchHistoryExtractions(apiKey, { limit: 25, sort: "newest" })
 			.then((results) => {
@@ -35,7 +37,9 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 	}, [apiKey]);
 
 	async function listExtractions(): Promise<void> {
-		if (!apiKey) return;
+		if (!apiKey) {
+			return;
+		}
 		setListStatus("Loading extractions…");
 		try {
 			const results = await fetchHistoryExtractions(apiKey, {
@@ -52,7 +56,9 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 	}
 
 	async function loadPreview(key: string): Promise<void> {
-		if (!apiKey) return;
+		if (!apiKey) {
+			return;
+		}
 		setSelectedKey(key);
 		setLoadingKey(key);
 		setStatus("Loading private extraction artefact…");

@@ -22,12 +22,7 @@ function story(elementKey, width, viewportDepth, selectorHint = "h2") {
 
 test("assigns one lead while keeping major, standard, and minor stories reachable", () => {
 	const stories = determineStoryProminence(
-		[
-			story("1", 500, 0.2),
-			story("2", 450, 0.3),
-			story("3", 300, 0.4),
-			story("4", 150, 1.5),
-		],
+		[story("1", 500, 0.2), story("2", 450, 0.3), story("3", 300, 0.4), story("4", 150, 1.5)],
 		1_200,
 	);
 

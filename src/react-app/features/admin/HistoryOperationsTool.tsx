@@ -34,9 +34,12 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 	}, [apiKey]);
 
 	async function indexArchive(): Promise<void> {
-		if (!apiKey) return;
-		if (reset && !window.confirm("Reset indexed history before rebuilding it from archive data?"))
+		if (!apiKey) {
 			return;
+		}
+		if (reset && !window.confirm("Reset indexed history before rebuilding it from archive data?")) {
+			return;
+		}
 		setRunning(true);
 		setIndexStatus("Scanning archive data…");
 		let cursor: string | undefined;
@@ -69,7 +72,9 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 	}
 
 	async function saveTimeline(): Promise<void> {
-		if (!apiKey) return;
+		if (!apiKey) {
+			return;
+		}
 		const storyIds = timelineStories
 			.split(/\r?\n/)
 			.map((value) => value.trim())
@@ -89,7 +94,9 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 	}
 
 	async function buildAggregates(): Promise<void> {
-		if (!apiKey) return;
+		if (!apiKey) {
+			return;
+		}
 		try {
 			const result = await materialiseHistoryAggregates(apiKey, {
 				month: aggregateMonth,

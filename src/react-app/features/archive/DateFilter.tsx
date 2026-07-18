@@ -33,11 +33,15 @@ export function DateFilter({ day, onChange, period }: DateFilterProps) {
 
 	useEffect(() => {
 		function closeDropdown(event: PointerEvent) {
-			if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
+			if (!containerRef.current?.contains(event.target as Node)) {
+				setOpen(false);
+			}
 		}
 
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === "Escape") setOpen(false);
+			if (event.key === "Escape") {
+				setOpen(false);
+			}
 		}
 
 		document.addEventListener("pointerdown", closeDropdown);

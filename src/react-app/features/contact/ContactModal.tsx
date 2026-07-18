@@ -15,7 +15,9 @@ export function ContactModal({ onClose }: { onClose: () => void }) {
 
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === "Escape") onClose();
+			if (event.key === "Escape") {
+				onClose();
+			}
 		}
 
 		document.body.classList.add("modal-open");

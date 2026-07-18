@@ -73,6 +73,7 @@ test("carries publisher cleaning rules into both device profiles", () => {
 	const bbc = resolveCaptureProfile(site({ brand: "bbc" }));
 	const dailymail = resolveCaptureProfile(site({ brand: "dailymail" }));
 	const guardian = resolveCaptureProfile(site({ brand: "guardian" }));
+	const independent = resolveCaptureProfile(site({ brand: "independent" }));
 	const newsquest = resolveCaptureProfile(site({ brand: "newsquest" }));
 	const reach = resolveCaptureProfile(site({ brand: "reach" }));
 	const sky = resolveCaptureProfile(site({ brand: "sky" }));
@@ -105,6 +106,10 @@ test("carries publisher cleaning rules into both device profiles", () => {
 	);
 	assert.equal(guardian.deviceConfig.desktop.scroll.behavior, "auto");
 	assert.equal(guardian.deviceConfig.mobile.scroll.behavior, "auto");
+	for (const device of ["desktop", "mobile"]) {
+		assert.ok(independent.deviceConfig[device].hideSelectors.includes(".tp-modal"));
+		assert.ok(independent.deviceConfig[device].hideSelectors.includes(".tp-backdrop"));
+	}
 	for (const device of ["desktop", "mobile"]) {
 		assert.ok(
 			guardian.deviceConfig[device].clickActions.some((action) => {

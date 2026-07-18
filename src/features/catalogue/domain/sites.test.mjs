@@ -42,15 +42,14 @@ test("reviewed publisher front pages use their specific extractors", () => {
 	assert.equal(siteNamed("guardian-uk").analysis?.extractor, "guardian-front-page");
 	assert.equal(siteNamed("cnn-com").analysis?.extractor, "cnn-front-page");
 	assert.equal(siteNamed("telegraph-uk").analysis?.extractor, "telegraph-front-page");
-	assert.equal(
-		siteNamed("washingtonpost-com").analysis?.extractor,
-		"washingtonpost-front-page",
-	);
+	assert.equal(siteNamed("washingtonpost-com").analysis?.extractor, "washingtonpost-front-page");
 });
 
 test("every configured analysis uses a registered extractor version", () => {
 	for (const site of SITES) {
-		if (!site.analysis) continue;
+		if (!site.analysis) {
+			continue;
+		}
 		assert.doesNotThrow(
 			() => extractorDefinition(site.analysis.extractor, site.analysis.version),
 			site.name,

@@ -480,17 +480,11 @@ const PROFILES: Record<string, CaptureProfile> = {
 		deviceConfig: {
 			desktop: {
 				clickActions: DMG_CONSENT_ACTIONS,
-				hideSelectors: [
-					".billboard-container",
-					...DMG_CONSENT_HIDE_SELECTORS,
-				],
+				hideSelectors: [".billboard-container", ...DMG_CONSENT_HIDE_SELECTORS],
 			},
 			mobile: {
 				clickActions: DMG_CONSENT_ACTIONS,
-				hideSelectors: [
-					".billboard-container",
-					...DMG_CONSENT_HIDE_SELECTORS,
-				],
+				hideSelectors: [".billboard-container", ...DMG_CONSENT_HIDE_SELECTORS],
 			},
 		},
 	},
@@ -531,6 +525,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 						timeoutMs: 5_000,
 					},
 				],
+				hideSelectors: [".tp-modal", ".tp-backdrop"],
 			},
 			mobile: {
 				clickActions: [
@@ -540,6 +535,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 						timeoutMs: 5_000,
 					},
 				],
+				hideSelectors: [".tp-modal", ".tp-backdrop"],
 			},
 		},
 	},
@@ -593,6 +589,7 @@ function mergeDeviceConfig(
 
 export function resolveCaptureProfile(site: SiteDefinition): ResolvedCaptureProfile {
 	const profile = PROFILES[site.profile ?? site.brand] ?? PROFILES.default;
+
 	return {
 		devices: profile.devices ?? ["desktop", "mobile"],
 		deviceConfig: {

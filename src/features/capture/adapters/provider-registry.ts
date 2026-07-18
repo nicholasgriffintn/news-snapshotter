@@ -1,8 +1,4 @@
-import puppeteer, {
-	connect,
-	type Browser,
-	type Page,
-} from "@cloudflare/puppeteer";
+import puppeteer, { connect, type Browser, type Page } from "@cloudflare/puppeteer";
 
 import type { DeviceCaptureConfig } from "../domain/profiles.ts";
 import {
@@ -10,16 +6,9 @@ import {
 	type WebSocketTransport,
 } from "../../../core/native-websocket-transport.ts";
 import type { Env } from "../../../platform/cloudflare/env.ts";
-import type {
-	CaptureProviderName,
-	Device,
-	SiteDefinition,
-} from "../../../core/domain.ts";
+import type { CaptureProviderName, Device, SiteDefinition } from "../../../core/domain.ts";
 
-export const CAPTURE_PROVIDER_NAMES: CaptureProviderName[] = [
-	"cloudflare",
-	"hyperbrowser",
-];
+export const CAPTURE_PROVIDER_NAMES: CaptureProviderName[] = ["cloudflare", "hyperbrowser"];
 
 export type CaptureBrowserSession = {
 	close: () => Promise<void>;
@@ -40,9 +29,7 @@ type CaptureProvider = {
 
 type HyperbrowserClient = {
 	sessions: {
-		create: (
-			params: HyperbrowserSessionParams,
-		) => Promise<{
+		create: (params: HyperbrowserSessionParams) => Promise<{
 			id: string;
 			wsEndpoint: string;
 		}>;
@@ -75,26 +62,20 @@ type HyperbrowserSession = {
 	wsEndpoint: string;
 };
 
-type Fetcher = (
-	input: string,
-	init?: RequestInit,
-) => Promise<Response>;
+type Fetcher = (input: string, init?: RequestInit) => Promise<Response>;
 
 const HYPERBROWSER_MINIMUM_SCREEN_SIZE = 500;
 
-type BrowserConnector = (
-	wsEndpoint: string,
-) => Promise<Browser>;
+type BrowserConnector = (wsEndpoint: string) => Promise<Browser>;
 
-type PuppeteerConnector = (
-	options: Parameters<typeof connect>[0],
-) => Promise<Browser>;
+type PuppeteerConnector = (options: Parameters<typeof connect>[0]) => Promise<Browser>;
 
 export async function connectToRemoteBrowser(
 	wsEndpoint: string,
 	connector: PuppeteerConnector = connect,
-	createTransport: (endpoint: string) => Promise<WebSocketTransport>
-		= createNativeWebSocketTransport,
+	createTransport: (
+		endpoint: string,
+	) => Promise<WebSocketTransport> = createNativeWebSocketTransport,
 ): Promise<Browser> {
 	const transport = await createTransport(wsEndpoint);
 
@@ -129,10 +110,7 @@ function hyperbrowserLocation(
 
 function hyperbrowserDevice(
 	device: Device,
-): Pick<
-	HyperbrowserSessionParams,
-	"device" | "operatingSystems" | "platform"
-> {
+): Pick<HyperbrowserSessionParams, "device" | "operatingSystems" | "platform"> {
 	if (device === "mobile") {
 		return {
 			device: ["mobile"],
@@ -154,19 +132,16 @@ async function hyperbrowserRequest<T>(
 	path: string,
 	init: RequestInit,
 ): Promise<T> {
-	const response = await fetcher(
-		`https://api.hyperbrowser.ai/api${path}`,
-		{
-			...init,
-			headers: {
-				"content-type": "application/json",
-				"x-api-key": apiKey,
-			},
+	const response = await fetcher(`https://api.hyperbrowser.ai/api${path}`, {
+		...init,
+		headers: {
+			"content-type": "application/json",
+			"x-api-key": apiKey,
 		},
-	);
+	});
 
 	if (!response.ok) {
-		const body = await response.json().catch(() => null) as {
+		const body = (await response.json().catch(() => null)) as {
 			error?: string;
 			message?: string;
 		} | null;
@@ -174,10 +149,7 @@ async function hyperbrowserRequest<T>(
 
 		throw new Error(`[Hyperbrowser]: ${message}`);
 	}
-	if (
-		response.status === 204
-		|| response.headers.get("content-length") === "0"
-	) {
+	if (response.status === 204 || response.headers.get("content-length") === "0") {
 		return undefined as T;
 	}
 
@@ -191,15 +163,10 @@ export function createHyperbrowserClient(
 	return {
 		sessions: {
 			create: async (params) => {
-				return hyperbrowserRequest<HyperbrowserSession>(
-					apiKey,
-					fetcher,
-					"/session",
-					{
-						body: JSON.stringify(params),
-						method: "POST",
-					},
-				);
+				return hyperbrowserRequest<HyperbrowserSession>(apiKey, fetcher, "/session", {
+					body: JSON.stringify(params),
+					method: "POST",
+				});
 			},
 			stop: async (sessionId) => {
 				return hyperbrowserRequest<unknown>(
@@ -215,9 +182,7 @@ export function createHyperbrowserClient(
 	};
 }
 
-async function cloudflareProvider(
-	context: ProviderContext,
-): Promise<CaptureBrowserSession> {
+async function cloudflareProvider(context: ProviderContext): Promise<CaptureBrowserSession> {
 	const browser = await puppeteer.launch(context.env.BROWSER);
 	const page = await browser.newPage();
 
@@ -252,14 +217,8 @@ export async function openHyperbrowserCaptureBrowser(
 		annoyances: true,
 		locales: ["en"],
 		screen: {
-			height: Math.max(
-				context.config.viewport.height,
-				HYPERBROWSER_MINIMUM_SCREEN_SIZE,
-			),
-			width: Math.max(
-				context.config.viewport.width,
-				HYPERBROWSER_MINIMUM_SCREEN_SIZE,
-			),
+			height: Math.max(context.config.viewport.height, HYPERBROWSER_MINIMUM_SCREEN_SIZE),
+			width: Math.max(context.config.viewport.width, HYPERBROWSER_MINIMUM_SCREEN_SIZE),
 		},
 		timeoutMinutes: 10,
 		trackers: true,
@@ -272,31 +231,21 @@ export async function openHyperbrowserCaptureBrowser(
 	try {
 		browser = await connector(session.wsEndpoint);
 		const contextPages = await browser.defaultBrowserContext().pages();
-		const page = contextPages[0] ?? await browser.newPage();
+		const page = contextPages[0] ?? (await browser.newPage());
 
 		return {
 			close: async () => {
-				await stopHyperbrowserSession(
-					client,
-					session.id,
-					browser,
-				);
+				await stopHyperbrowserSession(client, session.id, browser);
 			},
 			page,
 		};
 	} catch (error) {
-		await stopHyperbrowserSession(
-			client,
-			session.id,
-			browser,
-		);
+		await stopHyperbrowserSession(client, session.id, browser);
 		throw error;
 	}
 }
 
-async function hyperbrowserProvider(
-	context: ProviderContext,
-): Promise<CaptureBrowserSession> {
+async function hyperbrowserProvider(context: ProviderContext): Promise<CaptureBrowserSession> {
 	const apiKey = context.env.HYPERBROWSER_API_KEY;
 
 	if (!apiKey) {
@@ -305,11 +254,7 @@ async function hyperbrowserProvider(
 
 	const client = createHyperbrowserClient(apiKey);
 
-	return openHyperbrowserCaptureBrowser(
-		context,
-		client,
-		connectToRemoteBrowser,
-	);
+	return openHyperbrowserCaptureBrowser(context, client, connectToRemoteBrowser);
 }
 
 const PROVIDERS: Record<CaptureProviderName, CaptureProvider> = {
@@ -323,15 +268,11 @@ const PROVIDERS: Record<CaptureProviderName, CaptureProvider> = {
 	},
 };
 
-export function captureProviderManagesFingerprint(
-	provider: CaptureProviderName,
-): boolean {
+export function captureProviderManagesFingerprint(provider: CaptureProviderName): boolean {
 	return PROVIDERS[provider].managesFingerprint;
 }
 
-export function hasCaptureProvider(
-	provider: string,
-): provider is CaptureProviderName {
+export function hasCaptureProvider(provider: string): provider is CaptureProviderName {
 	return CAPTURE_PROVIDER_NAMES.includes(provider as CaptureProviderName);
 }
 

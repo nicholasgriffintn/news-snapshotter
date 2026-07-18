@@ -89,14 +89,8 @@ test("selects priority one by default, a priority, a brand, or one named site", 
 });
 
 test("rejects conflicting and unknown selections", () => {
-	assert.throws(
-		() => selectSites(sites, { brand: "example", name: "home" }),
-		/Specify only one/,
-	);
-	assert.throws(
-		() => selectSites(sites, { brand: "example", priority: 1 }),
-		/Specify only one/,
-	);
+	assert.throws(() => selectSites(sites, { brand: "example", name: "home" }), /Specify only one/);
+	assert.throws(() => selectSites(sites, { brand: "example", priority: 1 }), /Specify only one/);
 	assert.throws(() => selectSites(sites, { brand: "missing" }), /Unknown brand: missing/);
 	assert.throws(() => selectSites(sites, { name: "missing" }), /Unknown site name: missing/);
 });

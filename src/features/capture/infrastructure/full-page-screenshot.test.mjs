@@ -16,7 +16,7 @@ function pageWithDimensions(dimensions) {
 }
 
 test("keeps native full-page capture below the raster limit", async () => {
-	const page = pageWithDimensions({ deviceScaleFactor: 1, height: 10_000, width: 1_740 });
+	const page = pageWithDimensions({ deviceScaleFactor: 1, height: 8_000, width: 1_740 });
 
 	await takeFullScreenshot(page, { screenshot: { fullPage: true, type: "png" } });
 
@@ -24,21 +24,21 @@ test("keeps native full-page capture below the raster limit", async () => {
 });
 
 test("scales oversized captures below the browser raster limit", async () => {
-	const page = pageWithDimensions({ deviceScaleFactor: 1, height: 32_000, width: 1_740 });
+	const page = pageWithDimensions({ deviceScaleFactor: 1, height: 16_384, width: 1_740 });
 
 	await takeFullScreenshot(page, { screenshot: { fullPage: true, type: "png" } });
 
 	assert.deepEqual(page.screenshotCalls, [
 		{
 			captureBeyondViewport: true,
-			clip: { height: 32_000, scale: 0.5, width: 1_740, x: 0, y: 0 },
+			clip: { height: 16_384, scale: 0.5, width: 1_740, x: 0, y: 0 },
 			type: "png",
 		},
 	]);
 });
 
 test("includes device pixel ratio when scaling oversized captures", async () => {
-	const page = pageWithDimensions({ deviceScaleFactor: 2, height: 16_000, width: 412 });
+	const page = pageWithDimensions({ deviceScaleFactor: 2, height: 8_192, width: 412 });
 
 	await takeFullScreenshot(page, {
 		screenshot: { fullPage: true, quality: 80, type: "webp" },

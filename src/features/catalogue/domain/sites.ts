@@ -1,8 +1,4 @@
-import {
-	withBrand,
-	withIndividualBrands,
-	withoutDuplicateNames,
-} from "./site-catalogue.ts";
+import { withBrand, withIndividualBrands, withoutDuplicateNames } from "./site-catalogue.ts";
 import { BBC_LOCAL_SITES } from "./sites/bbc-local.ts";
 import { BBC_SITES } from "./sites/bbc.ts";
 import { BELFAST_LIVE_SITES } from "./sites/belfast-live.ts";
@@ -31,11 +27,7 @@ import { WASHINGTON_POST_SITES } from "./sites/washington-post.ts";
 
 export const SITES = [
 	...withBrand("bbc", BBC_SITES),
-	...withBrand(
-		"bbc",
-		withoutDuplicateNames(BBC_LOCAL_SITES, BBC_SITES),
-		"local",
-	),
+	...withBrand("bbc", withoutDuplicateNames(BBC_LOCAL_SITES, BBC_SITES), "local"),
 	...withBrand("times", TIMES_SITES),
 	...withBrand("nytimes", NEW_YORK_TIMES_SITES),
 	...withBrand("sky", SKY_SITES),

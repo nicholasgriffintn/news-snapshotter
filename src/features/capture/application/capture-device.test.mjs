@@ -32,9 +32,11 @@ function successfulPage(overrides = {}) {
 				return undefined;
 			}
 			if (command?.action === "measure") {
+				layoutCalls.push(command.action);
 				return { height: 2_000, viewportHeight: 1_000, y: scrollY };
 			}
 			if (command?.action === "move") {
+				layoutCalls.push(command.action);
 				scrollY = command.top;
 				return undefined;
 			}
@@ -129,10 +131,14 @@ test("stores desktop analysis independently from screenshot artefacts", async (c
 				scrollY = command.top;
 				return undefined;
 			}
-			if (command?.action === "expand-scroll-layout") return undefined;
+			if (command?.action === "expand-scroll-layout") {
+				return undefined;
+			}
 
 			evaluation += 1;
-			if (evaluation === 1) return "";
+			if (evaluation === 1) {
+				return "";
+			}
 			if (evaluation === 2) {
 				return JSON.stringify({ bodyHeight: 2_000, images: 2, textLength: 500 });
 			}
@@ -224,7 +230,8 @@ test("captures full and thumbnail images with metadata and closes the browser", 
 	assert.match(userAgentCall[1], /Macintosh/);
 	assert.equal(userAgentCall[2].platform, "macOS");
 	assert.deepEqual(page.runtimeCalls, ["Runtime.disable", "Runtime.enable"]);
-	assert.deepEqual(page.layoutCalls, ["expand-scroll-layout"]);
+	assert.equal(page.layoutCalls[0], "expand-scroll-layout");
+	assert.equal(page.layoutCalls.at(-1), "expand-scroll-layout");
 });
 
 test("runs optional profile clicks before applying cleanup styles", async (context) => {
@@ -235,7 +242,9 @@ test("runs optional profile clicks before applying cleanup styles", async (conte
 			return undefined;
 		},
 		waitForSelector: async (selector) => {
-			if (!selector.includes("cassie-accept-all")) return null;
+			if (!selector.includes("cassie-accept-all")) {
+				return null;
+			}
 			return { click: async () => events.push("click") };
 		},
 	});
@@ -277,6 +286,7 @@ test("unlocks the document layout before progressively scrolling a full-page cap
 		appliedStyles[0],
 		/html, body \{ height: auto !important; max-height: none !important; overflow-y: visible !important; \}/,
 	);
+	assert.match(appliedStyles[0], /body \* \{ content-visibility: visible !important; \}/);
 });
 
 test("runs consent actions inside matching iframes", async (context) => {
@@ -354,7 +364,10 @@ test("rejects a capture when navigation finishes on a different regional URL", a
 	const result = await captureDevice(env, bbcSite, "desktop", triggeredAt);
 
 	assert.equal(result.status, "error");
-	assert.equal(result.error, "Navigation loaded https://www.bbc.com/ instead of https://www.bbc.co.uk/");
+	assert.equal(
+		result.error,
+		"Navigation loaded https://www.bbc.com/ instead of https://www.bbc.co.uk/",
+	);
 	assert.equal(JSON.parse(failures[0][1]).reason, "unexpected-url");
 	assert.equal(screenshots.length, 0);
 });
@@ -376,7 +389,9 @@ test("waits for configured completion text before storing a capture", async (con
 	const completionWaits = [];
 	const page = successfulPage({
 		waitForFunction: async (_predicate, options, ...args) => {
-			if (args.length > 0) completionWaits.push({ args, options });
+			if (args.length > 0) {
+				completionWaits.push({ args, options });
+			}
 		},
 	});
 	context.mock.method(puppeteer, "launch", async () => ({
@@ -402,7 +417,9 @@ test("waits for configured completion text before storing a capture", async (con
 test("records a completion timeout without storing a partial screenshot", async (context) => {
 	const page = successfulPage({
 		waitForFunction: async (_predicate, _options, ...args) => {
-			if (args.length > 0) throw new Error("timeout");
+			if (args.length > 0) {
+				throw new Error("timeout");
+			}
 		},
 	});
 	context.mock.method(puppeteer, "launch", async () => ({

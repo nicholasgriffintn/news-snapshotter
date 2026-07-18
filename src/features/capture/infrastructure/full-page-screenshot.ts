@@ -2,7 +2,7 @@ import type { Page } from "@cloudflare/puppeteer";
 
 import type { DeviceCaptureConfig } from "../domain/profiles.ts";
 
-const MAX_RASTER_DIMENSION = 16_000;
+const MAX_RASTER_DIMENSION = 8_192;
 
 type PageDimensions = {
 	deviceScaleFactor: number;
@@ -33,7 +33,9 @@ export async function takeFullScreenshot(page: Page, config: DeviceCaptureConfig
 		screenshot.type === "png"
 			? { type: screenshot.type }
 			: { quality: screenshot.quality ?? 85, type: screenshot.type };
-	if (!screenshot.fullPage) return page.screenshot({ ...format, fullPage: false });
+	if (!screenshot.fullPage) {
+		return page.screenshot({ ...format, fullPage: false });
+	}
 
 	const dimensions = await measurePage(page);
 	const scale = Math.min(
@@ -41,7 +43,9 @@ export async function takeFullScreenshot(page: Page, config: DeviceCaptureConfig
 		MAX_RASTER_DIMENSION / (dimensions.height * dimensions.deviceScaleFactor),
 		MAX_RASTER_DIMENSION / (dimensions.width * dimensions.deviceScaleFactor),
 	);
-	if (scale === 1) return page.screenshot({ ...format, fullPage: true });
+	if (scale === 1) {
+		return page.screenshot({ ...format, fullPage: true });
+	}
 
 	return page.screenshot({
 		...format,

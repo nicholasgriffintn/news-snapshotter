@@ -10,26 +10,41 @@ import {
 function limit(url: URL): number {
 	const value = url.searchParams.get("limit");
 	const parsed = value === null ? 50 : Number(value);
+
 	if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
 		throw new Error("limit must be between 1 and 100");
 	}
+
 	return parsed;
 }
 
 function timestamp(url: URL, name: string): string | undefined {
 	const value = url.searchParams.get(name);
-	if (value === null) return undefined;
+
+	if (value === null) {
+		return undefined;
+	}
+
 	if (!/^\d{4}-\d{2}-\d{2}T/.test(value) || !Number.isFinite(Date.parse(value))) {
 		throw new Error(`${name} must be an ISO timestamp`);
 	}
+
 	return new Date(value).toISOString();
 }
 
 function cursor(url: URL): ResearchCursor | undefined {
 	const value = url.searchParams.get("cursor");
-	if (!value) return undefined;
+
+	if (!value) {
+		return undefined;
+	}
+
 	const decoded = decodeCursor(value);
-	if (!decoded.capturedAt || !decoded.id) throw new Error("cursor is invalid");
+
+	if (!decoded.capturedAt || !decoded.id) {
+		throw new Error("cursor is invalid");
+	}
+
 	return { capturedAt: decoded.capturedAt, id: decoded.id };
 }
 
@@ -52,12 +67,16 @@ export async function handleHistoryResearchRequest(
 	request: Request,
 	database: D1Database,
 ): Promise<Response | null> {
-	if (request.method !== "GET") return null;
+	if (request.method !== "GET") {
+		return null;
+	}
 	const url = new URL(request.url);
 
 	if (url.pathname === "/api/history/search") {
 		const query = url.searchParams.get("q")?.trim();
-		if (!query || query.length > 200) throw new Error("q must be between 1 and 200 characters");
+		if (!query || query.length > 200) {
+			throw new Error("q must be between 1 and 200 characters");
+		}
 		const result = await searchHistory(database, {
 			category: url.searchParams.get("category") ?? undefined,
 			cursor: cursor(url),
@@ -73,7 +92,9 @@ export async function handleHistoryResearchRequest(
 	const timelineMatch = /^\/api\/history\/timelines\/([^/]+)$/.exec(url.pathname);
 	if (timelineMatch) {
 		const slug = decodeURIComponent(timelineMatch[1]);
-		if (!slug || slug.length > 100) throw new Error("Timeline slug is invalid");
+		if (!slug || slug.length > 100) {
+			throw new Error("Timeline slug is invalid");
+		}
 		const timeline = await getSavedTimeline(database, slug);
 		return timeline
 			? Response.json(timeline)
@@ -81,7 +102,9 @@ export async function handleHistoryResearchRequest(
 	}
 
 	const match = /^\/api\/history\/([^/]+)\/(images|trends)$/.exec(url.pathname);
-	if (!match) return null;
+	if (!match) {
+		return null;
+	}
 	const site = decodeURIComponent(match[1]);
 	if (match[2] === "images") {
 		const month = url.searchParams.get("month") ?? undefined;

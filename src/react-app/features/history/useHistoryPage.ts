@@ -24,12 +24,21 @@ function urlState() {
 
 function writeUrl(state: ReturnType<typeof urlState>, replace = false) {
 	const url = new URL(window.location.href);
-	if (state.captureId) url.searchParams.set("capture", state.captureId);
-	else url.searchParams.delete("capture");
-	if (state.compareId) url.searchParams.set("compare", state.compareId);
-	else url.searchParams.delete("compare");
-	if (state.overlay) url.searchParams.set("overlay", "1");
-	else url.searchParams.delete("overlay");
+	if (state.captureId) {
+		url.searchParams.set("capture", state.captureId);
+	} else {
+		url.searchParams.delete("capture");
+	}
+	if (state.compareId) {
+		url.searchParams.set("compare", state.compareId);
+	} else {
+		url.searchParams.delete("compare");
+	}
+	if (state.overlay) {
+		url.searchParams.set("overlay", "1");
+	} else {
+		url.searchParams.delete("overlay");
+	}
 	window.history[replace ? "replaceState" : "pushState"]({}, "", url);
 }
 
@@ -72,7 +81,9 @@ export function useHistoryPage(site: string) {
 	}, [site]);
 
 	useEffect(() => {
-		if (!selection.captureId) return;
+		if (!selection.captureId) {
+			return;
+		}
 		setLoading(true);
 		fetchHistoryCapture(site, selection.captureId)
 			.then(async (nextCapture) => {
@@ -108,7 +119,9 @@ export function useHistoryPage(site: string) {
 	}, [selection]);
 
 	const loadOlder = useCallback(async () => {
-		if (!captureCursor) return;
+		if (!captureCursor) {
+			return;
+		}
 		setLoadingOlder(true);
 		try {
 			const page = await fetchHistoryCaptures(site, captureCursor);

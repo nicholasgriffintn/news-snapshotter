@@ -11,18 +11,16 @@ export async function handleScheduledCapture(
 		priority: 1,
 	});
 	const triggeredAt = new Date(controller.scheduledTime).toISOString();
-	const dispatch = await dispatchCaptureWorkflows(
-		env,
-		sites,
-		triggeredAt,
-	);
+	const dispatch = await dispatchCaptureWorkflows(env, sites, triggeredAt);
 
-	console.log(JSON.stringify({
-		batchId: dispatch.batchId,
-		event: "scheduled-capture-dispatched",
-		priority: 1,
-		runnerCount: dispatch.runnerCount,
-		siteCount: dispatch.selectedSites.length,
-		triggeredAt,
-	}));
+	console.log(
+		JSON.stringify({
+			batchId: dispatch.batchId,
+			event: "scheduled-capture-dispatched",
+			priority: 1,
+			runnerCount: dispatch.runnerCount,
+			siteCount: dispatch.selectedSites.length,
+			triggeredAt,
+		}),
+	);
 }

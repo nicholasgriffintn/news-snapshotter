@@ -298,7 +298,9 @@ export async function materialiseHistoryMonth(
 	site: string,
 	month: string,
 ): Promise<{ rows: number }> {
-	if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error("month must use YYYY-MM");
+	if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+		throw new Error("month must use YYYY-MM");
+	}
 	const from = `${month}-01T00:00:00.000Z`;
 	const toDate = new Date(from);
 	toDate.setUTCMonth(toDate.getUTCMonth() + 1);
@@ -424,7 +426,9 @@ export async function getSavedTimeline(
 		)
 		.bind(slug)
 		.first<Record<string, unknown>>();
-	if (!timeline) return null;
+	if (!timeline) {
+		return null;
+	}
 	const observations = await database
 		.prepare(
 			`SELECT

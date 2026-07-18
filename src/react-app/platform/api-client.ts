@@ -67,7 +67,9 @@ export async function fetchCaptureFailures(
 	cursor?: string,
 ): Promise<{ cursor?: string; failures: CaptureFailure[]; hasMore: boolean }> {
 	const search = new URLSearchParams({ limit: "50" });
-	if (cursor) search.set("cursor", cursor);
+	if (cursor) {
+		search.set("cursor", cursor);
+	}
 	const response = await fetch(`/api/admin/failures?${search}`, {
 		headers: { authorization: `Bearer ${apiKey}` },
 	});
@@ -126,7 +128,9 @@ export async function fetchHistoryCaptures(
 	cursor?: string,
 ): Promise<{ captures: HistoryCaptureSummary[]; cursor?: string }> {
 	const search = new URLSearchParams({ limit: "100" });
-	if (cursor) search.set("cursor", cursor);
+	if (cursor) {
+		search.set("cursor", cursor);
+	}
 	const response = await fetch(`/api/history/${encodeURIComponent(site)}/captures?${search}`);
 	return readJson(response);
 }
@@ -165,8 +169,12 @@ export async function searchHistory(input: {
 	site?: string;
 }): Promise<HistorySearchResult[]> {
 	const search = new URLSearchParams({ limit: "100", q: input.query });
-	if (input.site) search.set("site", input.site);
-	if (input.category) search.set("category", input.category);
+	if (input.site) {
+		search.set("site", input.site);
+	}
+	if (input.category) {
+		search.set("category", input.category);
+	}
 	const response = await fetch(`/api/history/search?${search}`);
 	return (await readJson<{ results: HistorySearchResult[] }>(response)).results;
 }
@@ -176,7 +184,9 @@ export async function fetchHistoryImages(
 	month?: string,
 ): Promise<HistoryImageObservation[]> {
 	const search = new URLSearchParams({ limit: "100" });
-	if (month) search.set("month", month);
+	if (month) {
+		search.set("month", month);
+	}
 	const response = await fetch(`/api/history/${encodeURIComponent(site)}/images?${search}`);
 	return (await readJson<{ images: HistoryImageObservation[] }>(response)).images;
 }
@@ -312,7 +322,9 @@ export async function fetchHistoryExtractions(
 		limit: String(options.limit),
 		sort: options.sort,
 	});
-	if (options.site) search.set("site", options.site);
+	if (options.site) {
+		search.set("site", options.site);
+	}
 	const response = await fetch(`/api/admin/history/extractions?${search}`, {
 		headers: { authorization: `Bearer ${apiKey}` },
 	});
@@ -335,7 +347,9 @@ export async function downloadExtractorFixture(apiKey: string, key: string): Pro
 	const response = await fetch(`/api/admin/history/extractor-preview?${search}`, {
 		headers: { authorization: `Bearer ${apiKey}` },
 	});
-	if (!response.ok) await readJson(response);
+	if (!response.ok) {
+		await readJson(response);
+	}
 	const objectUrl = URL.createObjectURL(await response.blob());
 	const anchor = document.createElement("a");
 	anchor.href = objectUrl;

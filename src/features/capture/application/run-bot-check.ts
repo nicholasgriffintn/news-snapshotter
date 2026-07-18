@@ -27,6 +27,7 @@ export async function runBotCheck(
 	capture: CaptureDevice = captureDevice,
 ) {
 	const triggeredAt = new Date().toISOString();
+
 	const site: SiteDefinition = {
 		brand: "amiabot",
 		captureRegion: "international",
@@ -43,7 +44,9 @@ export async function runBotCheck(
 		url: AM_I_A_BOT_URL,
 		visibility: "admin",
 	};
+
 	const { devices } = resolveCaptureProfile(site);
+
 	const results: ScreenshotResult[] = [];
 
 	for (const device of devices) {

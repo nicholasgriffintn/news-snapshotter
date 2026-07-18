@@ -20,8 +20,12 @@ export function FailureLog({ apiKey }: { apiKey: string }) {
 	const visibleFailures = useMemo(() => {
 		const search = query.trim().toLowerCase();
 		return failures.filter((failure) => {
-			if (reason !== "all" && failure.reason !== reason) return false;
-			if (!search) return true;
+			if (reason !== "all" && failure.reason !== reason) {
+				return false;
+			}
+			if (!search) {
+				return true;
+			}
 			return [failure.brand, failure.name, failure.message, failure.url].some((value) =>
 				value.toLowerCase().includes(search),
 			);
@@ -29,7 +33,9 @@ export function FailureLog({ apiKey }: { apiKey: string }) {
 	}, [failures, query, reason]);
 
 	async function load(nextCursor?: string, append = false) {
-		if (!apiKey) return;
+		if (!apiKey) {
+			return;
+		}
 		setLoading(true);
 		setStatus(append ? "Loading more failures…" : "Loading failures…");
 		try {
@@ -49,7 +55,9 @@ export function FailureLog({ apiKey }: { apiKey: string }) {
 		setFailures([]);
 		setCursor(undefined);
 		setHasMore(false);
-		if (apiKey) void load();
+		if (apiKey) {
+			void load();
+		}
 	}, [apiKey]);
 
 	return (

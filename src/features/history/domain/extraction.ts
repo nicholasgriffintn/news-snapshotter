@@ -79,8 +79,12 @@ function isOptionalString(value: unknown, maximum = MAX_TEXT_LENGTH): boolean {
 }
 
 function isImage(value: unknown): boolean {
-	if (value === undefined) return true;
-	if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+	if (value === undefined) {
+		return true;
+	}
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return false;
+	}
 	const image = value as Record<string, unknown>;
 	return (
 		isOptionalString(image.alt) &&
@@ -91,11 +95,15 @@ function isImage(value: unknown): boolean {
 }
 
 function isElement(value: unknown): value is PageElement {
-	if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return false;
+	}
 	const element = value as Record<string, unknown>;
 	const position = element.position;
 
-	if (!position || typeof position !== "object" || Array.isArray(position)) return false;
+	if (!position || typeof position !== "object" || Array.isArray(position)) {
+		return false;
+	}
 	const geometry = position as Record<string, unknown>;
 
 	return (
@@ -127,7 +135,9 @@ function isElement(value: unknown): value is PageElement {
 }
 
 function isWarning(value: unknown): boolean {
-	if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return false;
+	}
 	const warning = value as Record<string, unknown>;
 	return hasString(warning, "code") && hasString(warning, "message");
 }
@@ -141,7 +151,9 @@ function isIsoTimestamp(value: unknown): boolean {
 }
 
 function isWebUrl(value: unknown): boolean {
-	if (typeof value !== "string") return false;
+	if (typeof value !== "string") {
+		return false;
+	}
 	try {
 		const url = new URL(value);
 		return url.protocol === "https:" || url.protocol === "http:";

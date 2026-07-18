@@ -51,7 +51,9 @@ type DisclosureModalProps = {
 export function DisclosureModal({ onClose, onContact }: DisclosureModalProps) {
 	useEffect(() => {
 		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === "Escape") onClose();
+			if (event.key === "Escape") {
+				onClose();
+			}
 		}
 
 		document.body.classList.add("modal-open");

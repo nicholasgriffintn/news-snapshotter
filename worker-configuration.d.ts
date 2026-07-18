@@ -11,7 +11,9 @@ interface __BaseEnv_Env {
 	BROWSER: BrowserRun;
 	API_KEY: string;
 	HYPERBROWSER_API_KEY: string;
-	NEWS_SNAPSHOTTER: Workflow<Parameters<import("./src/index").NewsSnapshotterWorkflow['run']>[0]['payload']>;
+	NEWS_SNAPSHOTTER: Workflow<
+		Parameters<import("./src/index").NewsSnapshotterWorkflow["run"]>[0]["payload"]
+	>;
 }
 declare namespace Cloudflare {
 	interface GlobalProps {
@@ -24,7 +26,9 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "API_KEY" | "HYPERBROWSER_API_KEY">> {}
+	interface ProcessEnv extends StringifyValues<
+		Pick<Cloudflare.Env, "API_KEY" | "HYPERBROWSER_API_KEY">
+	> {}
 }
 
 // Begin runtime types

@@ -9,7 +9,9 @@ export type WorkflowShard = {
 };
 
 export function createWorkflowShards(sites: SiteDefinition[]): WorkflowShard[] {
-	if (sites.length === 0) return [];
+	if (sites.length === 0) {
+		return [];
+	}
 
 	const runnerCount = Math.min(MAX_RUNNERS, Math.ceil(sites.length / SITES_PER_RUNNER));
 	const shards = Array.from(

@@ -38,7 +38,9 @@ export function HistoryTrendPanel({
 						<span>View</span>
 						<select
 							onChange={(event) => {
-								if (isTrendMode(event.target.value)) onMode(event.target.value);
+								if (isTrendMode(event.target.value)) {
+									onMode(event.target.value);
+								}
 							}}
 							value={mode}
 						>

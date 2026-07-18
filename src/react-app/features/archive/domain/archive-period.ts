@@ -31,7 +31,9 @@ export function matchesArchivePeriod(
 	now = new Date(),
 ): boolean {
 	const captured = new Date(capturedAt);
-	if (Number.isNaN(captured.getTime()) || captured > now) return false;
+	if (Number.isNaN(captured.getTime()) || captured > now) {
+		return false;
+	}
 
 	switch (filter.period) {
 		case "last-3-hours":

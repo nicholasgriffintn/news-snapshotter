@@ -28,19 +28,16 @@ test("extractor versions are explicit", () => {
 	assert.equal(bbc.name, "bbc-front-page");
 	assert.match(bbc.cardSelector, /data-testid='promo'/);
 	assert.equal(bbc.categorySelector, "[type='attribution']");
-	assert.match(extractorDefinition("guardian-front-page", 4).storyLinkSelector, /sublinks/);
+	const guardian = extractorDefinition("guardian-front-page", 5);
+	assert.match(guardian.storyLinkSelector, /sublinks/);
+	assert.match(guardian.storyLinkSelector, /card-@/);
+	assert.match(guardian.storyLinkSelector, /media-/);
 	assert.match(extractorDefinition("times-front-page", 3).categorySelector, /tag-and-flag/);
 	assert.match(extractorDefinition("nytimes-front-page", 3).cardSelector, /data-tpl/);
-	assert.equal(
-		extractorDefinition("dailymail-front-page", 3).categoryAttribute,
-		"data-channel",
-	);
+	assert.equal(extractorDefinition("dailymail-front-page", 3).categoryAttribute, "data-channel");
 	assert.equal(extractorDefinition("cnn-front-page", 3).categoryAttribute, "data-section");
 	assert.match(extractorDefinition("telegraph-front-page", 2).cardSelector, /data-test/);
-	assert.match(
-		extractorDefinition("washingtonpost-front-page", 2).cardSelector,
-		/homepage\/story/,
-	);
+	assert.match(extractorDefinition("washingtonpost-front-page", 2).cardSelector, /homepage\/story/);
 	const generic = extractorDefinition("generic-baseline", 3);
 	assert.equal(generic.sectionSelector, undefined);
 	assert.doesNotMatch(generic.storyLinkSelector, /^a\[href\]$/);

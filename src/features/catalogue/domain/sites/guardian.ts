@@ -11,7 +11,7 @@ export const GUARDIAN_SITES = [
 			device: "desktop" as const,
 			extractor: "guardian-front-page" as const,
 			minimumElements: 20,
-			version: 4,
+			version: 5,
 		},
 	},
 	{

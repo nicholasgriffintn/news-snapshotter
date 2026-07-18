@@ -118,7 +118,9 @@ async function loadCaptureExtraction(
 		.prepare("SELECT * FROM analysed_captures WHERE capture_id = ?")
 		.bind(captureId)
 		.first<CaptureRow>();
-	if (!capture) return null;
+	if (!capture) {
+		return null;
+	}
 
 	const stories = await database
 		.prepare(
@@ -259,7 +261,9 @@ function captureStatement(
 function storyStatements(database: D1Database, document: PageExtraction): D1PreparedStatement[] {
 	const statements: D1PreparedStatement[] = [];
 	for (const element of document.elements) {
-		if (element.kind !== "story") continue;
+		if (element.kind !== "story") {
+			continue;
+		}
 		const id = storyId(document.capture.site, element);
 		const sourceUrl = element.image?.sourceUrl;
 		const currentImageId = sourceUrl ? imageId(document.capture.site, sourceUrl) : null;
@@ -470,7 +474,9 @@ async function replaceAdjacentEdges(
 
 	if (previousId) {
 		const previous = await loadCaptureExtraction(database, previousId);
-		if (!previous) throw new Error(`Previous capture ${previousId} could not be loaded`);
+		if (!previous) {
+			throw new Error(`Previous capture ${previousId} could not be loaded`);
+		}
 		const changes = await diffAdjacentCaptures(previous, document);
 		eventCount += changes.length;
 		statements.push(
@@ -482,7 +488,9 @@ async function replaceAdjacentEdges(
 
 	if (nextId) {
 		const next = await loadCaptureExtraction(database, nextId);
-		if (!next) throw new Error(`Next capture ${nextId} could not be loaded`);
+		if (!next) {
+			throw new Error(`Next capture ${nextId} could not be loaded`);
+		}
 		const changes = await diffAdjacentCaptures(document, next);
 		eventCount += changes.length;
 		statements.push(
@@ -645,7 +653,9 @@ export async function getStory(
 		)
 		.bind(site, id)
 		.first<Record<string, unknown>>();
-	if (!story) return null;
+	if (!story) {
+		return null;
+	}
 	const conditions = ["story_observations.story_id = ?"];
 	const parameters: Array<number | string> = [id];
 	if (options.from) {
