@@ -4,6 +4,7 @@ import type { Device, SiteDefinition } from "../../../core/domain.ts";
 import type { ElementPosition, PageElement } from "../../history/domain/extraction.ts";
 import { storyCategory } from "../../history/domain/story-classification.ts";
 import { extractorDefinition, type ExtractorDefinition } from "../domain/extractor-registry.ts";
+import { determineStoryProminence } from "../domain/story-prominence.ts";
 
 const SCHEMA_VERSION = 1;
 const SANITISATION_VERSION = 1;
@@ -209,6 +210,7 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 			scrollWidth: number;
 			tagName: string;
 			textContent: string | null;
+			matches: (selector: string) => boolean;
 		};
 		const browser = globalThis as unknown as {
 			document: {
@@ -269,34 +271,23 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 			const summaryElement = card.querySelector(extractorDefinition.summarySelector);
 			const summary = summaryElement?.textContent?.trim().replace(/\s+/g, " ");
 			const headingName = heading.tagName.toLowerCase();
-			const sectionContainer = card.closest(extractorDefinition.sectionSelector);
+			const sectionContainer = extractorDefinition.sectionSelector
+				? card.closest(extractorDefinition.sectionSelector)
+				: null;
 			const sectionHeading = sectionContainer?.querySelector("h1, h2");
 			const sectionText = sectionHeading?.textContent?.trim().replace(/\s+/g, " ");
 			const section = sectionText && sectionText !== headline ? sectionText : undefined;
-			const categoryText = extractorDefinition.categorySelector
-				? card
-						.querySelector(extractorDefinition.categorySelector)
-						?.textContent?.trim()
-						.replace(/\s+/g, " ")
-				: undefined;
-			const isLead =
-				headingName === "h1" ||
-				(rect.top < browser.innerHeight &&
-					rect.width > document.documentElement.scrollWidth * 0.25);
-			const majorStoryWidth = document.documentElement.scrollWidth * 0.25;
-			const isWide = rect.width > majorStoryWidth;
-			const isAboveFold = rect.top < browser.innerHeight;
+			const categoryElement = extractorDefinition.categorySelector
+				? card.matches(extractorDefinition.categorySelector)
+					? card
+					: card.querySelector(extractorDefinition.categorySelector)
+				: null;
+			const categoryValue = extractorDefinition.categoryAttribute
+				? categoryElement?.getAttribute(extractorDefinition.categoryAttribute)
+				: categoryElement?.textContent;
+			const categoryText = categoryValue?.trim().replace(/\s+/g, " ");
 			const absoluteTop = rect.top + browser.scrollY;
 			const viewportDepth = absoluteTop / browser.innerHeight;
-			let prominence: CollectedElement["prominence"] = "standard";
-
-			if (isLead) {
-				prominence = "lead";
-			} else if (isWide && isAboveFold) {
-				prominence = "major";
-			} else if (rect.width < document.documentElement.scrollWidth * 0.16) {
-				prominence = "minor";
-			}
 
 			let imageDetails: CollectedElement["image"];
 
@@ -324,7 +315,7 @@ async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<
 						viewportDepth,
 						width: rect.width,
 					},
-					prominence,
+					prominence: "standard",
 					selectorHint: headingName,
 					section,
 					summary: summary || undefined,
@@ -366,7 +357,10 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 	try {
 		const extractor = extractorDefinition(site.analysis.extractor, site.analysis.version);
 		const collected = await collectPage(page, extractor);
-		const stories = normaliseStoryElements(collected.elements);
+		const stories = determineStoryProminence(
+			normaliseStoryElements(collected.elements),
+			collected.pageWidth,
+		);
 		const canonicalElements = stories.map((element) => {
 			const canonicalUrl = canonicaliseUrl(element.canonicalUrl);
 			const category = storyCategory(canonicalUrl, element.category ?? element.section);

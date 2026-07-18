@@ -7,13 +7,13 @@ export const BLOOMBERG_SITES = [
 	{
 		captureRegion: "uk" as const,
 		name: "bloomberg-uk",
-		url: "https://www.bloomberg.com/",
+		url: "https://www.bloomberg.com/uk",
 		priority: 1 as const,
 		analysis: {
 			device: "desktop" as const,
 			extractor: "generic-baseline" as const,
 			minimumElements: 20,
-			version: 1,
+			version: 3,
 		},
 	},
 ].map((site) => {

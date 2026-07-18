@@ -6,9 +6,9 @@ export const WASHINGTON_POST_SITES = [
 		url: "https://www.washingtonpost.com/",
 		analysis: {
 			device: "desktop" as const,
-			extractor: "generic-baseline" as const,
+			extractor: "washingtonpost-front-page" as const,
 			minimumElements: 20,
-			version: 1,
+			version: 2,
 		},
 	},
 ].map((site) => {

@@ -44,7 +44,9 @@ export type ExtractorName =
 	| "generic-baseline"
 	| "guardian-front-page"
 	| "nytimes-front-page"
-	| "times-front-page";
+	| "telegraph-front-page"
+	| "times-front-page"
+	| "washingtonpost-front-page";
 
 export type SiteAnalysisConfig = {
 	device: "desktop";

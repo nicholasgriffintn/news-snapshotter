@@ -51,6 +51,7 @@ function successfulPage(overrides = {}) {
 			options.fullPage ? Buffer.from("full screenshot") : Buffer.from("thumbnail"),
 		profileCalls,
 		runtimeCalls,
+		url: () => site.url,
 		emulateTimezone: async (...args) => profileCalls.push(["emulateTimezone", ...args]),
 		setCookie: async () => undefined,
 		setExtraHTTPHeaders: async (...args) => profileCalls.push(["setExtraHTTPHeaders", ...args]),
@@ -154,7 +155,7 @@ test("stores desktop analysis independently from screenshot artefacts", async (c
 			device: "desktop",
 			extractor: "bbc-front-page",
 			minimumElements: 20,
-			version: 4,
+			version: 5,
 		},
 		brand: "bbc",
 		name: "bbc-home",
@@ -316,6 +317,23 @@ test("records HTTP capture failures without retrying or writing screenshots", as
 	assert.notEqual(failure.capturedAt, triggeredAt);
 	assert.equal(screenshots.length, 0);
 	assert.equal(closed, true);
+});
+
+test("rejects a capture when navigation finishes on a different regional URL", async (context) => {
+	const page = successfulPage({ url: () => "https://www.bbc.com/" });
+	context.mock.method(puppeteer, "launch", async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { env, failures, screenshots } = environment();
+	const bbcSite = { ...site, brand: "bbc", name: "bbc-home", url: "https://www.bbc.co.uk/" };
+
+	const result = await captureDevice(env, bbcSite, "desktop", triggeredAt);
+
+	assert.equal(result.status, "error");
+	assert.equal(result.error, "Navigation loaded https://www.bbc.com/ instead of https://www.bbc.co.uk/");
+	assert.equal(JSON.parse(failures[0][1]).reason, "unexpected-url");
+	assert.equal(screenshots.length, 0);
 });
 
 test("records launch errors as capture failures", async (context) => {

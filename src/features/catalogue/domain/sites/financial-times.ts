@@ -8,7 +8,7 @@ export const FINANCIAL_TIMES_SITES = [
 			device: "desktop" as const,
 			extractor: "generic-baseline" as const,
 			minimumElements: 20,
-			version: 1,
+			version: 3,
 		},
 	},
 	{

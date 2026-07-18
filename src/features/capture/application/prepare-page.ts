@@ -4,6 +4,7 @@ import { CAPTURE_REGIONS } from "../domain/regions.ts";
 import type { ClickAction, DeviceCaptureConfig } from "../domain/profiles.ts";
 import { progressivelyRenderPage } from "./rendering-scroll.ts";
 import type { SiteDefinition } from "../../../core/domain.ts";
+import { urlsMatchIgnoringHash } from "../../../core/urls.ts";
 
 export class DetectedCaptureError extends Error {
 	readonly reason: string;
@@ -281,5 +282,12 @@ export async function preparePageForCapture(input: {
 		await waitForImages(page, config.waitForImagesMs ?? 5_000);
 	}
 	if (site.completion) await waitForCompletion(page, site.completion);
+	const loadedUrl = page.url();
+	if (!urlsMatchIgnoringHash(site.url, loadedUrl)) {
+		throw new DetectedCaptureError(
+			"unexpected-url",
+			`Navigation loaded ${loadedUrl} instead of ${site.url}`,
+		);
+	}
 	await detectFailure(page, config, failureIndicators);
 }
