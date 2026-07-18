@@ -3,7 +3,7 @@
 		"captureId": "guardian-uk:desktop:2026-07-17T09:00:00.000Z",
 		"capturedAt": "2026-07-17T09:00:05.000Z",
 		"device": "desktop",
-		"extractor": { "name": "guardian-front-page", "version": 1 },
+		"extractor": { "name": "guardian-front-page", "version": 2 },
 		"htmlKey": "fixture.rendered.html.gz",
 		"pageHeight": 1800,
 		"pageWidth": 1440,

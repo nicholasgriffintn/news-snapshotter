@@ -6,7 +6,7 @@ export const DAILYMAIL_SITES = [
 		priority: 1 as const,
 		analysis: {
 			device: "desktop" as const,
-			extractor: "generic-baseline" as const,
+			extractor: "dailymail-front-page" as const,
 			minimumElements: 20,
 			version: 1,
 		},

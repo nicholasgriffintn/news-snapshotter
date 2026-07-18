@@ -24,9 +24,14 @@ for (const fixture of ["bbc-home", "guardian-uk"]) {
 }
 
 test("extractor versions are explicit", () => {
-	const bbc = extractorDefinition("bbc-front-page", 3);
+	const bbc = extractorDefinition("bbc-front-page", 4);
 	assert.equal(bbc.name, "bbc-front-page");
+	assert.match(bbc.cardSelector, /data-testid='promo'/);
 	assert.equal(bbc.categorySelector, "[type='attribution']");
-	assert.equal(extractorDefinition("guardian-front-page", 1).name, "guardian-front-page");
-	assert.throws(() => extractorDefinition("bbc-front-page", 2), /not registered/);
+	assert.match(extractorDefinition("guardian-front-page", 2).storyLinkSelector, /sublinks/);
+	assert.match(extractorDefinition("times-front-page", 1).headlineSelector, /article-headline/);
+	assert.match(extractorDefinition("nytimes-front-page", 1).cardSelector, /data-tpl/);
+	assert.match(extractorDefinition("dailymail-front-page", 1).cardSelector, /\.article/);
+	assert.match(extractorDefinition("cnn-front-page", 1).headlineSelector, /data-editable/);
+	assert.throws(() => extractorDefinition("bbc-front-page", 3), /not registered/);
 });

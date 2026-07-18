@@ -37,7 +37,14 @@ export type SiteDefinition = {
 	visibility?: "admin" | "public";
 };
 
-export type ExtractorName = "bbc-front-page" | "generic-baseline" | "guardian-front-page";
+export type ExtractorName =
+	| "bbc-front-page"
+	| "cnn-front-page"
+	| "dailymail-front-page"
+	| "generic-baseline"
+	| "guardian-front-page"
+	| "nytimes-front-page"
+	| "times-front-page";
 
 export type SiteAnalysisConfig = {
 	device: "desktop";

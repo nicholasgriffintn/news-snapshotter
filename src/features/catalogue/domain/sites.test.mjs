@@ -31,8 +31,16 @@ test("catalogue priorities distinguish key route types", () => {
 });
 
 test("BBC front pages use the reviewed analysis extractor", () => {
-	assert.equal(siteNamed("bbc-home").analysis?.version, 3);
-	assert.equal(siteNamed("bbc-news").analysis?.version, 3);
+	assert.equal(siteNamed("bbc-home").analysis?.version, 4);
+	assert.equal(siteNamed("bbc-news").analysis?.version, 4);
+});
+
+test("reviewed publisher front pages use their specific extractors", () => {
+	assert.equal(siteNamed("times-com").analysis?.extractor, "times-front-page");
+	assert.equal(siteNamed("nytimes-us").analysis?.extractor, "nytimes-front-page");
+	assert.equal(siteNamed("dailymail-home").analysis?.extractor, "dailymail-front-page");
+	assert.equal(siteNamed("guardian-uk").analysis?.extractor, "guardian-front-page");
+	assert.equal(siteNamed("cnn-com").analysis?.extractor, "cnn-front-page");
 });
 
 test("every configured analysis uses a registered extractor version", () => {

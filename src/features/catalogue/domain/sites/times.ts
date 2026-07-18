@@ -6,7 +6,7 @@ export const TIMES_SITES = [
 		category: "news" as const,
 		analysis: {
 			device: "desktop" as const,
-			extractor: "generic-baseline" as const,
+			extractor: "times-front-page" as const,
 			minimumElements: 20,
 			version: 1,
 		},

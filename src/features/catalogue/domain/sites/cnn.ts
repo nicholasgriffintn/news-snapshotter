@@ -6,7 +6,7 @@ export const CNN_SITES = [
 		priority: 1 as const,
 		analysis: {
 			device: "desktop" as const,
-			extractor: "generic-baseline" as const,
+			extractor: "cnn-front-page" as const,
 			minimumElements: 20,
 			version: 1,
 		},

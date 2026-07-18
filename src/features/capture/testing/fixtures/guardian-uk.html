@@ -3,15 +3,21 @@
 	<body>
 		<main>
 			<section data-component="container-news">
-				<div data-link-name="article">
-					<h2 data-gu-name="headline">Guardian fixture headline</h2>
-					<p data-link-name="standfirst">Guardian fixture standfirst.</p>
-					<a href="https://www.theguardian.com/politics/2026/jul/17/fixture-story">Read story</a>
-				</div>
-				<div data-link-name="article">
-					<h3 data-gu-name="headline">Guardian culture fixture</h3>
-					<a href="https://www.theguardian.com/culture/2026/jul/17/fixture-culture">Read story</a>
-				</div>
+				<ul>
+					<li>
+						<a
+							data-link-name="article"
+							href="https://www.theguardian.com/politics/2026/jul/17/fixture-story"
+						></a>
+						<h2 data-gu-name="headline">Guardian fixture headline</h2>
+						<p data-link-name="standfirst">Guardian fixture standfirst.</p>
+					</li>
+					<li data-link-name="sublinks | 1">
+						<a href="https://www.theguardian.com/culture/2026/jul/17/fixture-culture">
+							<h3 data-gu-name="headline">Guardian culture fixture</h3>
+						</a>
+					</li>
+				</ul>
 			</section>
 		</main>
 	</body>
