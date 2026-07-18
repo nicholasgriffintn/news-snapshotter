@@ -6,7 +6,7 @@ export const FINANCIAL_TIMES_SITES = [
 		priority: 1 as const,
 		analysis: {
 			device: "desktop" as const,
-			extractor: "bbc-front-page" as const,
+			extractor: "generic-baseline" as const,
 			minimumElements: 20,
 			version: 3,
 		},

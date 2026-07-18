@@ -6,7 +6,7 @@ export const WASHINGTON_POST_SITES = [
 		url: "https://www.washingtonpost.com/",
 		analysis: {
 			device: "desktop" as const,
-			extractor: "bbc-front-page" as const,
+			extractor: "generic-baseline" as const,
 			minimumElements: 20,
 			version: 3,
 		},
