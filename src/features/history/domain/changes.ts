@@ -1,3 +1,4 @@
+import { isAnalysedContentKind } from "../../../core/contracts.ts";
 import type { PageElement, PageExtraction } from "./extraction.ts";
 
 export const POSITION_NOISE = {
@@ -91,6 +92,20 @@ function storyChange(
 		elementKey: element.elementKey,
 		magnitude,
 		storyId: storyId(current.capture.site, element),
+	};
+}
+
+function contentChange(
+	previous: PageExtraction,
+	current: PageExtraction,
+	element: PageElement,
+	type: "appeared" | "disappeared",
+	before: ChangeValue,
+	after: ChangeValue,
+): PendingChange {
+	return {
+		...baseChange(previous, current, type, before, after),
+		elementKey: element.elementKey,
 	};
 }
 
@@ -348,11 +363,35 @@ export async function diffAdjacentCaptures(
 				changes.push(storyChange(previous, current, after, "appeared", null, after.elementKey));
 			}
 		}
+
+		const previousMedia = new Map(
+			previous.elements
+				.filter(({ kind }) => isAnalysedContentKind(kind) && kind !== "story")
+				.map((element) => [element.elementKey, element]),
+		);
+		const currentMedia = new Map(
+			current.elements
+				.filter(({ kind }) => isAnalysedContentKind(kind) && kind !== "story")
+				.map((element) => [element.elementKey, element]),
+		);
+
+		for (const [id, before] of previousMedia) {
+			if (!currentMedia.has(id)) {
+				changes.push(
+					contentChange(previous, current, before, "disappeared", before.elementKey, null),
+				);
+			}
+		}
+		for (const [id, after] of currentMedia) {
+			if (!previousMedia.has(id)) {
+				changes.push(contentChange(previous, current, after, "appeared", null, after.elementKey));
+			}
+		}
 	}
 
 	changes.sort((left, right) => {
-		return `${left.type}:${left.storyId ?? ""}`.localeCompare(
-			`${right.type}:${right.storyId ?? ""}`,
+		return `${left.type}:${left.storyId ?? left.elementKey ?? ""}`.localeCompare(
+			`${right.type}:${right.storyId ?? right.elementKey ?? ""}`,
 		);
 	});
 
@@ -361,7 +400,7 @@ export async function diffAdjacentCaptures(
 			const identity = [
 				change.previousCaptureId,
 				change.currentCaptureId,
-				change.storyId ?? "page",
+				change.storyId ?? change.elementKey ?? "page",
 				change.type,
 			].join("\n");
 

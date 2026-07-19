@@ -8,6 +8,7 @@ const MIGRATIONS = [
 	"0002_failure_identity.sql",
 	"0003_history_operations.sql",
 	"0004_story_categories.sql",
+	"0005_page_element_context.sql",
 ];
 
 export async function createHistoryTestDatabase() {

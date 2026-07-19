@@ -3,6 +3,11 @@ export type Device = "desktop" | "mobile";
 export type CapturePriority = 1 | 2 | 3 | 4;
 export type CaptureRegion = "international" | "uk" | "us";
 export type CaptureProviderName = "cloudflare" | "hyperbrowser";
+export type AnalysedContentKind = "audio" | "story" | "video";
+
+export function isAnalysedContentKind(value: string): value is AnalysedContentKind {
+	return value === "audio" || value === "story" || value === "video";
+}
 
 export type Snapshot = {
 	brand: string;

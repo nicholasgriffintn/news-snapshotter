@@ -1,19 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-	analysisKeys,
-	canonicaliseUrl,
-	collectAndStoreAnalysis,
-	normaliseStoryElements,
-} from "./capture-analysis.ts";
+import { analysisKeys, canonicaliseUrl, collectAndStoreAnalysis } from "./capture-analysis.ts";
+import { normaliseContentElements } from "../domain/content-elements.ts";
 
 const site = {
 	analysis: {
 		device: "desktop",
 		extractor: "bbc-front-page",
 		minimumElements: 2,
-		version: 5,
+		version: 6,
 	},
 	brand: "bbc",
 	category: "news",
@@ -54,7 +50,7 @@ test("builds deterministic private artefact keys", () => {
 	const timestamp = "2026-07-17T09-00-01-130Z";
 
 	assert.deepEqual(analysisKeys(site, "desktop", triggeredAt), {
-		extractionKey: `${prefix}/${timestamp}.extraction.v1.json.gz`,
+		extractionKey: `${prefix}/${timestamp}.extraction.v2.json.gz`,
 		failureKey: `${prefix}/${timestamp}.analysis-failure.json`,
 		htmlKey: `${prefix}/${timestamp}.rendered.html.gz`,
 	});
@@ -86,7 +82,7 @@ test("keeps visible headline links and rejects navigation or hidden card actions
 		summary: "A real BBC story headline",
 		textFingerprint: "a real bbc story headline",
 	};
-	const stories = normaliseStoryElements([
+	const stories = normaliseContentElements([
 		base,
 		{
 			...base,
@@ -129,11 +125,38 @@ test("keeps a visible responsive card when a hidden duplicate appears first", ()
 		position: { ...hidden.position, height: 240, width: 600 },
 	});
 
-	const stories = normaliseStoryElements([hidden, visible]);
+	const stories = normaliseContentElements([hidden, visible]);
 
 	assert.equal(stories.length, 1);
 	assert.equal(stories[0].elementKey, "visible-card");
 	assert.equal(stories[0].position.pageOrder, 1);
+});
+
+test("keeps media as distinct analysed content and restores visual page order", () => {
+	const story = extractedStory({
+		canonicalUrl: "https://www.bbc.co.uk/news/articles/story",
+		elementKey: "https://www.bbc.co.uk/news/articles/story",
+		position: { ...extractedStory().position, top: 600 },
+	});
+	const video = extractedStory({
+		canonicalUrl: undefined,
+		elementKey: "video:short-report",
+		headline: "Short report from the scene",
+		kind: "video",
+		position: { ...extractedStory().position, top: 300 },
+		textFingerprint: "short report from the scene",
+	});
+	const duplicateVideo = { ...video, selectorHint: "button" };
+
+	const content = normaliseContentElements([story, video, duplicateVideo]);
+
+	assert.deepEqual(
+		content.map(({ elementKey, kind, position }) => [elementKey, kind, position.pageOrder]),
+		[
+			["video:short-report", "video", 1],
+			["https://www.bbc.co.uk/news/articles/story", "story", 2],
+		],
+	);
 });
 
 test("stores compressed HTML and extraction artefacts", async () => {
@@ -246,7 +269,7 @@ test("stores an explicit failure when extraction is unexpectedly empty", async (
 
 	assert.equal(outcome.status, "failed");
 	assert.match(outcome.failureKey, /analysis-failure\.json$/);
-	assert.match(writes[0][1], /Expected at least 2 elements/);
+	assert.match(writes[0][1], /Expected at least 2 story elements/);
 });
 
 test("reports analysis failure without throwing when private storage is unavailable", async () => {

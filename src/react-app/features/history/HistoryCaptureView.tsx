@@ -1,10 +1,7 @@
+import { isAnalysedContentKind } from "../../../core/contracts.ts";
 import { historyScreenshotUrl } from "../../platform/api-client.ts";
-import type { HistoryCapture, HistoryElement } from "../../core/types.ts";
-import { storyHistoryPath } from "./history-routes.ts";
-
-function storyId(site: string, element: HistoryElement): string {
-	return `${site}:${element.canonicalUrl ?? element.elementKey}`;
-}
+import type { HistoryCapture } from "../../core/types.ts";
+import { HistoryContentItem } from "./HistoryContentItem.tsx";
 
 export function HistoryCaptureView({
 	capture,
@@ -15,9 +12,17 @@ export function HistoryCaptureView({
 	overlay: boolean;
 	onToggleOverlay: () => void;
 }) {
-	const stories = capture.elements.filter((element) => element.kind === "story");
+	const content = capture.elements.filter(({ kind }) => isAnalysedContentKind(kind));
+	const stories = content.filter(({ kind }) => kind === "story");
+	const videos = content.filter(({ kind }) => kind === "video");
+	const audio = content.filter(({ kind }) => kind === "audio");
 	const pageWidth = Math.max(capture.capture.pageWidth, 1);
 	const pageHeight = Math.max(capture.capture.pageHeight, 1);
+	const contentSummary = [
+		`${stories.length} stories`,
+		...(videos.length > 0 ? [`${videos.length} videos`] : []),
+		...(audio.length > 0 ? [`${audio.length} audio`] : []),
+	].join(" · ");
 
 	return (
 		<section className="history-evidence">
@@ -30,7 +35,7 @@ export function HistoryCaptureView({
 						</strong>
 					</div>
 					<button aria-pressed={overlay} onClick={onToggleOverlay} type="button">
-						{overlay ? "Hide story boxes" : "Show story boxes"}
+						{overlay ? "Hide content boxes" : "Show content boxes"}
 					</button>
 				</header>
 				<div className="history-shot-scroll">
@@ -40,19 +45,19 @@ export function HistoryCaptureView({
 							src={historyScreenshotUrl(capture.capture.screenshotKey)}
 						/>
 						{overlay
-							? stories.map((story) => (
+							? content.map((element) => (
 									<span
-										aria-label={`Story ${story.position.pageOrder}: ${story.headline ?? "Untitled"}`}
-										className={`history-shot__box history-shot__box--${story.prominence ?? "standard"}`}
-										key={story.elementKey}
+										aria-label={`${element.kind} ${element.position.pageOrder}: ${element.headline ?? "Untitled"}`}
+										className={`history-shot__box history-shot__box--${element.prominence ?? "standard"} history-shot__box--${element.kind}`}
+										key={element.elementKey}
 										style={{
-											height: `${(story.position.height / pageHeight) * 100}%`,
-											left: `${(story.position.left / pageWidth) * 100}%`,
-											top: `${(story.position.top / pageHeight) * 100}%`,
-											width: `${(story.position.width / pageWidth) * 100}%`,
+											height: `${(element.position.height / pageHeight) * 100}%`,
+											left: `${(element.position.left / pageWidth) * 100}%`,
+											top: `${(element.position.top / pageHeight) * 100}%`,
+											width: `${(element.position.width / pageWidth) * 100}%`,
 										}}
 									>
-										{story.position.pageOrder}
+										{element.position.pageOrder}
 									</span>
 								))
 							: null}
@@ -62,27 +67,16 @@ export function HistoryCaptureView({
 
 			<aside className="history-story-rail">
 				<header>
-					<span>Stories on this page</span>
-					<strong>{stories.length} stories</strong>
+					<span>Analysed content</span>
+					<strong>{contentSummary}</strong>
 				</header>
 				<ol>
-					{stories.map((story) => (
-						<li key={story.elementKey}>
-							<div className="history-story-rank">
-								<span>{String(story.position.pageOrder).padStart(2, "0")}</span>
-								<small>{story.prominence ?? "standard"}</small>
-							</div>
-							<a
-								href={storyHistoryPath(capture.capture.site, storyId(capture.capture.site, story))}
-							>
-								<strong>{story.headline ?? "Untitled story"}</strong>
-								{story.summary ? <p>{story.summary}</p> : null}
-								<div className="history-story-tags">
-									<small>{story.section ?? story.category ?? "Front page"}</small>
-									<small>{story.position.viewportDepth.toFixed(1)} pages down</small>
-								</div>
-							</a>
-						</li>
+					{content.map((element) => (
+						<HistoryContentItem
+							element={element}
+							key={element.elementKey}
+							site={capture.capture.site}
+						/>
 					))}
 				</ol>
 			</aside>

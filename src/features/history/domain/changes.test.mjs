@@ -91,3 +91,41 @@ test("marks missing scheduled captures and story appearance or disappearance", a
 		["appeared", "capture-gap", "disappeared"],
 	);
 });
+
+test("tracks analysed media appearing and disappearing without story identities", async () => {
+	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z", {
+		elements: [
+			historyStory(),
+			historyStory({
+				canonicalUrl: undefined,
+				elementKey: "video:earlier-clip",
+				kind: "video",
+			}),
+		],
+	});
+	const current = historyExtraction("capture-b", "2026-07-17T10:00:00.000Z", {
+		elements: [
+			historyStory(),
+			historyStory({
+				canonicalUrl: "https://www.bbc.co.uk/sounds/play/latest",
+				elementKey: "https://www.bbc.co.uk/sounds/play/latest",
+				kind: "audio",
+			}),
+		],
+	});
+
+	const changes = await diffAdjacentCaptures(previous, current);
+
+	assert.deepEqual(
+		changes.map(({ elementKey, storyId, type }) => ({ elementKey, storyId, type })),
+		[
+			{
+				elementKey: "https://www.bbc.co.uk/sounds/play/latest",
+				storyId: undefined,
+				type: "appeared",
+			},
+			{ elementKey: "video:earlier-clip", storyId: undefined, type: "disappeared" },
+		],
+	);
+	assert.notEqual(changes[0].changeId, changes[1].changeId);
+});

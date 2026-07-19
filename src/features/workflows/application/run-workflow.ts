@@ -44,7 +44,11 @@ export async function runSnapshotWorkflow(
 
 	for (const site of sites) {
 		const profile = resolveCaptureProfile(site);
-		for (const device of profile.devices) {
+		for (const [deviceIndex, device] of profile.devices.entries()) {
+			if (deviceIndex > 0 && site.interDeviceDelaySeconds && step.sleep) {
+				const duration: `${number} seconds` = `${site.interDeviceDelaySeconds} seconds`;
+				await step.sleep(`wait between ${site.name} devices`, duration);
+			}
 			const result = await step.do(`screenshot-${site.name}-${device}`, () => {
 				return capture(env, site, device, triggeredAt);
 			});

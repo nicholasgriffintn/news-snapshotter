@@ -57,7 +57,7 @@ test("keeps a stored screenshot successful when indexing cannot be queued", asyn
 				device: "desktop",
 				extractor: "bbc-front-page",
 				minimumElements: 1,
-				version: 5,
+				version: 6,
 			},
 			brand: "bbc",
 			captureRegion: "uk",

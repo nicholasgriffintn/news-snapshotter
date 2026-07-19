@@ -318,6 +318,12 @@ const PROFILES: Record<string, CaptureProfile> = {
 					},
 					{ selector: "button.martech-spotlight-modal__close-button", timeoutMs: 1_000 },
 				],
+				userAgent:
+					"Mozilla/5.0 (Linux; Android 14; Pixel 9 Pro) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36",
+				userAgentMetadata: {
+					...DEFAULT_DEVICE_CONFIG.mobile.userAgentMetadata!,
+					model: "Pixel 9 Pro",
+				},
 			},
 			mobile: {
 				blockSelectors: [{ selector: "#sec-if-cpt-container", reason: "akamai-challenge" }],
@@ -470,6 +476,12 @@ const PROFILES: Record<string, CaptureProfile> = {
 				},
 			],
 			hideSelectors: ["#fides-overlay", "#fides-overlay-wrapper"],
+			scroll: {
+				...DEFAULT_PROGRESSIVE_SCROLL,
+				behavior: "auto",
+				minDelayMs: 350,
+				settleDelayMs: 1_500,
+			},
 			styles: ["body.fides-no-scroll { overflow: auto !important; }"],
 		}),
 	},

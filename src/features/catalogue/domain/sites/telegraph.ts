@@ -2,6 +2,7 @@ export const TELEGRAPH_SITES = [
 	{
 		name: "telegraph-uk",
 		displayName: "The Telegraph",
+		interDeviceDelaySeconds: 60,
 		url: "https://www.telegraph.co.uk/",
 		priority: 1 as const,
 		category: "news" as const,
@@ -12,5 +13,10 @@ export const TELEGRAPH_SITES = [
 			version: 2,
 		},
 	},
-	{ name: "telegraph-sport", url: "https://www.telegraph.co.uk/sport", category: "sport" as const },
+	{
+		displayName: "The Telegraph Sport",
+		name: "telegraph-sport",
+		url: "https://www.telegraph.co.uk/sport",
+		category: "sport" as const,
+	},
 ];

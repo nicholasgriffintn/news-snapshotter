@@ -155,7 +155,7 @@ async function loadCaptureExtraction(
 		.prepare(
 			`SELECT
 				canonical_url,
-				NULL AS category,
+				category,
 				element_key,
 				headline,
 				height,
@@ -166,7 +166,7 @@ async function loadCaptureExtraction(
 				left_position,
 				NULL AS prominence,
 				rank,
-				NULL AS section,
+				section,
 				selector_hint,
 				NULL AS summary,
 				text_fingerprint,
@@ -374,9 +374,10 @@ function pageElementStatements(
 			return database
 				.prepare(
 					`INSERT INTO page_elements (
-						capture_id, element_key, kind, canonical_url, headline, text_fingerprint,
-						selector_hint, rank, top, left_position, width, height, viewport_depth
-					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+						capture_id, element_key, kind, canonical_url, headline, category, section,
+						text_fingerprint, selector_hint, rank, top, left_position, width, height,
+						viewport_depth
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 				)
 				.bind(
 					document.capture.captureId,
@@ -384,6 +385,8 @@ function pageElementStatements(
 					element.kind,
 					element.canonicalUrl ?? null,
 					element.headline ?? null,
+					element.category ?? null,
+					element.section ?? null,
 					element.textFingerprint,
 					element.selectorHint ?? null,
 					element.position.pageOrder,
@@ -568,7 +571,7 @@ export async function listCaptures(
 	site: string,
 	options: HistoryListOptions,
 ): Promise<{ captures: Record<string, unknown>[]; nextCursor?: CaptureCursor }> {
-	const conditions = ["site = ?", "status = 'indexed'"];
+	const conditions = ["site = ?", "device = 'desktop'", "status = 'indexed'"];
 	const parameters: Array<number | string> = [site];
 	if (options.from) {
 		conditions.push("captured_at >= ?");
@@ -625,6 +628,7 @@ export async function listHistorySites(database: D1Database): Promise<Record<str
 			LEFT JOIN story_observations
 				ON story_observations.capture_id = analysed_captures.capture_id
 			WHERE analysed_captures.status = 'indexed'
+				AND analysed_captures.device = 'desktop'
 			GROUP BY analysed_captures.site, analysed_captures.device
 			ORDER BY analysed_captures.site, analysed_captures.device`,
 		)
@@ -638,7 +642,9 @@ export async function getCapture(
 	captureId: string,
 ): Promise<PageExtraction | null> {
 	const extraction = await loadCaptureExtraction(database, captureId);
-	return extraction?.capture.site === site ? extraction : null;
+	return extraction?.capture.site === site && extraction.capture.device === "desktop"
+		? extraction
+		: null;
 }
 
 export async function getStory(

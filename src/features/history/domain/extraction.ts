@@ -17,7 +17,7 @@ export type PageElement = {
 		cropKey?: string;
 		sourceUrl?: string;
 	};
-	kind: "story" | "heading" | "image" | "navigation" | "other";
+	kind: AnalysedContentKind | "heading" | "image" | "navigation" | "other";
 	position: ElementPosition;
 	prominence?: "lead" | "major" | "standard" | "minor";
 	section?: string;
@@ -55,7 +55,15 @@ export type PageExtraction = {
 	}>;
 };
 
-const ELEMENT_KINDS = new Set(["story", "heading", "image", "navigation", "other"]);
+const ELEMENT_KINDS = new Set([
+	"audio",
+	"story",
+	"video",
+	"heading",
+	"image",
+	"navigation",
+	"other",
+]);
 const PROMINENCE_VALUES = new Set(["lead", "major", "standard", "minor"]);
 const MAX_ELEMENTS = 200;
 const MAX_WARNINGS = 100;
@@ -228,3 +236,4 @@ export function parsePageExtraction(value: unknown): PageExtraction {
 
 	return value as PageExtraction;
 }
+import type { AnalysedContentKind } from "../../../core/contracts.ts";

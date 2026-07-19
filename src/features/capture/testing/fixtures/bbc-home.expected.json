@@ -3,7 +3,7 @@
 		"captureId": "bbc-home:desktop:2026-07-17T09:00:00.000Z",
 		"capturedAt": "2026-07-17T09:00:05.000Z",
 		"device": "desktop",
-		"extractor": { "name": "bbc-front-page", "version": 4 },
+		"extractor": { "name": "bbc-front-page", "version": 6 },
 		"htmlKey": "fixture.rendered.html.gz",
 		"pageHeight": 1600,
 		"pageWidth": 1440,

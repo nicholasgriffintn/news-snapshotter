@@ -1,12 +1,13 @@
 import type { PageElement } from "../../history/domain/extraction.ts";
 
 type Prominence = NonNullable<PageElement["prominence"]>;
+type ProminenceCandidate = PageElement & { prominenceHint?: Prominence };
 
 const MAJOR_WIDTH_RATIO = 1 / 3;
 const LEAD_WIDTH_RATIO = 1 / 4;
 const MINOR_WIDTH_RATIO = 1 / 6;
 
-export function determineStoryProminence<T extends PageElement>(
+export function determineStoryProminence<T extends ProminenceCandidate>(
 	stories: T[],
 	pageWidth: number,
 ): Array<T & { prominence: Prominence }> {
@@ -25,7 +26,16 @@ export function determineStoryProminence<T extends PageElement>(
 		return { ...story, prominence };
 	});
 
-	const lead = classified
+	const explicitLead = classified
+		.filter(({ prominenceHint }) => prominenceHint === "lead")
+		.sort((left, right) => {
+			return (
+				left.position.top - right.position.top ||
+				left.position.left - right.position.left ||
+				right.position.width - left.position.width
+			);
+		})[0];
+	const inferredLead = classified
 		.filter((story) => {
 			return (
 				story.position.viewportDepth <= 1 &&
@@ -44,6 +54,7 @@ export function determineStoryProminence<T extends PageElement>(
 			}
 			return left.position.top - right.position.top;
 		})[0];
+	const lead = explicitLead ?? inferredLead;
 
 	return classified.map((story) => {
 		return story.elementKey === lead?.elementKey ? { ...story, prominence: "lead" } : story;

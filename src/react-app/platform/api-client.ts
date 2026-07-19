@@ -1,6 +1,5 @@
 import type {
 	CaptureFailure,
-	CapturePriority,
 	CaptureProviderName,
 	CatalogueSite,
 	HistoryCapture,

@@ -24,22 +24,70 @@ for (const fixture of ["bbc-home", "guardian-uk"]) {
 }
 
 test("extractor versions are explicit", () => {
-	const bbc = extractorDefinition("bbc-front-page", 5);
+	const bbc = extractorDefinition("bbc-front-page", 6);
 	assert.equal(bbc.name, "bbc-front-page");
-	assert.match(bbc.cardSelector, /data-testid='promo'/);
-	assert.equal(bbc.categorySelector, "[type='attribution']");
-	const guardian = extractorDefinition("guardian-front-page", 5);
-	assert.match(guardian.storyLinkSelector, /sublinks/);
-	assert.match(guardian.storyLinkSelector, /card-@/);
-	assert.match(guardian.storyLinkSelector, /media-/);
-	assert.match(extractorDefinition("times-front-page", 3).categorySelector, /tag-and-flag/);
-	assert.match(extractorDefinition("nytimes-front-page", 3).cardSelector, /data-tpl/);
-	assert.equal(extractorDefinition("dailymail-front-page", 3).categoryAttribute, "data-channel");
-	assert.equal(extractorDefinition("cnn-front-page", 3).categoryAttribute, "data-section");
-	assert.match(extractorDefinition("telegraph-front-page", 2).cardSelector, /data-test/);
-	assert.match(extractorDefinition("washingtonpost-front-page", 2).cardSelector, /homepage\/story/);
+	assert.ok(
+		bbc.rules.some(({ candidateSelector, prominenceHint }) => {
+			return (
+				/billboard-canvas-background-image/.test(candidateSelector) && prominenceHint === "lead"
+			);
+		}),
+	);
+	assert.ok(
+		bbc.rules.some(({ candidateSelector, kind }) => {
+			return kind === "video" && /portrait-video-experience/.test(candidateSelector);
+		}),
+	);
+	assert.ok(bbc.rules.some(({ kind }) => kind === "audio"));
+	assert.ok(
+		bbc.rules
+			.filter(({ cardSelector }) => /data-testid='promo'/.test(cardSelector))
+			.every(({ sectionSelector }) => /spc-container/.test(sectionSelector)),
+	);
+	const guardian = extractorDefinition("guardian-front-page", 6);
+	assert.match(guardian.rules[0].candidateSelector, /sublinks/);
+	assert.match(guardian.rules[0].candidateSelector, /card-@/);
+	assert.match(guardian.rules[0].candidateSelector, /media-/);
+	assert.doesNotMatch(guardian.rules[0].candidateSelector, /:not\([^)]*media-/);
+	assert.equal(guardian.rules[0].headlineSelector[0], ".headline-text");
+	const times = extractorDefinition("times-front-page", 4);
+	assert.ok(
+		times.rules.some(({ candidateSelector, prominenceHint }) => {
+			return /lead-media-article/.test(candidateSelector) && prominenceHint === "lead";
+		}),
+	);
+	assert.match(times.rules.at(-1).categorySelector, /tag-and-flag/);
+	const nytimes = extractorDefinition("nytimes-front-page", 4);
+	assert.match(nytimes.rules[0].candidateSelector, /:has\(\[data-tpl='sli'\]\)/);
+	assert.equal(nytimes.rules[0].prominenceHint, "lead");
+	assert.match(nytimes.rules[0].sectionHeadingSelector, /data-tpl='tk'/);
+	assert.equal(
+		extractorDefinition("dailymail-front-page", 3).rules[0].categoryAttribute,
+		"data-channel",
+	);
+	assert.equal(extractorDefinition("cnn-front-page", 3).rules[0].categoryAttribute, "data-section");
+	const telegraph = extractorDefinition("telegraph-front-page", 2);
+	assert.match(telegraph.rules[0].cardSelector, /data-test/);
+	assert.equal(telegraph.rules[0].prominenceHint, "lead");
+	assert.match(
+		extractorDefinition("washingtonpost-front-page", 2).rules[0].cardSelector,
+		/homepage\/story/,
+	);
+	const financialTimes = extractorDefinition("financialtimes-front-page", 1);
+	assert.match(financialTimes.rules[0].candidateSelector, /heading-link/);
+	assert.match(financialTimes.rules[0].cardSelector, /story-group__article/);
+	const bloomberg = extractorDefinition("bloomberg-front-page", 1);
+	assert.ok(
+		bloomberg.rules.some(({ candidateSelector, prominenceHint }) => {
+			return /#lede/.test(candidateSelector) && prominenceHint === "lead";
+		}),
+	);
+	assert.match(bloomberg.rules.at(-1).candidateSelector, /data-component='headline'/);
 	const generic = extractorDefinition("generic-baseline", 3);
-	assert.equal(generic.sectionSelector, undefined);
-	assert.doesNotMatch(generic.storyLinkSelector, /^a\[href\]$/);
-	assert.throws(() => extractorDefinition("bbc-front-page", 4), /not registered/);
+	assert.equal(generic.rules[0].sectionSelector, undefined);
+	assert.doesNotMatch(generic.rules[0].candidateSelector, /^a\[href\]$/);
+	assert.throws(() => extractorDefinition("bbc-front-page", 5), /not registered/);
+	assert.throws(() => extractorDefinition("guardian-front-page", 5), /not registered/);
+	assert.throws(() => extractorDefinition("nytimes-front-page", 3), /not registered/);
+	assert.throws(() => extractorDefinition("times-front-page", 3), /not registered/);
 });

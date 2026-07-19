@@ -1,4 +1,5 @@
 import type {
+	AnalysedContentKind,
 	CaptureFailureRecord,
 	CapturePriority,
 	CaptureProviderName,
@@ -56,7 +57,7 @@ export type HistoryElement = {
 	elementKey: string;
 	headline?: string;
 	image?: { alt?: string; sourceUrl?: string };
-	kind: "story" | "heading" | "image" | "navigation" | "other";
+	kind: AnalysedContentKind | "heading" | "image" | "navigation" | "other";
 	position: {
 		height: number;
 		left: number;

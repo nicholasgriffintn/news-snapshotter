@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ingestExtraction } from "./history-repository.ts";
+import {
+	getCapture,
+	ingestExtraction,
+	listCaptures,
+	listHistorySites,
+} from "./history-repository.ts";
 import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { historyExtraction, historyStory } from "../testing/extraction-fixture.mjs";
 
@@ -72,6 +77,81 @@ test("late and repeated ingestion converges on the two true adjacent edges", asy
 	assert.equal(
 		rows(sqlite, "SELECT * FROM story_observation_search WHERE capture_id = 'capture-b'").length,
 		1,
+	);
+
+	sqlite.close();
+});
+
+test("persists video and audio elements without turning them into stories", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const capture = historyExtraction("capture-media", "2026-07-17T09:00:00.000Z", {
+		elements: [
+			historyStory({ position: { ...historyStory().position, pageOrder: 1 } }),
+			historyStory({
+				canonicalUrl: undefined,
+				category: "Sport",
+				elementKey: "video:short-report",
+				headline: "Short report from the scene",
+				kind: "video",
+				position: { ...historyStory().position, pageOrder: 2 },
+				section: "Shorts",
+			}),
+			historyStory({
+				canonicalUrl: "https://www.bbc.co.uk/sounds/play/example",
+				elementKey: "https://www.bbc.co.uk/sounds/play/example",
+				headline: "Listen to the latest bulletin",
+				kind: "audio",
+				position: { ...historyStory().position, pageOrder: 3 },
+			}),
+		],
+	});
+
+	await ingestExtraction(database, "capture-media.json.gz", capture);
+	const stored = await getCapture(database, "bbc-home", "capture-media");
+
+	assert.deepEqual(
+		stored.elements.map(({ elementKey, kind }) => [elementKey, kind]),
+		[
+			["https://www.bbc.co.uk/news/articles/story-one", "story"],
+			["video:short-report", "video"],
+			["https://www.bbc.co.uk/sounds/play/example", "audio"],
+		],
+	);
+	assert.equal(rows(sqlite, "SELECT COUNT(*) AS count FROM stories")[0].count, 1);
+	assert.deepEqual(
+		rows(
+			sqlite,
+			"SELECT category, section FROM page_elements WHERE element_key = 'video:short-report'",
+		),
+		[{ category: "Sport", section: "Shorts" }],
+	);
+
+	sqlite.close();
+});
+
+test("keeps legacy mobile captures out of desktop history and prominence comparisons", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const desktop = historyExtraction("capture-desktop", "2026-07-17T09:00:00.000Z");
+	const mobile = {
+		...historyExtraction("capture-mobile", "2026-07-17T10:00:00.000Z"),
+		capture: {
+			...historyExtraction("capture-mobile", "2026-07-17T10:00:00.000Z").capture,
+			device: "mobile",
+		},
+	};
+
+	await ingestExtraction(database, "capture-desktop.json.gz", desktop);
+	await ingestExtraction(database, "capture-mobile.json.gz", mobile);
+
+	const page = await listCaptures(database, "bbc-home", { limit: 10 });
+	assert.deepEqual(
+		page.captures.map(({ captureId, device }) => [captureId, device]),
+		[["capture-desktop", "desktop"]],
+	);
+	assert.equal(await getCapture(database, "bbc-home", "capture-mobile"), null);
+	assert.deepEqual(
+		(await listHistorySites(database)).map(({ device, site }) => [site, device]),
+		[["bbc-home", "desktop"]],
 	);
 
 	sqlite.close();

@@ -9,8 +9,13 @@ export const TIMES_SITES = [
 			device: "desktop" as const,
 			extractor: "times-front-page" as const,
 			minimumElements: 20,
-			version: 3,
+			version: 4,
 		},
 	},
-	{ name: "times-sport", url: "https://www.thetimes.com/sport", category: "sport" as const },
+	{
+		displayName: "The Times Sport",
+		name: "times-sport",
+		url: "https://www.thetimes.com/sport",
+		category: "sport" as const,
+	},
 ];

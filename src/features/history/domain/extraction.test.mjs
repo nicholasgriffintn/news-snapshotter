@@ -10,6 +10,18 @@ test("accepts a bounded versioned extraction document", () => {
 	assert.equal(parsePageExtraction(document), document);
 });
 
+test("accepts separately typed video and audio content", () => {
+	const capturedAt = "2026-07-17T09:00:00.000Z";
+	const document = historyExtraction("capture-media", capturedAt, {
+		elements: [
+			historyStory({ elementKey: "video:one", canonicalUrl: undefined, kind: "video" }),
+			historyStory({ elementKey: "audio:one", canonicalUrl: undefined, kind: "audio" }),
+		],
+	});
+
+	assert.equal(parsePageExtraction(document), document);
+});
+
 test("rejects unsafe URLs, unsupported kinds, and oversized element sets", () => {
 	const capturedAt = "2026-07-17T09:00:00.000Z";
 	const documents = [

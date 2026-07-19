@@ -77,6 +77,7 @@ test("carries publisher cleaning rules into both device profiles", () => {
 	const newsquest = resolveCaptureProfile(site({ brand: "newsquest" }));
 	const reach = resolveCaptureProfile(site({ brand: "reach" }));
 	const sky = resolveCaptureProfile(site({ brand: "sky" }));
+	const telegraph = resolveCaptureProfile(site({ brand: "telegraph" }));
 	const times = resolveCaptureProfile(site({ brand: "times" }));
 	const metro = resolveCaptureProfile(site({ brand: "metro" }));
 	const nytimes = resolveCaptureProfile(site({ brand: "nytimes" }));
@@ -143,11 +144,16 @@ test("carries publisher cleaning rules into both device profiles", () => {
 		sky.deviceConfig.mobile.styles.includes(".ui-news-header-body { height: 50px !important; }"),
 	);
 	assert.ok(times.deviceConfig.desktop.hideSelectors.includes('iframe[id^="sp_message_iframe_"]'));
+	assert.match(telegraph.deviceConfig.desktop.userAgent, /Android/);
+	assert.equal(telegraph.deviceConfig.desktop.userAgentMetadata.mobile, true);
+	assert.equal(telegraph.deviceConfig.desktop.userAgentMetadata.model, "Pixel 9 Pro");
 	assert.ok(
 		nytimes.deviceConfig.desktop.clickActions.some(({ selector }) =>
 			selector.includes("#fides-reject-all-button"),
 		),
 	);
+	assert.equal(nytimes.deviceConfig.desktop.scroll.behavior, "auto");
+	assert.equal(nytimes.deviceConfig.desktop.scroll.minDelayMs, 350);
 	assert.ok(nytimes.deviceConfig.mobile.hideSelectors.includes("#fides-overlay"));
 	assert.ok(
 		metro.deviceConfig.desktop.clickActions.some((action) => {

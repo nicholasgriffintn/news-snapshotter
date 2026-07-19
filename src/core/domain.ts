@@ -18,6 +18,7 @@ export type {
 export type SiteDefinition = {
 	analysis?: SiteAnalysisConfig;
 	displayName?: string;
+	interDeviceDelaySeconds?: number;
 	name: string;
 	provider?: CaptureProviderName;
 	brand: string;
@@ -40,8 +41,10 @@ export type SiteDefinition = {
 
 export type ExtractorName =
 	| "bbc-front-page"
+	| "bloomberg-front-page"
 	| "cnn-front-page"
 	| "dailymail-front-page"
+	| "financialtimes-front-page"
 	| "generic-baseline"
 	| "guardian-front-page"
 	| "nytimes-front-page"

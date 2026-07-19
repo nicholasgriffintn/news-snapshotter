@@ -12,8 +12,9 @@ import type {
 	HistoryChange,
 	HistoryFailure,
 } from "../../core/types.ts";
+import { normaliseHistorySelection, type HistorySelection } from "./domain/history-selection.ts";
 
-function urlState() {
+function urlState(): HistorySelection {
 	const search = new URLSearchParams(window.location.search);
 	return {
 		captureId: search.get("capture") ?? undefined,
@@ -68,13 +69,13 @@ export function useHistoryPage(site: string) {
 				setCaptures(capturePage.captures);
 				setCaptureCursor(capturePage.cursor);
 				setFailures(failurePage);
-				if (!selection.captureId && capturePage.captures[0]) {
-					const captureId = capturePage.captures[0].captureId;
-					const compareId = capturePage.captures[1]?.captureId;
-					const next = { ...selection, captureId, compareId };
-					setSelection(next);
-					writeUrl(next, true);
-				}
+				setSelection((current) => {
+					const next = normaliseHistorySelection(current, capturePage.captures);
+					if (next !== current) {
+						writeUrl(next, true);
+					}
+					return next;
+				});
 			})
 			.catch((reason: Error) => setError(reason.message))
 			.finally(() => setLoading(false));

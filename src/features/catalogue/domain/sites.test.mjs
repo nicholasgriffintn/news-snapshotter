@@ -34,12 +34,17 @@ test("publisher homepages can define reader-facing names", () => {
 	assert.equal(siteNamed("bbc-home").displayName, "BBC");
 	assert.equal(siteNamed("skysports-com").displayName, "Sky Sports");
 	assert.equal(siteNamed("times-com").displayName, "The Times");
-	assert.ok(SITES.every((site) => site.displayName === undefined || site.displayName.trim().length > 0));
+	assert.equal(siteNamed("times-sport").displayName, "The Times Sport");
+	assert.equal(siteNamed("telegraph-sport").displayName, "The Telegraph Sport");
+	assert.equal(siteNamed("independent").displayName, "The Independent");
+	assert.ok(
+		SITES.every((site) => site.displayName === undefined || site.displayName.trim().length > 0),
+	);
 });
 
 test("BBC front pages use the reviewed analysis extractor", () => {
-	assert.equal(siteNamed("bbc-home").analysis?.version, 5);
-	assert.equal(siteNamed("bbc-news").analysis?.version, 5);
+	assert.equal(siteNamed("bbc-home").analysis?.version, 6);
+	assert.equal(siteNamed("bbc-news").analysis?.version, 6);
 });
 
 test("reviewed publisher front pages use their specific extractors", () => {
@@ -50,6 +55,8 @@ test("reviewed publisher front pages use their specific extractors", () => {
 	assert.equal(siteNamed("cnn-com").analysis?.extractor, "cnn-front-page");
 	assert.equal(siteNamed("telegraph-uk").analysis?.extractor, "telegraph-front-page");
 	assert.equal(siteNamed("washingtonpost-com").analysis?.extractor, "washingtonpost-front-page");
+	assert.equal(siteNamed("financialtimes-uk").analysis?.extractor, "financialtimes-front-page");
+	assert.equal(siteNamed("bloomberg-uk").analysis?.extractor, "bloomberg-front-page");
 });
 
 test("every configured analysis uses a registered extractor version", () => {
@@ -74,7 +81,7 @@ test("catalogue capture regions distinguish UK, US, and international editions",
 	assert.equal(siteNamed("bbc-home").captureRegion, "uk");
 	assert.equal(siteNamed("bloomberg-us").captureRegion, "us");
 	assert.equal(siteNamed("bloomberg-uk").captureRegion, "uk");
-	assert.equal(siteNamed("cnn-international").captureRegion, "international");
+	assert.equal(siteNamed("cnn-com").captureRegion, "international");
 	assert.equal(siteNamed("financialtimes-international").captureRegion, "international");
 	assert.equal(siteNamed("nytimes-international").captureRegion, "international");
 	assert.equal(siteNamed("washingtonpost-com").captureRegion, "us");

@@ -99,6 +99,41 @@ test("delays a child runner before starting its first capture", async () => {
 	assert.equal(events.filter((event) => event === "capture").length, 2);
 });
 
+test("spaces device captures when a publisher requires it", async () => {
+	const events = [];
+	const step = {
+		do: async (name, callback) => {
+			events.push(name);
+			return callback();
+		},
+		sleep: async (name, duration) => {
+			events.push(`${name}:${duration}`);
+		},
+	};
+	const capture = async (_env, site, device) => ({
+		device,
+		key: `${site.name}-${device}.png`,
+		name: site.name,
+		status: "success",
+	});
+
+	await runSnapshotWorkflow(
+		{},
+		{
+			triggeredAt,
+			sites: [{ ...sites[0], interDeviceDelaySeconds: 60 }],
+		},
+		step,
+		capture,
+	);
+
+	assert.deepEqual(events, [
+		"screenshot-bbc-home-desktop",
+		"wait between bbc-home devices:60 seconds",
+		"screenshot-bbc-home-mobile",
+	]);
+});
+
 test("does not retry or swallow a durable step failure", async () => {
 	let attempts = 0;
 	const step = {

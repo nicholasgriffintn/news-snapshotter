@@ -59,3 +59,29 @@ test("does not invent a lead when extraction starts below the fold", () => {
 
 	assert.equal(storyBelowFold.prominence, "major");
 });
+
+test("honours an extractor-reviewed lead across changing billboard layouts", () => {
+	const h1 = story("1", 700, 0.15, "h1");
+	const billboard = { ...story("2", 900, 0.25), prominenceHint: "lead" };
+	const stories = determineStoryProminence([h1, billboard], 1_200);
+
+	assert.deepEqual(
+		stories.map(({ prominence }) => prominence),
+		["major", "lead"],
+	);
+});
+
+test("uses visual reading order when an extractor marks a row as lead candidates", () => {
+	const left = { ...story("1", 250, 0.2), prominenceHint: "lead" };
+	const right = {
+		...story("2", 500, 0.2),
+		position: { ...story("2", 500, 0.2).position, left: 600 },
+		prominenceHint: "lead",
+	};
+	const stories = determineStoryProminence([left, right], 1_200);
+
+	assert.deepEqual(
+		stories.map(({ prominence }) => prominence),
+		["lead", "major"],
+	);
+});

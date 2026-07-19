@@ -1,30 +1,18 @@
 import type { Page } from "@cloudflare/puppeteer";
 
 import type { Device, SiteDefinition } from "../../../core/domain.ts";
-import type { ElementPosition, PageElement } from "../../history/domain/extraction.ts";
 import { storyCategory } from "../../history/domain/story-classification.ts";
-import { extractorDefinition, type ExtractorDefinition } from "../domain/extractor-registry.ts";
+import {
+	type CollectedElement,
+	type CollectedPage,
+	normaliseContentElements,
+} from "../domain/content-elements.ts";
+import { extractorDefinition } from "../domain/extractor-registry.ts";
 import { determineStoryProminence } from "../domain/story-prominence.ts";
+import { collectPageContent } from "./page-content-collector.ts";
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const SANITISATION_VERSION = 1;
-
-type CollectedElement = PageElement & {
-	canonicalUrl: string;
-	headline: string;
-	kind: "story";
-	position: ElementPosition;
-	prominence: "lead" | "major" | "minor" | "standard";
-	selectorHint: string;
-};
-
-type CollectedPage = {
-	elements: CollectedElement[];
-	html: string;
-	pageHeight: number;
-	pageWidth: number;
-	warnings: Array<{ code: string; message: string }>;
-};
 
 type ScreenshotAnalysis = import("../../../core/domain.ts").ScreenshotResult["analysis"];
 
@@ -41,40 +29,6 @@ type AnalysisInput = {
 	site: SiteDefinition;
 	triggeredAt: string;
 };
-
-export function normaliseStoryElements(
-	elements: CollectedPage["elements"],
-): CollectedPage["elements"] {
-	const visibleStories = elements.filter((element) => {
-		return (
-			element.selectorHint !== "a" && element.position.height > 0 && element.position.width > 0
-		);
-	});
-	const uniqueStories = new Map<string, CollectedElement>();
-
-	for (const element of visibleStories) {
-		if (!uniqueStories.has(element.canonicalUrl)) {
-			uniqueStories.set(element.canonicalUrl, element);
-		}
-	}
-
-	return [...uniqueStories.values()].map((element, index) => {
-		let summary = element.summary;
-
-		if (summary === element.headline) {
-			summary = undefined;
-		}
-
-		return {
-			...element,
-			position: {
-				...element.position,
-				pageOrder: index + 1,
-			},
-			summary,
-		};
-	});
-}
 
 function safeSegment(value: string): string {
 	return value
@@ -196,167 +150,6 @@ async function storeOptionalImageCrops(
 	return next;
 }
 
-async function collectPage(page: Page, extractor: ExtractorDefinition): Promise<CollectedPage> {
-	const serialised = await page.evaluate((extractorDefinition) => {
-		type DomElement = {
-			attributes: ArrayLike<{
-				name: string;
-			}>;
-			cloneNode: (deep: boolean) => DomElement;
-			closest: (selector: string) => DomElement | null;
-			getBoundingClientRect: () => {
-				height: number;
-				left: number;
-				top: number;
-				width: number;
-			};
-			href: string;
-			getAttribute: (name: string) => string | null;
-			outerHTML: string;
-			querySelector: (selector: string) => DomElement | null;
-			querySelectorAll: (selector: string) => ArrayLike<DomElement>;
-			remove: () => void;
-			removeAttribute: (name: string) => void;
-			scrollHeight: number;
-			scrollWidth: number;
-			tagName: string;
-			textContent: string | null;
-			matches: (selector: string) => boolean;
-		};
-
-		const browser = globalThis as unknown as {
-			document: {
-				baseURI: string;
-				documentElement: DomElement;
-				querySelectorAll: (selector: string) => ArrayLike<DomElement>;
-			};
-			innerHeight: number;
-			scrollY: number;
-		};
-
-		const { document } = browser;
-		const clone = document.documentElement.cloneNode(true);
-		const unsafeNodes = clone.querySelectorAll("script, [data-pashi-cleanup]");
-
-		Array.from(unsafeNodes).forEach((node) => {
-			node.remove();
-		});
-
-		Array.from(clone.querySelectorAll("*")).forEach((node) => {
-			for (const attribute of Array.from(node.attributes)) {
-				const isEventHandler = /^on/i.test(attribute.name);
-				const isSensitiveValue = /^(nonce|value)$/i.test(attribute.name);
-
-				if (isEventHandler || isSensitiveValue) {
-					node.removeAttribute(attribute.name);
-				}
-			}
-		});
-
-		Array.from(clone.querySelectorAll("input, textarea")).forEach((node) => {
-			node.removeAttribute("value");
-
-			if (node.tagName === "TEXTAREA") {
-				node.textContent = "";
-			}
-		});
-
-		const links = Array.from(document.querySelectorAll(extractorDefinition.storyLinkSelector));
-		const elements = links.flatMap((link) => {
-			const card = link.closest(extractorDefinition.cardSelector) ?? link;
-			const heading = card.querySelector(extractorDefinition.headlineSelector);
-
-			if (!heading) {
-				return [];
-			}
-
-			const headingText = heading.textContent ?? link.textContent ?? "";
-			const headline = headingText.trim().replace(/\s+/g, " ");
-
-			if (headline.length < 10) {
-				return [];
-			}
-
-			const canonicalUrl = new URL(link.href, document.baseURI).toString();
-
-			const rect = card.getBoundingClientRect();
-			const image = card.querySelector("img");
-			const summaryElement = card.querySelector(extractorDefinition.summarySelector);
-			const summary = summaryElement?.textContent?.trim().replace(/\s+/g, " ");
-			const headingName = heading.tagName.toLowerCase();
-			const sectionContainer = extractorDefinition.sectionSelector
-				? card.closest(extractorDefinition.sectionSelector)
-				: null;
-			const sectionHeading = sectionContainer?.querySelector("h1, h2");
-			const sectionText = sectionHeading?.textContent?.trim().replace(/\s+/g, " ");
-			const section = sectionText && sectionText !== headline ? sectionText : undefined;
-			const categoryElement = extractorDefinition.categorySelector
-				? card.matches(extractorDefinition.categorySelector)
-					? card
-					: card.querySelector(extractorDefinition.categorySelector)
-				: null;
-			const categoryValue = extractorDefinition.categoryAttribute
-				? categoryElement?.getAttribute(extractorDefinition.categoryAttribute)
-				: categoryElement?.textContent;
-			const categoryText = categoryValue?.trim().replace(/\s+/g, " ");
-			const absoluteTop = rect.top + browser.scrollY;
-			const viewportDepth = absoluteTop / browser.innerHeight;
-
-			let imageDetails: CollectedElement["image"];
-
-			if (image) {
-				const imageSource = image.getAttribute("src");
-				imageDetails = {
-					alt: image.getAttribute("alt") ?? undefined,
-					sourceUrl: imageSource ? new URL(imageSource, document.baseURI).toString() : undefined,
-				};
-			}
-
-			return [
-				{
-					canonicalUrl,
-					category: categoryText || section,
-					elementKey: canonicalUrl,
-					headline,
-					image: imageDetails,
-					kind: "story",
-					position: {
-						height: rect.height,
-						left: rect.left,
-						pageOrder: 0,
-						top: absoluteTop,
-						viewportDepth,
-						width: rect.width,
-					},
-					prominence: "standard",
-					selectorHint: headingName,
-					section,
-					summary: summary || undefined,
-					textFingerprint: headline.toLowerCase(),
-				},
-			];
-		});
-
-		return JSON.stringify({
-			elements,
-			html: `<!doctype html>${clone.outerHTML}`,
-			pageHeight: document.documentElement.scrollHeight,
-			pageWidth: document.documentElement.scrollWidth,
-			warnings:
-				elements.length === 0
-					? [
-							{
-								code: "no-story-matches",
-								message: `No elements matched ${extractorDefinition.name}`,
-							},
-						]
-					: [],
-		});
-	}, extractor);
-
-	return JSON.parse(serialised) as CollectedPage;
-}
-
 export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<AnalysisOutcome> {
 	const { bucket, capturedAt, device, page, profile, screenshotKey, site, triggeredAt } = input;
 
@@ -375,33 +168,39 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 		const versionToUse = site.analysis?.version ? site.analysis.version : 1;
 		const extractor = extractorDefinition(extractorToUse, versionToUse);
 
-		const collected = await collectPage(page, extractor);
-		const stories = determineStoryProminence(
-			normaliseStoryElements(collected.elements),
-			collected.pageWidth,
-		);
-
-		const canonicalElements = stories.map((element) => {
-			const canonicalUrl = canonicaliseUrl(element.canonicalUrl);
-			const category = storyCategory(canonicalUrl, element.category ?? element.section);
+		const collected = await collectPageContent(page, extractor);
+		collected.warnings ??= [];
+		const canonicalElements = collected.elements.map((element) => {
+			const canonicalUrl = element.canonicalUrl ? canonicaliseUrl(element.canonicalUrl) : undefined;
+			const category =
+				element.kind === "story"
+					? storyCategory(canonicalUrl, element.category ?? element.section)
+					: element.category;
 
 			return {
 				...element,
-				canonicalUrl,
+				...(canonicalUrl ? { canonicalUrl } : {}),
 				category,
-				elementKey: canonicalUrl,
+				elementKey: canonicalUrl ?? element.elementKey,
 			};
 		});
+		const content = normaliseContentElements(canonicalElements);
+		const prominentStories = determineStoryProminence(
+			content.filter((element) => element.kind === "story"),
+			collected.pageWidth,
+		);
+		const storiesByKey = new Map(prominentStories.map((story) => [story.elementKey, story]));
 
-		collected.elements = [
-			...new Map(canonicalElements.map((element) => [element.elementKey, element])).values(),
-		];
+		collected.elements = content.map((element) => {
+			const resolved = storiesByKey.get(element.elementKey) ?? element;
+			const { prominenceHint: _prominenceHint, ...storedElement } = resolved;
+			return storedElement;
+		});
 
 		const minimumElements = site?.analysis?.minimumElements ?? 0;
-		if (collected.elements.length < minimumElements) {
-			throw new Error(
-				`Expected at least ${minimumElements} elements, ` + `found ${collected.elements.length}`,
-			);
+		const storyCount = collected.elements.filter(({ kind }) => kind === "story").length;
+		if (storyCount < minimumElements) {
+			throw new Error(`Expected at least ${minimumElements} story elements, found ${storyCount}`);
 		}
 
 		collected.elements = await storeOptionalImageCrops(
