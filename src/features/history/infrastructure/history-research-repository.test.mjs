@@ -123,6 +123,37 @@ test("searches FTS fields and builds image and time-weighted trend timelines", a
 	sqlite.close();
 });
 
+test("filters filler words from materialised coverage patterns", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const insertAggregate = (label, count, weightSeconds) =>
+		database
+			.prepare(
+				`INSERT INTO history_monthly_aggregates (
+					site, month, mode, label, observation_count, weighted_seconds, generated_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			)
+			.bind(
+				"bbc-home",
+				"2026-07",
+				"all-headline-words",
+				label,
+				count,
+				weightSeconds,
+				"2026-08-01",
+			);
+	await database.batch([
+		insertAggregate("and", 12, 43_200),
+		insertAggregate("election", 4, 14_400),
+	]);
+
+	const trends = await historyTrends(database, "bbc-home", "all", "all-headline-words");
+
+	assert.deepEqual(trends.periods[0].values, [
+		{ count: 4, label: "election", weightSeconds: 14_400 },
+	]);
+	sqlite.close();
+});
+
 test("creates and reads a shareable multi-content timeline", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	await ingestExtraction(

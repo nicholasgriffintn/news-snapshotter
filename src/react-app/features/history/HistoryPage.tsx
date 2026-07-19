@@ -35,8 +35,6 @@ export function HistoryPage({ preferredName, site }: { preferredName?: string; s
 				captures={history.captures}
 				hasOlder={Boolean(history.captureCursor)}
 				loadingOlder={history.loadingOlder}
-				newer={history.newer}
-				older={history.older}
 				onLoadOlder={history.loadOlder}
 				onSelect={history.selectCapture}
 				selectedId={history.selection.captureId}

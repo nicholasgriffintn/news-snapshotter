@@ -1818,8 +1818,8 @@ footer a {
 
 .history-scrubber {
 	display: grid;
-	grid-template-columns: auto minmax(13rem, 0.4fr) minmax(18rem, 1fr) auto;
-	gap: 1.5rem;
+	grid-template-columns: minmax(13rem, 0.35fr) minmax(24rem, 1fr);
+	gap: clamp(1.25rem, 3vw, 3rem);
 	align-items: center;
 	padding: 1.25rem;
 	background: rgba(7, 10, 28, 0.9);
@@ -1828,13 +1828,14 @@ footer a {
 }
 
 .history-scrubber__clock,
+.history-scrubber__timeline,
 .history-scrubber__track {
 	display: grid;
 	gap: 0.35rem;
 }
 
 .history-scrubber__clock span,
-.history-scrubber__track label,
+.history-scrubber__heading label,
 .history-evidence header span,
 .history-story-rail > header span {
 	color: var(--yellow);
@@ -1855,22 +1856,38 @@ footer a {
 	font-size: 0.65rem;
 }
 
+.history-scrubber__heading {
+	display: flex;
+	gap: 0.75rem;
+	align-items: baseline;
+	justify-content: space-between;
+}
+
+.history-scrubber__heading > span {
+	color: var(--muted);
+	font-size: 0.62rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.history-scrubber__controls {
+	display: grid;
+	grid-template-columns: auto minmax(10rem, 1fr) auto;
+	gap: 1rem;
+	align-items: center;
+}
+
 .history-scrubber input[type="range"] {
 	width: 100%;
 	accent-color: var(--cyan);
+	direction: ltr;
 }
 
 .history-scrubber__ticks {
 	display: flex;
 	justify-content: space-between;
 	text-transform: uppercase;
-}
-
-.history-scrubber__actions {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	justify-content: flex-end;
 }
 
 .history-scrubber button,
@@ -1885,6 +1902,11 @@ footer a {
 	background: transparent;
 	border: 2px solid var(--cyan);
 	cursor: pointer;
+}
+
+.history-scrubber__load {
+	justify-self: end;
+	margin-top: 0.35rem;
 }
 
 .history-scrubber button:hover:not(:disabled),
@@ -2998,10 +3020,12 @@ footer a {
 
 	.history-scrubber {
 		grid-template-columns: 1fr;
+		gap: 1rem;
 	}
 
-	.history-scrubber__actions {
-		justify-content: flex-start;
+	.history-scrubber__clock {
+		padding-bottom: 1rem;
+		border-bottom: 1px solid rgba(255, 247, 215, 0.14);
 	}
 
 	.history-evidence__screenshot {
@@ -3190,6 +3214,37 @@ footer a {
 
 	.history-heading h1 {
 		font-size: clamp(3.2rem, 16vw, 5.5rem);
+	}
+
+	.history-scrubber {
+		padding: 1rem;
+		box-shadow: 5px 5px 0 var(--pink);
+	}
+
+	.history-scrubber__heading {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.history-scrubber__controls {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.65rem;
+	}
+
+	.history-scrubber__controls > button {
+		width: 100%;
+	}
+
+	.history-scrubber__track {
+		grid-row: 1;
+		grid-column: 1 / -1;
+		margin-bottom: 0.35rem;
+	}
+
+	.history-scrubber__load {
+		width: 100%;
+		justify-self: stretch;
 	}
 
 	.history-nav {

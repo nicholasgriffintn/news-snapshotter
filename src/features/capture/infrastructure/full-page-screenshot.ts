@@ -47,9 +47,30 @@ export async function takeFullScreenshot(page: Page, config: DeviceCaptureConfig
 		return page.screenshot({ ...format, fullPage: true });
 	}
 
-	return page.screenshot({
-		...format,
-		captureBeyondViewport: true,
-		clip: { height: dimensions.height, scale, width: dimensions.width, x: 0, y: 0 },
+	const originalViewport = {
+		...config.viewport,
+		deviceScaleFactor: config.deviceScaleFactor,
+		hasTouch: config.hasTouch,
+		isMobile: config.isMobile,
+	};
+
+	await page.setViewport({
+		...originalViewport,
+		deviceScaleFactor: dimensions.deviceScaleFactor * scale,
+		height: Math.ceil(dimensions.height),
 	});
+
+	try {
+		await page.evaluate(() => {
+			const browser = globalThis as unknown as {
+				requestAnimationFrame: (callback: () => void) => number;
+			};
+			return new Promise<void>((resolve) => {
+				browser.requestAnimationFrame(() => browser.requestAnimationFrame(resolve));
+			});
+		});
+		return await page.screenshot({ ...format, fullPage: true });
+	} finally {
+		await page.setViewport(originalViewport);
+	}
 }

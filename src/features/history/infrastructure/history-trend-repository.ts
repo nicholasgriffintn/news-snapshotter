@@ -1,5 +1,5 @@
 import { groupBy } from "../../../core/collections.ts";
-import { weightedWordFrequency } from "../domain/word-frequency.ts";
+import { headlineWords, weightedWordFrequency } from "../domain/word-frequency.ts";
 
 type TrendRow = {
 	capture_id: string;
@@ -45,13 +45,17 @@ export async function historyTrends(
 			.bind(site, mode)
 			.all<{ count: number; label: string; period: string; weightSeconds: number }>();
 		if (materialised.results.length > 0) {
+			const rows =
+				mode === "category"
+					? materialised.results
+					: materialised.results.filter(({ label }) => headlineWords(label).length === 1);
 			return {
 				materialised: true,
 				mode,
 				period,
-				periods: [...groupBy(materialised.results, (row) => row.period)].map(([month, rows]) => ({
+				periods: [...groupBy(rows, (row) => row.period)].map(([month, monthRows]) => ({
 					period: month,
-					values: rows.map(({ count, label, weightSeconds }) => ({
+					values: monthRows.map(({ count, label, weightSeconds }) => ({
 						count,
 						label,
 						weightSeconds,

@@ -11,6 +11,15 @@ test("normalises headline words and removes common noise", () => {
 	]);
 });
 
+test("removes common grammatical filler from coverage patterns", () => {
+	assert.deepEqual(
+		headlineWords(
+			"And how are you? It’s our new quiz, but I'm ready. His friend, who did ask why, should only play one.",
+		),
+		["quiz", "ready", "friend", "ask", "play"],
+	);
+});
+
 test("weights words by how long a capture remained current", () => {
 	const words = weightedWordFrequency([
 		{ headline: "Election result live", weightSeconds: 3_600 },

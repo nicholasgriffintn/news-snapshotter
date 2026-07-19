@@ -139,10 +139,6 @@ export function useHistoryPage(site: string) {
 		return () => controller.abort();
 	}, [selection.captureId, site]);
 
-	const selectedIndex = captures.findIndex(({ captureId }) => captureId === selection.captureId);
-	const newer = selectedIndex > 0 ? captures[selectedIndex - 1] : undefined;
-	const older = selectedIndex >= 0 ? captures[selectedIndex + 1] : undefined;
-
 	const selectCapture = useCallback(
 		(captureId: string) => {
 			const index = captures.findIndex((candidate) => candidate.captureId === captureId);
@@ -198,8 +194,6 @@ export function useHistoryPage(site: string) {
 		loadOlder,
 		loading: loadingCaptures || loadingCapture,
 		loadingOlder,
-		newer,
-		older,
 		selectCapture,
 		selection,
 		toggleOverlay,
