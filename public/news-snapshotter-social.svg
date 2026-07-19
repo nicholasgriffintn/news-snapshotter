@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="News Snapshotter — a Pashi project">
+	<defs>
+		<pattern id="grid" width="42" height="42" patternUnits="userSpaceOnUse">
+			<path d="M42 0H0v42" fill="none" stroke="#fff7d7" stroke-opacity=".08" />
+		</pattern>
+		<radialGradient id="glow" cx="80%" cy="18%" r="65%">
+			<stop stop-color="#ff2f78" stop-opacity=".35" />
+			<stop offset="1" stop-color="#0d1024" stop-opacity="0" />
+		</radialGradient>
+	</defs>
+	<rect width="1200" height="630" fill="#0d1024" />
+	<rect width="1200" height="630" fill="url(#grid)" />
+	<rect width="1200" height="630" fill="url(#glow)" />
+	<path d="M58 157V58h99M1043 58h99v99M1142 473v99h-99M157 572H58v-99" fill="none" stroke="#25ffe6" stroke-width="14" />
+	<g transform="translate(92 164) scale(2.05)">
+		<path d="M47 44h76v88H47z" fill="#ff2f78" />
+		<path d="M37 34h76v88H37z" fill="#fff7d7" stroke="#0d1024" stroke-width="5" />
+		<path d="M89 34h24v24H89z" fill="#25ffe6" />
+		<path d="m89 34 24 24H89Z" fill="#ffd14c" stroke="#0d1024" stroke-linejoin="bevel" stroke-width="4" />
+		<path d="M49 51h27v10H49z" fill="#ff2f78" />
+		<path d="M49 72h47M49 84h47M49 96h29" fill="none" stroke="#0d1024" stroke-width="7" />
+		<circle cx="99" cy="101" r="20" fill="#ffd14c" stroke="#0d1024" stroke-width="5" />
+		<path d="M99 90v22M88 101h22" stroke="#0d1024" stroke-width="5" />
+	</g>
+	<text x="405" y="264" fill="#fff7d7" font-family="Impact, Haettenschweiler, 'Arial Black', sans-serif" font-size="108" letter-spacing="3">NEWS</text>
+	<text x="405" y="367" fill="#ffd14c" font-family="Impact, Haettenschweiler, 'Arial Black', sans-serif" font-size="80" letter-spacing="3">SNAPSHOTTER</text>
+	<path d="M410 410h635" stroke="#ff2f78" stroke-width="13" />
+	<text x="410" y="472" fill="#25ffe6" font-family="'Trebuchet MS', 'Gill Sans', sans-serif" font-size="27" font-weight="700" letter-spacing="7">A PASHI PROJECT</text>
+</svg>

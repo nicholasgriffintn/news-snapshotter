@@ -10,14 +10,6 @@ export const DEFAULT_ARCHIVE_PERIOD: ArchivePeriodFilter = {
 	period: "last-3-hours",
 };
 
-function isSameLocalDay(left: Date, right: Date): boolean {
-	return (
-		left.getFullYear() === right.getFullYear() &&
-		left.getMonth() === right.getMonth() &&
-		left.getDate() === right.getDate()
-	);
-}
-
 function localDayBounds(day: string): { end: Date; start: Date } | undefined {
 	if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
 		return undefined;

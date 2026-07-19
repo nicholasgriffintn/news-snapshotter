@@ -14,7 +14,7 @@ function request(path, body) {
 	});
 }
 
-test("reindex scans bounded R2 pages and queues only history artefacts", async () => {
+test("reindex scans bounded R2 pages and queues only desktop history artefacts", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	const batches = [];
 	const response = await handleHistoryAdminRequest(
@@ -31,12 +31,28 @@ test("reindex scans bounded R2 pages and queues only history artefacts", async (
 						cursor: "next-r2-page",
 						objects: [
 							{
-								customMetadata: { site: "bbc-home" },
-								key: "brand=bbc/site=bbc-home/a.extraction.v1.json.gz",
+								customMetadata: { device: "desktop", site: "bbc-home" },
+								key: "brand=bbc/site=bbc-home/device=desktop/a.extraction.v1.json.gz",
 							},
 							{
 								customMetadata: { site: "bbc-home" },
-								key: "brand=bbc/site=bbc-home/b.analysis-failure.json",
+								key: "brand=bbc/site=bbc-home/device=desktop/b.analysis-failure.json",
+							},
+							{
+								customMetadata: { device: "mobile", site: "bbc-home" },
+								key: "brand=bbc/site=bbc-home/device=mobile/c.extraction.v1.json.gz",
+							},
+							{
+								customMetadata: { site: "bbc-home" },
+								key: "brand=bbc/site=bbc-home/device=mobile/d.analysis-failure.json",
+							},
+							{
+								customMetadata: { device: "desktop", site: "bbc-home" },
+								key: "brand=bbc/site=bbc-home/device=mobile/e.extraction.v1.json.gz",
+							},
+							{
+								customMetadata: { site: "bbc-home" },
+								key: "legacy.extraction.v1.json.gz",
 							},
 							{ customMetadata: { site: "bbc-home" }, key: "other.html.gz" },
 						],
@@ -56,17 +72,19 @@ test("reindex scans bounded R2 pages and queues only history artefacts", async (
 		enqueued: 2,
 		hasMore: true,
 		reset: true,
-		scanned: 3,
+		scanned: 7,
 	});
 	assert.deepEqual(
 		batches.flat().map(({ body: message }) => message),
 		[
 			{
-				extractionKey: "brand=bbc/site=bbc-home/a.extraction.v1.json.gz",
+				extractionKey:
+					"brand=bbc/site=bbc-home/device=desktop/a.extraction.v1.json.gz",
 				kind: "extraction",
 			},
 			{
-				failureKey: "brand=bbc/site=bbc-home/b.analysis-failure.json",
+				failureKey:
+					"brand=bbc/site=bbc-home/device=desktop/b.analysis-failure.json",
 				kind: "failure",
 			},
 		],

@@ -115,6 +115,19 @@ function isSelected(object: R2Object, options: ArchiveIndexOptions): boolean {
 }
 
 function messageForObject(object: R2Object): HistoryIndexMessage | undefined {
+	const metadataDevice = object.customMetadata?.device;
+	const keyDevice = /\/device=(desktop|mobile)\//.exec(object.key)?.[1];
+	if (
+		(metadataDevice === "desktop" || metadataDevice === "mobile") &&
+		keyDevice &&
+		metadataDevice !== keyDevice
+	) {
+		return undefined;
+	}
+	if ((metadataDevice ?? keyDevice) !== "desktop") {
+		return undefined;
+	}
+
 	if (/\.extraction\.v\d+\.json\.gz$/.test(object.key)) {
 		return { extractionKey: object.key, kind: "extraction" };
 	}

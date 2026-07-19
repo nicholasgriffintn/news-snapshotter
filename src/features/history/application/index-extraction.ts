@@ -107,6 +107,16 @@ async function recordIndexingFailure(
 		.run();
 }
 
+async function clearResolvedIndexingFailure(
+	database: D1Database,
+	artefactKey: string,
+): Promise<void> {
+	await database
+		.prepare("DELETE FROM extraction_failures WHERE stage = 'indexing' AND extraction_key = ?")
+		.bind(artefactKey)
+		.run();
+}
+
 type AnalysisFailure = {
 	captureId: string;
 	capturedAt: string;
@@ -179,6 +189,7 @@ export async function indexExtractionArtefact(
 				message.failureKey,
 				parseAnalysisFailure(rawFailure.value),
 			);
+			await clearResolvedIndexingFailure(env.HISTORY_DB, message.failureKey);
 			return { changeCount: 0 };
 		}
 		if (!message.extractionKey.endsWith(".json.gz")) {
@@ -193,10 +204,12 @@ export async function indexExtractionArtefact(
 			throw new Error("Queue message does not match extraction capture identity");
 		}
 
-		return await ingestExtraction(env.HISTORY_DB, message.extractionKey, document, {
+		const result = await ingestExtraction(env.HISTORY_DB, message.extractionKey, document, {
 			compressedBytes: rawDocument.compressedBytes,
 			decompressedBytes: rawDocument.decompressedBytes,
 		});
+		await clearResolvedIndexingFailure(env.HISTORY_DB, message.extractionKey);
+		return result;
 	} catch (error) {
 		try {
 			await recordIndexingFailure(env.HISTORY_DB, message, error);

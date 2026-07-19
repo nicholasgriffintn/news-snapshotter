@@ -28,10 +28,18 @@ async function environment(document, compress = true) {
 test("indexes a compressed extraction artefact from private R2", async () => {
 	const document = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z");
 	const { env, sqlite } = await environment(document);
+	const extractionKey = "capture-a.extraction.v1.json.gz";
+	sqlite
+		.prepare(
+			`INSERT INTO extraction_failures (
+				failure_key, extraction_key, device, stage, message, failed_at
+			) VALUES (?, ?, 'desktop', 'indexing', 'Temporary D1 failure', ?)`,
+		)
+		.run(`indexing:${extractionKey}`, extractionKey, "2026-07-17T09:01:00.000Z");
 
 	const result = await indexExtractionArtefact(env, {
 		captureId: "capture-a",
-		extractionKey: "capture-a.extraction.v1.json.gz",
+		extractionKey,
 		kind: "extraction",
 		site: "bbc-home",
 	});
@@ -39,6 +47,7 @@ test("indexes a compressed extraction artefact from private R2", async () => {
 	assert.deepEqual(result, { changeCount: 0 });
 	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM analysed_captures").get().count, 1);
 	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM page_elements").get().count, 1);
+	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM extraction_failures").get().count, 0);
 	const metrics = sqlite
 		.prepare(
 			"SELECT compressed_bytes AS compressedBytes, element_count AS elementCount FROM history_ingestion_metrics",

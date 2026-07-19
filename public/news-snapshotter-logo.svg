@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" role="img" aria-label="News Snapshotter">
+	<rect x="10" y="10" width="140" height="140" fill="#11142e" stroke="#fff7d7" stroke-width="4" />
+	<path d="M22 51V22h29M109 22h29v29M138 109v29h-29M51 138H22v-29" fill="none" stroke="#25ffe6" stroke-linecap="square" stroke-width="8" />
+	<path d="M47 44h76v88H47z" fill="#ff2f78" />
+	<path d="M37 34h76v88H37z" fill="#fff7d7" stroke="#0d1024" stroke-width="5" />
+	<path d="M89 34h24v24H89z" fill="#25ffe6" />
+	<path d="m89 34 24 24H89Z" fill="#ffd14c" stroke="#0d1024" stroke-linejoin="bevel" stroke-width="4" />
+	<path d="M49 51h27v10H49z" fill="#ff2f78" />
+	<path d="M49 72h47M49 84h47M49 96h29" fill="none" stroke="#0d1024" stroke-width="7" />
+	<circle cx="99" cy="101" r="20" fill="#ffd14c" stroke="#0d1024" stroke-width="5" />
+	<path d="M99 90v22M88 101h22" stroke="#0d1024" stroke-width="5" />
+	<text x="178" y="67" fill="#fff7d7" font-family="Impact, Haettenschweiler, 'Arial Black', sans-serif" font-size="51" letter-spacing="2">NEWS</text>
+	<text x="178" y="123" fill="#ffd14c" font-family="Impact, Haettenschweiler, 'Arial Black', sans-serif" font-size="51" letter-spacing="2">SNAPSHOTTER</text>
+	<path d="M177 137h473" stroke="#ff2f78" stroke-width="7" />
+</svg>

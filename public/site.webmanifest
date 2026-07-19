@@ -1,0 +1,21 @@
+{
+	"name": "News Snapshotter",
+	"short_name": "Snapshotter",
+	"description": "Browse full-page records of the news, layouts and moments shaping the day.",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#0d1024",
+	"theme_color": "#0d1024",
+	"icons": [
+		{
+			"src": "/news-snapshotter-icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "/news-snapshotter-icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		}
+	]
+}

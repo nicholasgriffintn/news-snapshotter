@@ -3,7 +3,9 @@ import { useState } from "react";
 import { resolveAppPage } from "./core/app-route.ts";
 import { AdminPage } from "./features/admin/AdminPage";
 import { SnapshotGallery } from "./features/archive/SnapshotGallery";
+import { PageMetadata } from "./features/branding/PageMetadata";
 import { ContactModal } from "./features/contact/ContactModal";
+import { SiteHeader } from "./features/branding/SiteHeader";
 import { Disclosure, DisclosureModal } from "./features/legal/Disclosure";
 import { LegalPage } from "./features/legal/LegalPage";
 import { HistoryRouter } from "./features/history/HistoryRouter";
@@ -17,20 +19,8 @@ export default function App() {
 
 	return (
 		<main className="shell">
-			<header className="masthead">
-				<a className="wordmark" href="/">
-					<img alt="" aria-hidden="true" src="/pashi-logo.svg" />
-					<span>Pashi</span>
-				</a>
-				<nav aria-label="Main" className="main-nav">
-					<a className={page === "archive" ? "active" : ""} href="/" aria-current={page === "archive" ? "page" : undefined}>
-						Archive
-					</a>
-					<a className={page === "history" ? "active" : ""} href="/history" aria-current={page === "history" ? "page" : undefined}>
-						History
-					</a>
-				</nav>
-			</header>
+			<PageMetadata historySite={historySite} page={page} />
+			<SiteHeader page={page} />
 
 			{page === "archive" ? (
 				<section className="hero">
