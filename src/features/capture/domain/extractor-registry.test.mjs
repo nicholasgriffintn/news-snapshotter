@@ -158,6 +158,25 @@ test("extractor versions are explicit", () => {
 			.rules.filter(({ kind }) => kind === "story" || kind === "video")
 			.every(({ sectionHeadingSelector }) => sectionHeadingSelector === undefined),
 	);
+	const googleNewsExtractor = extractorDefinition("google-news-front-page", 2);
+	const googleNews = googleNewsExtractor.rules[0];
+	assert.match(googleNews.cardSelector, /UwIKyb/);
+	assert.match(googleNews.candidateSelector, /gPFEn/);
+	assert.equal(googleNews.categorySelector, undefined);
+	assert.ok(
+		googleNewsExtractor.rules.some(({ candidateSelector }) => /JtKRv/.test(candidateSelector)),
+	);
+	const hackerNews = extractorDefinition("hackernews-front-page", 2);
+	assert.match(hackerNews.rules[0].candidateSelector, /titleline/);
+	assert.equal(hackerNews.rules[0].categorySelector, undefined);
+	assert.ok(
+		hackerNews.rules.some(
+			({ candidateSelector, kind }) => kind === "navigation" && /hnmain/.test(candidateSelector),
+		),
+	);
+	const yahooNews = extractorDefinition("yahoo-news-front-page", 1).rules[0];
+	assert.match(yahooNews.candidateSelector, /data-ylk/);
+	assert.match(yahooNews.cardSelector, /cls-card-story/);
 	const newPublisherExtractors = [
 		"apnews-front-page",
 		"channel4-front-page",
@@ -168,6 +187,7 @@ test("extractor versions are explicit", () => {
 		"nbcnews-front-page",
 		"standard-front-page",
 		"usatoday-front-page",
+		"yahoo-news-front-page",
 	];
 	for (const name of newPublisherExtractors) {
 		assert.ok(
@@ -175,6 +195,8 @@ test("extractor versions are explicit", () => {
 			name,
 		);
 	}
+	assert.ok(hackerNews.rules.some(({ kind }) => kind === "story"));
+	assert.ok(googleNewsExtractor.rules.some(({ kind }) => kind === "story"));
 	for (const name of [
 		"apnews-front-page",
 		"channel4-front-page",
@@ -209,7 +231,9 @@ test("every extractor includes semantic elements from the rest of the page", () 
 		["financialtimes-front-page", 2],
 		["forbes-front-page", 1],
 		["foxnews-front-page", 1],
+		["google-news-front-page", 2],
 		["guardian-front-page", 8],
+		["hackernews-front-page", 2],
 		["inews-front-page", 1],
 		["nbcnews-front-page", 1],
 		["nytimes-front-page", 5],
@@ -218,6 +242,7 @@ test("every extractor includes semantic elements from the rest of the page", () 
 		["times-front-page", 5],
 		["usatoday-front-page", 1],
 		["washingtonpost-front-page", 4],
+		["yahoo-news-front-page", 1],
 	];
 
 	for (const [name, version] of extractors) {

@@ -243,11 +243,15 @@ export async function fetchHistoryTrends(
 export async function fetchElementHistory(
 	site: string,
 	elementKey: string,
-	options?: RequestOptions,
+	options?: RequestOptions & { cursor?: string },
 ): Promise<ElementHistory> {
+	const search = new URLSearchParams({ limit: "100" });
+	if (options?.cursor) {
+		search.set("cursor", options.cursor);
+	}
 	const response = await fetch(
-		`/api/history/${encodeURIComponent(site)}/content/${encodeURIComponent(elementKey)}?limit=100`,
-		options,
+		`/api/history/${encodeURIComponent(site)}/content/${encodeURIComponent(elementKey)}?${search}`,
+		options?.signal ? { signal: options.signal } : undefined,
 	);
 	return readJson(response);
 }

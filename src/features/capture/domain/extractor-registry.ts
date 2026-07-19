@@ -326,6 +326,26 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		],
 		version: 1,
 	},
+	"google-news-front-page": {
+		name: "google-news-front-page",
+		rules: [
+			{
+				cardSelector: ".UwIKyb",
+				candidateSelector: "main .UwIKyb a.gPFEn[href]",
+				headlineSelector: "a.gPFEn",
+				kind: "story",
+				sectionHeadingSelector: "main h2, main h3.aqvwYd",
+			},
+			{
+				cardSelector: "div:has(> a.JtKRv[href])",
+				candidateSelector: "main a.JtKRv[href]",
+				headlineSelector: "a.JtKRv",
+				kind: "story",
+				sectionHeadingSelector: "main h2, main h3.aqvwYd",
+			},
+		],
+		version: 2,
+	},
 	"guardian-front-page": {
 		name: "guardian-front-page",
 		rules: [
@@ -340,6 +360,27 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 			},
 		],
 		version: 8,
+	},
+	"hackernews-front-page": {
+		name: "hackernews-front-page",
+		rules: [
+			{
+				cardSelector: "tr.athing",
+				candidateSelector: "tr.athing .titleline > a[href]",
+				headlineSelector: ".titleline > a",
+				kind: "story",
+			},
+			{
+				cardSelector: "a[href]",
+				candidateSelector: "#hnmain > tbody > tr:first-child table a[href]",
+				fixedCategory: "Navigation",
+				headlineSelector: "a[href]",
+				kind: "navigation",
+				minimumHeadlineLength: 1,
+				scope: "page",
+			},
+		],
+		version: 2,
 	},
 	"inews-front-page": {
 		name: "inews-front-page",
@@ -521,6 +562,20 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 			},
 		],
 		version: 4,
+	},
+	"yahoo-news-front-page": {
+		name: "yahoo-news-front-page",
+		rules: [
+			{
+				cardSelector:
+					"li.cls-card-story, article, div:has(> h2 > a[data-ylk*='elm:hdln']), div:has(> h3 > a[data-ylk*='elm:hdln'])",
+				candidateSelector: "main a[data-ylk*='elm:hdln'][href]",
+				headlineSelector: "h2, h3",
+				kind: "story",
+				summarySelector: "p",
+			},
+		],
+		version: 1,
 	},
 };
 

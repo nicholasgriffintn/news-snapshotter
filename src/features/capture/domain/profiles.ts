@@ -251,8 +251,7 @@ const PROFILES: Record<string, CaptureProfile> = {
 		deviceConfig: forBothDevices({
 			clickActions: [
 				{
-					selector:
-						'div[role="dialog"][aria-modal="true"] > a[role="button"][href="#"]',
+					selector: 'div[role="dialog"][aria-modal="true"] > a[role="button"][href="#"]',
 					timeoutMs: 5_000,
 					waitAfterMs: 1_000,
 				},
@@ -554,6 +553,26 @@ const PROFILES: Record<string, CaptureProfile> = {
 	forbes: {
 		deviceConfig: forBothDevices({
 			hideSelectors: ["#ketch-banner", "#ketch-consent-overlay"],
+		}),
+	},
+	reuters: {
+		devices: ["mobile"],
+		deviceConfig: forBothDevices({
+			blockSelectors: [{ selector: "#cmsg", reason: "datadome-challenge" }],
+		}),
+		failureIndicators: [
+			{ reason: "datadome-challenge", text: "please enable js and disable any ad blocker" },
+		],
+	},
+	"yahoo-news": {
+		deviceConfig: forBothDevices({
+			clickActions: [
+				{
+					selector: "button[name='agree'], button[value='agree']",
+					timeoutMs: 5_000,
+					waitAfterMs: 1_000,
+				},
+			],
 		}),
 	},
 	independent: {

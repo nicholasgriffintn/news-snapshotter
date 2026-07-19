@@ -4,10 +4,35 @@ import test from "node:test";
 import {
 	fetchAvailableHistorySites,
 	fetchCatalogue,
+	fetchElementHistory,
 	fetchHistoryCapture,
 	fetchHistorySites,
 	fetchSnapshots,
 } from "./api-client.ts";
+
+test("continues content history from the supplied cursor", async () => {
+	const originalFetch = globalThis.fetch;
+	const requests = [];
+	globalThis.fetch = async (input) => {
+		requests.push(String(input));
+		return Response.json({ cursor: "following-page", observations: [] });
+	};
+
+	try {
+		assert.deepEqual(
+			await fetchElementHistory("bbc-home", "https://www.bbc.co.uk/news/story", {
+				cursor: "older/capture",
+			}),
+			{ cursor: "following-page", observations: [] },
+		);
+	} finally {
+		globalThis.fetch = originalFetch;
+	}
+
+	assert.deepEqual(requests, [
+		"/api/history/bbc-home/content/https%3A%2F%2Fwww.bbc.co.uk%2Fnews%2Fstory?limit=100&cursor=older%2Fcapture",
+	]);
+});
 
 test("caller cancellation does not abort or duplicate a shared public GET", async () => {
 	const originalFetch = globalThis.fetch;

@@ -184,6 +184,24 @@ test("carries publisher cleaning rules into both device profiles", () => {
 	);
 });
 
+test("detects Reuters blocking and handles Yahoo consent on both devices", () => {
+	const reuters = resolveCaptureProfile(site({ brand: "reuters" }));
+	const yahoo = resolveCaptureProfile(site({ brand: "yahoo-news" }));
+
+	assert.deepEqual(reuters.devices, ["mobile"]);
+	for (const device of ["desktop", "mobile"]) {
+		assert.ok(
+			reuters.deviceConfig[device].blockSelectors.some(({ selector }) => selector === "#cmsg"),
+		);
+		assert.ok(
+			yahoo.deviceConfig[device].clickActions.some(({ selector }) =>
+				selector.includes("button[name='agree']"),
+			),
+		);
+	}
+	assert.ok(reuters.failureIndicators.some(({ reason }) => reason === "datadome-challenge"));
+});
+
 test("falls back to defaults for an unknown profile", () => {
 	const profile = resolveCaptureProfile(site({ profile: "missing" }));
 

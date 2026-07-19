@@ -14,7 +14,9 @@ import { FINANCIAL_TIMES_SITES } from "./sites/financial-times.ts";
 import { FORBES_SITES } from "./sites/forbes.ts";
 import { FOX_NEWS_SITES } from "./sites/fox-news.ts";
 import { GIVEMESPORT_SITES } from "./sites/givemesport.ts";
+import { GOOGLE_NEWS_SITES } from "./sites/google-news.ts";
 import { GUARDIAN_SITES } from "./sites/guardian.ts";
+import { HACKER_NEWS_SITES } from "./sites/hacker-news.ts";
 import { INDEPENDENT_SITES } from "./sites/independent.ts";
 import { INEWS_SITES } from "./sites/inews.ts";
 import { ITV_LOCAL_SITES } from "./sites/itv-local.ts";
@@ -25,6 +27,7 @@ import { NEW_YORK_TIMES_SITES } from "./sites/new-york-times.ts";
 import { NEWSQUEST_SITES } from "./sites/newsquest.ts";
 import { OTHER_SITES } from "./sites/other.ts";
 import { REACH_SITES } from "./sites/reach.ts";
+import { REUTERS_SITES } from "./sites/reuters.ts";
 import { SKY_SPORTS_SITES } from "./sites/sky-sports.ts";
 import { SKY_SITES } from "./sites/sky.ts";
 import { STANDARD_SITES } from "./sites/standard.ts";
@@ -33,6 +36,7 @@ import { TELEGRAPH_SITES } from "./sites/telegraph.ts";
 import { TIMES_SITES } from "./sites/times.ts";
 import { USA_TODAY_SITES } from "./sites/usa-today.ts";
 import { WASHINGTON_POST_SITES } from "./sites/washington-post.ts";
+import { YAHOO_NEWS_SITES } from "./sites/yahoo-news.ts";
 
 export const SITES = [
 	...withBrand("apnews", AP_NEWS_SITES),
@@ -58,6 +62,8 @@ export const SITES = [
 	...withBrand("express", EXPRESS_SITES),
 	...withBrand("forbes", FORBES_SITES),
 	...withBrand("foxnews", FOX_NEWS_SITES),
+	...withBrand("google-news", GOOGLE_NEWS_SITES),
+	...withBrand("hackernews", HACKER_NEWS_SITES),
 	...withBrand("independent", INDEPENDENT_SITES),
 	...withBrand("inews", INEWS_SITES),
 	...withBrand("nbcnews", NBC_NEWS_SITES),
@@ -67,6 +73,8 @@ export const SITES = [
 	...withBrand("belfasttelegraph", BELFAST_TELEGRAPH_SITES),
 	...withBrand("reach", REACH_SITES, "local"),
 	...withBrand("reach", BELFAST_LIVE_SITES, "local"),
+	...withBrand("reuters", REUTERS_SITES),
 	...withBrand("newsquest", NEWSQUEST_SITES, "local"),
 	...withIndividualBrands(OTHER_SITES, "local"),
+	...withBrand("yahoo-news", YAHOO_NEWS_SITES),
 ];

@@ -1884,7 +1884,8 @@ footer a {
 }
 
 .history-scrubber button,
-.history-evidence header button {
+.history-evidence header button,
+.story-history__pagination button {
 	min-height: 2.6rem;
 	padding: 0.55rem 0.75rem;
 	color: var(--cyan);
@@ -1904,12 +1905,14 @@ footer a {
 
 .history-scrubber button:hover:not(:disabled),
 .history-evidence header button:hover,
-.history-evidence header button[aria-pressed="true"] {
+.history-evidence header button[aria-pressed="true"],
+.story-history__pagination button:hover:not(:disabled) {
 	color: var(--ink);
 	background: var(--cyan);
 }
 
-.history-scrubber button:disabled {
+.history-scrubber button:disabled,
+.story-history__pagination button:disabled {
 	opacity: 0.35;
 	cursor: not-allowed;
 }
@@ -2979,6 +2982,23 @@ footer a {
 	line-height: 1.5;
 }
 
+.story-history__pagination {
+	display: flex;
+	gap: 1rem;
+	align-items: center;
+	justify-content: space-between;
+	padding-top: 1rem;
+	border-top: 1px solid rgba(255, 247, 215, 0.18);
+}
+
+.story-history__pagination span {
+	color: var(--muted);
+	font-size: 0.68rem;
+	font-weight: 800;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+}
+
 .saved-timeline li {
 	display: grid;
 	grid-template-columns: 10rem 1fr;
@@ -3378,6 +3398,11 @@ footer a {
 	.story-observations li {
 		grid-template-columns: 1fr;
 		gap: 0.8rem;
+	}
+
+	.story-history__pagination {
+		align-items: stretch;
+		flex-direction: column;
 	}
 }
 

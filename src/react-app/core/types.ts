@@ -1,12 +1,4 @@
-import type {
-	PageElementKind,
-	CaptureFailureRecord,
-	CapturePriority,
-	CaptureProviderName,
-	CaptureRegion,
-	CatalogueSite,
-	Snapshot,
-} from "../../core/contracts.ts";
+import type { CaptureFailureRecord, PageElementKind, Snapshot } from "../../core/contracts.ts";
 
 export type {
 	PageElementKind,

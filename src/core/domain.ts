@@ -51,7 +51,9 @@ export type ExtractorName =
 	| "forbes-front-page"
 	| "foxnews-front-page"
 	| "generic-baseline"
+	| "google-news-front-page"
 	| "guardian-front-page"
+	| "hackernews-front-page"
 	| "inews-front-page"
 	| "nbcnews-front-page"
 	| "nytimes-front-page"
@@ -59,7 +61,8 @@ export type ExtractorName =
 	| "telegraph-front-page"
 	| "times-front-page"
 	| "usatoday-front-page"
-	| "washingtonpost-front-page";
+	| "washingtonpost-front-page"
+	| "yahoo-news-front-page";
 
 export type SiteAnalysisConfig = {
 	device: "desktop";

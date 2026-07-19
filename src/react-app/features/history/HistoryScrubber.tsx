@@ -8,6 +8,7 @@ export function HistoryScrubber({
 	loadingOlder,
 	onLoadOlder,
 	onSelect,
+	selectedCapturedAt,
 	selectedId,
 }: {
 	captures: HistoryCaptureSummary[];
@@ -15,20 +16,30 @@ export function HistoryScrubber({
 	loadingOlder: boolean;
 	onLoadOlder: () => void;
 	onSelect: (captureId: string) => void;
+	selectedCapturedAt?: string;
 	selectedId?: string;
 }) {
 	const { newer, older, selected, selectedIndex } = captureTimelinePosition(captures, selectedId);
-	const selectedTime = selected ? dateTimeLabel(selected.capturedAt) : undefined;
+	const selectedTime = selected
+		? dateTimeLabel(selected.capturedAt)
+		: selectedCapturedAt
+			? dateTimeLabel(selectedCapturedAt)
+			: undefined;
+	const outsideLoadedTimeline = Boolean(selectedId && selectedIndex < 0);
 
 	return (
 		<section aria-label="Capture timeline" className="history-scrubber">
 			<div className="history-scrubber__clock">
 				<span>Selected capture</span>
-				<strong>{selectedTime ?? "No capture selected"}</strong>
+				<strong>
+					{selectedTime ?? (selectedId ? "Loading selected capture…" : "No capture selected")}
+				</strong>
 				<small>
-					{selected
-						? `Capture ${selectedIndex + 1} of ${captures.length} loaded`
-						: "No captures loaded"}
+					{outsideLoadedTimeline
+						? "Selected capture is outside the loaded timeline"
+						: selected
+							? `Capture ${selectedIndex + 1} of ${captures.length} loaded`
+							: "No captures loaded"}
 					{hasOlder ? " · earlier captures available" : ""}
 				</small>
 			</div>
@@ -38,12 +49,14 @@ export function HistoryScrubber({
 					<span aria-hidden="true">Newest to oldest</span>
 				</div>
 				<span className="sr-only" id="history-capture-direction">
-					The timeline runs from the newest capture on the left to the oldest loaded capture
-					on the right.
+					The timeline runs from the newest capture on the left to the oldest loaded capture on the
+					right.
 				</span>
 				<div className="history-scrubber__controls">
 					<button
-						aria-label={newer ? `Show newer capture from ${dateTimeLabel(newer.capturedAt)}` : undefined}
+						aria-label={
+							newer ? `Show newer capture from ${dateTimeLabel(newer.capturedAt)}` : undefined
+						}
 						disabled={!newer}
 						onClick={() => newer && onSelect(newer.captureId)}
 						type="button"
@@ -54,7 +67,7 @@ export function HistoryScrubber({
 						<input
 							aria-describedby="history-capture-direction"
 							aria-valuetext={selectedTime}
-							disabled={captures.length < 2}
+							disabled={captures.length < 2 || outsideLoadedTimeline}
 							id="history-capture-range"
 							max={Math.max(0, captures.length - 1)}
 							min="0"
@@ -65,7 +78,7 @@ export function HistoryScrubber({
 								}
 							}}
 							type="range"
-							value={selectedIndex}
+							value={Math.max(0, selectedIndex)}
 						/>
 						<div aria-hidden="true" className="history-scrubber__ticks">
 							<span>Newest</span>
@@ -73,7 +86,9 @@ export function HistoryScrubber({
 						</div>
 					</div>
 					<button
-						aria-label={older ? `Show older capture from ${dateTimeLabel(older.capturedAt)}` : undefined}
+						aria-label={
+							older ? `Show older capture from ${dateTimeLabel(older.capturedAt)}` : undefined
+						}
 						disabled={!older}
 						onClick={() => older && onSelect(older.captureId)}
 						type="button"

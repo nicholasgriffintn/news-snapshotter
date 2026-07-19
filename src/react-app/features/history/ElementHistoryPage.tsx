@@ -1,11 +1,7 @@
-import { useEffect, useState } from "react";
-
-import { isAbortError } from "../../shared/errors.ts";
-import type { ElementHistory } from "../../core/types.ts";
-import { fetchElementHistory } from "../../platform/api-client.ts";
 import { displayName } from "../../shared/format.ts";
 import { ContentTimelineChart } from "./ContentTimelineChart.tsx";
 import { HistoryNav } from "./HistoryNav.tsx";
+import { useElementHistory } from "./useElementHistory.ts";
 
 export function ElementHistoryPage({
 	elementKey,
@@ -16,26 +12,10 @@ export function ElementHistoryPage({
 	preferredName?: string;
 	site: string;
 }) {
-	const [history, setHistory] = useState<ElementHistory>();
-	const [error, setError] = useState<string>();
-
-	useEffect(() => {
-		const controller = new AbortController();
-		setError(undefined);
-		setHistory(undefined);
-		fetchElementHistory(site, elementKey, { signal: controller.signal })
-			.then((nextHistory) => {
-				if (!controller.signal.aborted) {
-					setHistory(nextHistory);
-				}
-			})
-			.catch((reason: unknown) => {
-				if (!isAbortError(reason)) {
-					setError(reason instanceof Error ? reason.message : "Could not load content history");
-				}
-			});
-		return () => controller.abort();
-	}, [elementKey, site]);
+	const { error, history, loadEarlier, loading, loadingEarlier } = useElementHistory(
+		site,
+		elementKey,
+	);
 
 	const latest = history?.observations.at(-1);
 	const title = latest?.headline ?? "Content timeline";
@@ -53,7 +33,7 @@ export function ElementHistoryPage({
 			</header>
 			<HistoryNav current="research" site={site} />
 			{error ? <div className="empty-state empty-state--error">{error}</div> : null}
-			{!history && !error ? <div className="empty-state">Loading content history…</div> : null}
+			{loading && !history ? <div className="empty-state">Loading content history…</div> : null}
 			{history ? (
 				<>
 					{history.canonicalUrl ? (
@@ -88,6 +68,14 @@ export function ElementHistoryPage({
 							</li>
 						))}
 					</ol>
+					{history.cursor ? (
+						<div className="story-history__pagination">
+							<span>{history.observations.length} observations loaded</span>
+							<button disabled={loadingEarlier} onClick={loadEarlier} type="button">
+								{loadingEarlier ? "Loading earlier observations…" : "Load earlier observations"}
+							</button>
+						</div>
+					) : null}
 				</>
 			) : null}
 		</div>

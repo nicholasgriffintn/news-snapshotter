@@ -21,3 +21,12 @@ test("disables time-direction navigation at the loaded timeline edges", () => {
 	assert.equal(captureTimelinePosition(captures, "newest").newer, undefined);
 	assert.equal(captureTimelinePosition(captures, "oldest").older, undefined);
 });
+
+test("does not present the newest capture as an explicitly selected unloaded capture", () => {
+	const position = captureTimelinePosition(captures, "earlier-not-loaded");
+
+	assert.equal(position.selectedIndex, -1);
+	assert.equal(position.selected, undefined);
+	assert.equal(position.newer, undefined);
+	assert.equal(position.older, undefined);
+});

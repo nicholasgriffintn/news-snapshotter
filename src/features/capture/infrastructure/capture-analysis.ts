@@ -40,7 +40,7 @@ export function canonicaliseUrl(value: string): string | undefined {
 	const url = new URL(value);
 	url.hash = "";
 
-	for (const parameter of [...url.searchParams.keys()]) {
+	for (const parameter of Array.from(url.searchParams.keys())) {
 		if (/^(utm_|at_|cmpid$)/i.test(parameter)) {
 			url.searchParams.delete(parameter);
 		}
