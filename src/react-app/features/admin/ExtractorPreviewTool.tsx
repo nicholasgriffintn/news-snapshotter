@@ -9,14 +9,20 @@ import {
 } from "../../platform/api-client.ts";
 import { displayName } from "../../shared/format.ts";
 
-export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
+export function ExtractorPreviewTool({
+	apiKey,
+	initialSite = "",
+}: {
+	apiKey: string;
+	initialSite?: string;
+}) {
 	const [extractions, setExtractions] = useState<ExtractionSummary[]>([]);
 	const [limit, setLimit] = useState(25);
 	const [listStatus, setListStatus] = useState("");
 	const [loadingKey, setLoadingKey] = useState("");
 	const [preview, setPreview] = useState<ExtractorPreview>();
 	const [selectedKey, setSelectedKey] = useState("");
-	const [site, setSite] = useState("");
+	const [site, setSite] = useState(initialSite);
 	const [sort, setSort] = useState<"newest" | "oldest">("newest");
 	const [status, setStatus] = useState("");
 
@@ -25,7 +31,11 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 			return;
 		}
 		setListStatus("Loading extractions…");
-		fetchHistoryExtractions(apiKey, { limit: 25, sort: "newest" })
+		fetchHistoryExtractions(apiKey, {
+			limit: 25,
+			site: initialSite || undefined,
+			sort: "newest",
+		})
 			.then((results) => {
 				setExtractions(results);
 				setListStatus("");
@@ -34,7 +44,7 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 				setExtractions([]);
 				setListStatus(reason instanceof Error ? reason.message : "Could not list extractions.");
 			});
-	}, [apiKey]);
+	}, [apiKey, initialSite]);
 
 	async function listExtractions(): Promise<void> {
 		if (!apiKey) {

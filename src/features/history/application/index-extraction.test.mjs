@@ -71,6 +71,25 @@ test("records identity mismatches as explicit indexing failures", async () => {
 	sqlite.close();
 });
 
+test("records the source device when indexing an extraction fails", async () => {
+	const document = historyExtraction("desktop-capture", "2026-07-17T09:00:00.000Z");
+	const { env, sqlite } = await environment(document);
+
+	await assert.rejects(
+		indexExtractionArtefact(env, {
+			captureId: "bbc-home:mobile:2026-07-17T09:00:00.000Z",
+			extractionKey:
+				"brand=bbc/site=bbc-home/device=mobile/2026-07-17T09-00-00.extraction.v1.json.gz",
+			kind: "extraction",
+			site: "bbc-home",
+		}),
+	);
+
+	const failure = sqlite.prepare("SELECT device FROM extraction_failures").get();
+	assert.equal(failure.device, "mobile");
+	sqlite.close();
+});
+
 test("indexes analysis failures idempotently", async () => {
 	const failure = {
 		captureId: "capture-failed",

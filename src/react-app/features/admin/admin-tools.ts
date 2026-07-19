@@ -17,7 +17,7 @@ export const ADMIN_TOOL_DETAILS: Record<AdminToolId, AdminToolDetails> = {
 		label: "Browser diagnostic",
 	},
 	failures: {
-		description: "Review capture errors and identify recurring publisher issues.",
+		description: "Review capture and extraction errors and identify recurring publisher issues.",
 		label: "Failure log",
 	},
 	history: {
@@ -35,3 +35,17 @@ export const ADMIN_TOOL_GROUPS: Array<{ label: string; tools: AdminToolId[] }> =
 	{ label: "Diagnostics", tools: ["diagnostics", "failures"] },
 	{ label: "Data tools", tools: ["history", "extractors"] },
 ];
+
+export function adminStateFromSearch(search: string): { site: string; tool: AdminToolId } {
+	const parameters = new URLSearchParams(search);
+	const requestedTool = parameters.get("tool");
+	const tool =
+		requestedTool && requestedTool in ADMIN_TOOL_DETAILS
+			? (requestedTool as AdminToolId)
+			: DEFAULT_ADMIN_TOOL;
+
+	return {
+		site: (parameters.get("site") ?? "").slice(0, 200),
+		tool,
+	};
+}

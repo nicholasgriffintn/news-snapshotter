@@ -8,11 +8,17 @@ import {
 	type HistoryAdminStatus,
 } from "../../platform/api-client.ts";
 
-export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
+export function HistoryOperationsTool({
+	apiKey,
+	initialSite = "",
+}: {
+	apiKey: string;
+	initialSite?: string;
+}) {
 	const [aggregateMonth, setAggregateMonth] = useState(new Date().toISOString().slice(0, 7));
 	const [aggregateSite, setAggregateSite] = useState("");
 	const [aggregateStatus, setAggregateStatus] = useState("");
-	const [indexSite, setIndexSite] = useState("");
+	const [indexSite, setIndexSite] = useState(initialSite);
 	const [indexStatus, setIndexStatus] = useState("");
 	const [mode, setMode] = useState<"backfill" | "reindex">("backfill");
 	const [reset, setReset] = useState(false);
@@ -110,7 +116,7 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 
 	return (
 		<div className="history-operations">
-			<section className="admin-tool">
+			<section className="admin-tool history-operation--wide">
 				<header className="admin-tool__header">
 					<h3>Archive index</h3>
 				</header>

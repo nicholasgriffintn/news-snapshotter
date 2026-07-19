@@ -3,6 +3,7 @@ export type FailureListOptions = {
 		failedAt: string;
 		failureId: number;
 	};
+	device?: "desktop" | "mobile";
 	limit: number;
 	site?: string;
 };
@@ -116,6 +117,10 @@ export async function listExtractionFailures(
 	if (options.site) {
 		conditions.push("site = ?");
 		parameters.push(options.site);
+	}
+	if (options.device) {
+		conditions.push("device = ?");
+		parameters.push(options.device);
 	}
 	if (options.cursor) {
 		conditions.push("(failed_at < ? OR (failed_at = ? AND failure_id < ?))");

@@ -4,11 +4,11 @@ import { fetchCaptureFailures } from "../../platform/api-client.ts";
 import { dateTimeLabel, displayName } from "../../shared/format.ts";
 import type { CaptureFailure } from "../../core/types.ts";
 
-export function FailureLog({ apiKey }: { apiKey: string }) {
+export function FailureLog({ apiKey, initialSite = "" }: { apiKey: string; initialSite?: string }) {
 	const [failures, setFailures] = useState<CaptureFailure[]>([]);
 	const [cursor, setCursor] = useState<string>();
 	const [hasMore, setHasMore] = useState(false);
-	const [query, setQuery] = useState("");
+	const [query, setQuery] = useState(initialSite);
 	const [reason, setReason] = useState("all");
 	const [status, setStatus] = useState("");
 	const [loading, setLoading] = useState(false);

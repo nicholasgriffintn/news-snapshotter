@@ -4,17 +4,26 @@ import { AdminAccessPanel } from "./AdminAccessPanel.tsx";
 import { AdminNavigation } from "./AdminNavigation.tsx";
 import { BotCheckTool } from "./BotCheckTool";
 import { CaptureTool } from "./CaptureTool";
-import { ADMIN_TOOL_DETAILS, DEFAULT_ADMIN_TOOL, type AdminToolId } from "./admin-tools.ts";
+import { ADMIN_TOOL_DETAILS, adminStateFromSearch, type AdminToolId } from "./admin-tools.ts";
 import { FailureLog } from "./FailureLog";
-import { HistoryOperationsTool } from "./HistoryOperationsTool.tsx";
 import { ExtractorPreviewTool } from "./ExtractorPreviewTool.tsx";
+import { HistoryFailureDiagnostics } from "./HistoryFailureDiagnostics.tsx";
+import { HistoryOperationsTool } from "./HistoryOperationsTool.tsx";
 import { useAdminConfiguration } from "./useAdminConfiguration.ts";
 
 export function AdminPage() {
+	const [initialState] = useState(() => adminStateFromSearch(window.location.search));
 	const [apiKey, setApiKey] = useState("");
-	const [activeTool, setActiveTool] = useState<AdminToolId>(DEFAULT_ADMIN_TOOL);
+	const [activeTool, setActiveTool] = useState<AdminToolId>(initialState.tool);
 	const configuration = useAdminConfiguration();
 	const activeToolDetails = ADMIN_TOOL_DETAILS[activeTool];
+
+	function selectTool(tool: AdminToolId): void {
+		setActiveTool(tool);
+		const url = new URL(window.location.href);
+		url.searchParams.set("tool", tool);
+		window.history.replaceState(null, "", url);
+	}
 
 	return (
 		<section className="admin-panel">
@@ -29,7 +38,7 @@ export function AdminPage() {
 			</header>
 
 			<div className="admin-console-layout">
-				<AdminNavigation activeTool={activeTool} onChange={setActiveTool} />
+				<AdminNavigation activeTool={activeTool} onChange={selectTool} />
 				<section
 					aria-labelledby="admin-workspace-title"
 					className="admin-workspace"
@@ -43,7 +52,7 @@ export function AdminPage() {
 					</header>
 					<div className="admin-workspace__body">
 						{configuration.status === "error" &&
-							(activeTool === "capture" || activeTool === "diagnostics") ? (
+						(activeTool === "capture" || activeTool === "diagnostics") ? (
 							<p className="admin-configuration-error" role="alert">
 								Capture options could not be loaded. Refresh the page to try again.
 							</p>
@@ -58,9 +67,18 @@ export function AdminPage() {
 						{activeTool === "diagnostics" ? (
 							<BotCheckTool apiKey={apiKey} profiles={configuration.profiles} />
 						) : null}
-						{activeTool === "failures" ? <FailureLog apiKey={apiKey} /> : null}
-						{activeTool === "history" ? <HistoryOperationsTool apiKey={apiKey} /> : null}
-						{activeTool === "extractors" ? <ExtractorPreviewTool apiKey={apiKey} /> : null}
+						{activeTool === "failures" ? (
+							<div className="failure-tools">
+								<HistoryFailureDiagnostics apiKey={apiKey} initialSite={initialState.site} />
+								<FailureLog apiKey={apiKey} initialSite={initialState.site} />
+							</div>
+						) : null}
+						{activeTool === "history" ? (
+							<HistoryOperationsTool apiKey={apiKey} initialSite={initialState.site} />
+						) : null}
+						{activeTool === "extractors" ? (
+							<ExtractorPreviewTool apiKey={apiKey} initialSite={initialState.site} />
+						) : null}
 					</div>
 				</section>
 			</div>

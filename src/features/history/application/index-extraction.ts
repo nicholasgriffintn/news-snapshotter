@@ -83,11 +83,14 @@ async function recordIndexingFailure(
 	const artefactKey = message.kind === "extraction" ? message.extractionKey : message.failureKey;
 	const captureId = message.kind === "extraction" ? message.captureId : undefined;
 	const site = message.kind === "extraction" ? message.site : undefined;
+	const archivedDevice = /(?:^|\/)device=(desktop|mobile)(?:\/|$)/.exec(artefactKey)?.[1];
+	const device =
+		archivedDevice === "mobile" || captureId?.includes(":mobile:") ? "mobile" : "desktop";
 	await database
 		.prepare(
 			`INSERT INTO extraction_failures (
 				failure_key, capture_id, site, device, extraction_key, stage, message, failed_at
-			) VALUES (?, ?, ?, 'desktop', ?, 'indexing', ?, ?)
+			) VALUES (?, ?, ?, ?, ?, 'indexing', ?, ?)
 			ON CONFLICT(failure_key) DO UPDATE SET
 				message = excluded.message,
 				failed_at = excluded.failed_at`,
@@ -96,6 +99,7 @@ async function recordIndexingFailure(
 			`indexing:${artefactKey}`.slice(0, 4_096),
 			captureId?.slice(0, 4_096) ?? null,
 			site?.slice(0, 4_096) ?? null,
+			device,
 			artefactKey.slice(0, 4_096),
 			errorMessage(error).slice(0, 20_000),
 			new Date().toISOString(),

@@ -51,6 +51,7 @@ export function useHistoryPage(site: string) {
 	const [capture, setCapture] = useState<HistoryCapture>();
 	const [changes, setChanges] = useState<HistoryChange[]>([]);
 	const [failures, setFailures] = useState<HistoryFailure[]>([]);
+	const [failureCursor, setFailureCursor] = useState<string>();
 	const [loadingCaptures, setLoadingCaptures] = useState(true);
 	const [loadingCapture, setLoadingCapture] = useState(false);
 	const [loadingOlder, setLoadingOlder] = useState(false);
@@ -71,6 +72,7 @@ export function useHistoryPage(site: string) {
 		setCaptures([]);
 		setCaptureCursor(undefined);
 		setFailures([]);
+		setFailureCursor(undefined);
 		Promise.all([
 			fetchHistoryCaptures(site, undefined, { signal: controller.signal }),
 			fetchHistoryFailures(site, { signal: controller.signal }),
@@ -81,7 +83,8 @@ export function useHistoryPage(site: string) {
 				}
 				setCaptures(capturePage.captures);
 				setCaptureCursor(capturePage.cursor);
-				setFailures(failurePage);
+				setFailures(failurePage.failures);
+				setFailureCursor(failurePage.cursor);
 				setSelection((current) => {
 					const next = normaliseHistorySelection(current, capturePage.captures);
 					if (next !== current) {
@@ -191,6 +194,7 @@ export function useHistoryPage(site: string) {
 		changes: edgeChanges,
 		error,
 		failures,
+		failureCursor,
 		loadOlder,
 		loading: loadingCaptures || loadingCapture,
 		loadingOlder,

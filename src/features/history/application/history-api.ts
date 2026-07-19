@@ -174,12 +174,7 @@ export async function handleHistoryRequest(
 	}
 
 	if (resource === "content" && identifier) {
-		const element = await getContentHistory(
-			database,
-			site,
-			identifier,
-			captureListOptions(url),
-		);
+		const element = await getContentHistory(database, site, identifier, captureListOptions(url));
 		if (!element) {
 			return jsonError("Content item not found", 404);
 		}
@@ -202,6 +197,7 @@ export async function handleHistoryRequest(
 	if (resource === "failures" && !identifier) {
 		const result = await listExtractionFailures(database, {
 			...publicFailureOptions(url),
+			device: "desktop",
 			site,
 		});
 

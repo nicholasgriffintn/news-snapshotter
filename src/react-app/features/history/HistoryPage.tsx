@@ -1,14 +1,13 @@
 import { displayName } from "../../shared/format.ts";
 import { HistoryCaptureView } from "./HistoryCaptureView";
 import { HistoryChangePanel } from "./HistoryChangePanel";
+import { HistoryFailureNotice } from "./HistoryFailureNotice.tsx";
 import { HistoryNav } from "./HistoryNav.tsx";
 import { HistoryScrubber } from "./HistoryScrubber";
 import { useHistoryPage } from "./useHistoryPage.ts";
 
 export function HistoryPage({ preferredName, site }: { preferredName?: string; site: string }) {
 	const history = useHistoryPage(site);
-	const latestFailure = history.failures[0];
-
 	return (
 		<div className="history-page">
 			<header className="history-heading history-heading--archive">
@@ -42,17 +41,11 @@ export function HistoryPage({ preferredName, site }: { preferredName?: string; s
 			/>
 
 			{history.failures.length > 0 ? (
-				<aside className="history-alert">
-					<strong>
-						{history.failures.length} extraction failures are visible in this history.
-					</strong>
-					{latestFailure ? (
-						<span>
-							Latest: {new Date(latestFailure.failedAt).toLocaleString("en-GB")} ·{" "}
-							{latestFailure.stage}
-						</span>
-					) : null}
-				</aside>
+				<HistoryFailureNotice
+					failures={history.failures}
+					hasMore={Boolean(history.failureCursor)}
+					site={site}
+				/>
 			) : null}
 
 			{history.loading && !history.capture ? (

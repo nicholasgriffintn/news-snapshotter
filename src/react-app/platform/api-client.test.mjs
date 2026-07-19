@@ -6,11 +6,57 @@ import {
 	fetchCatalogue,
 	fetchElementHistory,
 	fetchHistoryCapture,
+	fetchHistoryExtractionFailures,
+	fetchHistoryFailures,
 	fetchHistoryImages,
 	fetchHistorySites,
 	fetchSnapshots,
 	searchHistory,
 } from "./api-client.ts";
+
+test("loads private extraction failures for one site", async () => {
+	const originalFetch = globalThis.fetch;
+	const requests = [];
+	globalThis.fetch = async (input, init) => {
+		requests.push({ headers: init?.headers, url: String(input) });
+		return Response.json({ cursor: "older", failures: [{ failureId: 1 }] });
+	};
+
+	try {
+		assert.deepEqual(
+			await fetchHistoryExtractionFailures("secret", {
+				cursor: "next/page",
+				site: "bbc-home",
+			}),
+			{ cursor: "older", failures: [{ failureId: 1 }] },
+		);
+	} finally {
+		globalThis.fetch = originalFetch;
+	}
+
+	assert.deepEqual(requests, [
+		{
+			headers: { authorization: "Bearer secret" },
+			url: "/api/admin/history/extraction-failures?limit=50&cursor=next%2Fpage&site=bbc-home",
+		},
+	]);
+});
+
+test("preserves the history failure continuation cursor", async () => {
+	const originalFetch = globalThis.fetch;
+	globalThis.fetch = async () => {
+		return Response.json({ cursor: "older-failures", failures: [{ stage: "validation" }] });
+	};
+
+	try {
+		assert.deepEqual(await fetchHistoryFailures("bbc-home"), {
+			cursor: "older-failures",
+			failures: [{ stage: "validation" }],
+		});
+	} finally {
+		globalThis.fetch = originalFetch;
+	}
+});
 
 test("preserves research pagination cursors", async () => {
 	const originalFetch = globalThis.fetch;

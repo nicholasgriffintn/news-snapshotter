@@ -123,7 +123,9 @@ test("serves content observations and filtered adjacent changes", async () => {
 	);
 
 	const storyResponse = await handleHistoryRequest(
-		request(`/api/history/bbc-home/content/${encodeURIComponent("https://www.bbc.co.uk/news/articles/story-one")}`),
+		request(
+			`/api/history/bbc-home/content/${encodeURIComponent("https://www.bbc.co.uk/news/articles/story-one")}`,
+		),
 		database,
 	);
 	const storyBody = await storyResponse.json();
@@ -132,7 +134,9 @@ test("serves content observations and filtered adjacent changes", async () => {
 	assert.equal(storyBody.observations.length, 2);
 
 	const firstObservation = await handleHistoryRequest(
-		request(`/api/history/bbc-home/content/${encodeURIComponent("https://www.bbc.co.uk/news/articles/story-one")}?limit=1`),
+		request(
+			`/api/history/bbc-home/content/${encodeURIComponent("https://www.bbc.co.uk/news/articles/story-one")}?limit=1`,
+		),
 		database,
 	);
 	const firstObservationBody = await firstObservation.json();
@@ -163,6 +167,21 @@ test("serves content observations and filtered adjacent changes", async () => {
 			"validation",
 			"Private diagnostic detail",
 			"2026-07-17T11:00:00.000Z",
+		);
+	sqlite
+		.prepare(
+			`INSERT INTO extraction_failures (
+				failure_key, capture_id, site, device, stage, message, failed_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		)
+		.run(
+			"mobile-failure",
+			"bbc-home:mobile:2026-07-17T10:00:00.000Z",
+			"bbc-home",
+			"mobile",
+			"validation",
+			"Mobile analysis should not appear in desktop history",
+			"2026-07-17T10:00:00.000Z",
 		);
 	const failuresResponse = await handleHistoryRequest(
 		request("/api/history/bbc-home/failures"),
@@ -213,10 +232,7 @@ test("serves every content kind from the same endpoint", async () => {
 	assert.equal(body.observations.length, 1);
 	assert.equal(body.observations[0].headline, "Listen to the programme");
 	await assert.rejects(
-		handleHistoryRequest(
-			request(`/api/history/bbc-home/content/${"x".repeat(4_097)}`),
-			database,
-		),
+		handleHistoryRequest(request(`/api/history/bbc-home/content/${"x".repeat(4_097)}`), database),
 		/resource identifier is invalid/,
 	);
 

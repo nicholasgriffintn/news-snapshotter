@@ -179,12 +179,12 @@ export async function fetchHistoryChanges(
 export async function fetchHistoryFailures(
 	site: string,
 	options?: RequestOptions,
-): Promise<HistoryFailure[]> {
+): Promise<{ cursor?: string; failures: HistoryFailure[] }> {
 	const response = await fetch(
 		`/api/history/${encodeURIComponent(site)}/failures?limit=100`,
 		options,
 	);
-	return (await readJson<{ failures: HistoryFailure[] }>(response)).failures;
+	return readJson(response);
 }
 
 export function historyScreenshotUrl(key: string): string {
@@ -297,8 +297,36 @@ export type HistoryAdminStatus = {
 	totals: Record<"captures" | "changes" | "content" | "failures" | "observations", number>;
 };
 
+export type HistoryExtractionFailure = {
+	captureId?: string;
+	device?: "desktop" | "mobile";
+	extractionKey?: string;
+	failureId: number;
+	failedAt: string;
+	message: string;
+	site?: string;
+	stage: string;
+};
+
 export async function fetchHistoryAdminStatus(apiKey: string): Promise<HistoryAdminStatus> {
 	const response = await fetch("/api/admin/history/status", {
+		headers: { authorization: `Bearer ${apiKey}` },
+	});
+	return readJson(response);
+}
+
+export async function fetchHistoryExtractionFailures(
+	apiKey: string,
+	input: { cursor?: string; site?: string } = {},
+): Promise<{ cursor?: string; failures: HistoryExtractionFailure[] }> {
+	const search = new URLSearchParams({ limit: "50" });
+	if (input.cursor) {
+		search.set("cursor", input.cursor);
+	}
+	if (input.site) {
+		search.set("site", input.site);
+	}
+	const response = await fetch(`/api/admin/history/extraction-failures?${search}`, {
 		headers: { authorization: `Bearer ${apiKey}` },
 	});
 	return readJson(response);
