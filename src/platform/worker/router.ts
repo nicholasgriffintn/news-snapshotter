@@ -1,6 +1,9 @@
 import { SITES } from "../../features/catalogue/domain/sites.ts";
 import { runBotCheck } from "../../features/capture/application/run-bot-check.ts";
-import { listCaptureFailures } from "../../features/capture/infrastructure/capture-failures.ts";
+import {
+	clearCaptureFailureBatch,
+	listCaptureFailures,
+} from "../../features/capture/infrastructure/capture-failures.ts";
 import {
 	CAPTURE_PROFILE_NAMES,
 	hasCaptureProfile,
@@ -155,6 +158,10 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 
 	if (request.method === "GET" && url.pathname === "/api/admin/failures") {
 		return Response.json(await listCaptureFailures(env, failureListOptions(url)));
+	}
+
+	if (request.method === "DELETE" && url.pathname === "/api/admin/failures") {
+		return Response.json(await clearCaptureFailureBatch(env, failureListOptions(url).cursor));
 	}
 
 	if (url.pathname.startsWith("/api/admin/history/")) {

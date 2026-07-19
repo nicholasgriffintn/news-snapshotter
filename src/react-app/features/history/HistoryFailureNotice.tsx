@@ -1,19 +1,13 @@
 import type { HistoryFailure } from "../../core/types.ts";
 import { dateTimeLabel } from "../../shared/format.ts";
-import {
-	groupHistoryFailures,
-	historyFailureGuidance,
-	historyFailureLogHref,
-} from "./domain/history-failure-guidance.ts";
+import { groupHistoryFailures, historyFailureGuidance } from "./domain/history-failure-guidance.ts";
 
 export function HistoryFailureNotice({
 	failures,
 	hasMore,
-	site,
 }: {
 	failures: HistoryFailure[];
 	hasMore: boolean;
-	site: string;
 }) {
 	const countLabel = hasMore ? `${failures.length}+` : String(failures.length);
 
@@ -55,9 +49,6 @@ export function HistoryFailureNotice({
 						</section>
 					);
 				})}
-				<nav aria-label="Failure maintenance tools">
-					<a href={historyFailureLogHref(site)}>Open private diagnostics →</a>
-				</nav>
 			</div>
 		</details>
 	);

@@ -1080,6 +1080,12 @@ textarea:focus-visible {
 	gap: 1.5rem;
 }
 
+.admin-tool__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
 .admin-tool__header h3 {
 	margin: 0;
 	color: var(--cream);
@@ -1089,7 +1095,8 @@ textarea:focus-visible {
 	text-transform: uppercase;
 }
 
-.admin-tool__header > p:last-child {
+.admin-tool__header > p:last-child,
+.admin-tool__header > div > p:last-child {
 	margin: 0.75rem 0 0;
 	color: var(--muted);
 	line-height: 1.6;
@@ -1153,6 +1160,16 @@ textarea:focus-visible {
 .admin-secondary-button:hover:not(:disabled) {
 	color: var(--ink);
 	background: var(--cyan);
+}
+
+.admin-secondary-button--danger {
+	color: var(--pink);
+	border-color: var(--pink);
+}
+
+.admin-secondary-button--danger:hover:not(:disabled) {
+	color: var(--cream);
+	background: var(--pink);
 }
 
 .admin-secondary-button:disabled {
@@ -2111,21 +2128,6 @@ footer a {
 
 .history-failure-notice__resolution strong {
 	color: var(--yellow);
-}
-
-.history-failure-notice__body nav {
-	display: flex;
-	grid-column: 1 / -1;
-	flex-wrap: wrap;
-	gap: 0.75rem 1.5rem;
-}
-
-.history-failure-notice__body nav a {
-	color: var(--cyan);
-	font-size: 0.68rem;
-	font-weight: 900;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
 }
 
 .history-capture-meta {

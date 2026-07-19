@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {
-	groupHistoryFailures,
-	historyFailureGuidance,
-	historyFailureLogHref,
-} from "./history-failure-guidance.ts";
+import { groupHistoryFailures, historyFailureGuidance } from "./history-failure-guidance.ts";
 
 test("explains known failure stages with a concrete recovery path", () => {
 	assert.deepEqual(historyFailureGuidance("validation"), {
@@ -53,8 +49,4 @@ test("groups failure records by stage and retains their newest-first order", () 
 			{ captureIds: ["capture-2"], stage: "validation" },
 		],
 	);
-});
-
-test("links history failures to the filtered failure log", () => {
-	assert.equal(historyFailureLogHref("bbc-home"), "/admin?tool=failures&site=bbc-home");
 });

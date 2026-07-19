@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { fetchCaptureFailures } from "../../platform/api-client.ts";
+import { clearCaptureFailures, fetchCaptureFailures } from "../../platform/api-client.ts";
 import { dateTimeLabel, displayName } from "../../shared/format.ts";
 import type { CaptureFailure } from "../../core/types.ts";
 
@@ -12,6 +12,7 @@ export function FailureLog({ apiKey, initialSite = "" }: { apiKey: string; initi
 	const [reason, setReason] = useState("all");
 	const [status, setStatus] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [clearing, setClearing] = useState(false);
 
 	const reasons = useMemo(
 		() => [...new Set(failures.map((failure) => failure.reason))].sort(),
@@ -63,18 +64,47 @@ export function FailureLog({ apiKey, initialSite = "" }: { apiKey: string; initi
 		}
 	}, [apiKey, load]);
 
+	async function clearFailures(): Promise<void> {
+		if (!apiKey || !window.confirm("Clear every stored capture failure?")) {
+			return;
+		}
+		setClearing(true);
+		setStatus("Clearing capture failures…");
+		try {
+			const cleared = await clearCaptureFailures(apiKey);
+			setFailures([]);
+			setCursor(undefined);
+			setHasMore(false);
+			setStatus(`Cleared ${cleared} capture ${cleared === 1 ? "failure" : "failures"}.`);
+		} catch (error) {
+			setStatus(error instanceof Error ? error.message : "Could not clear capture failures.");
+		} finally {
+			setClearing(false);
+		}
+	}
+
 	return (
 		<section className="admin-tool failure-log">
 			<header className="admin-tool__header admin-tool__header--action">
 				<h3>Recent capture failures</h3>
-				<button
-					className="admin-secondary-button"
-					disabled={!apiKey || loading}
-					onClick={() => void load()}
-					type="button"
-				>
-					Refresh
-				</button>
+				<div className="admin-tool__actions">
+					<button
+						className="admin-secondary-button"
+						disabled={!apiKey || loading || clearing}
+						onClick={() => void load()}
+						type="button"
+					>
+						Refresh
+					</button>
+					<button
+						className="admin-secondary-button admin-secondary-button--danger"
+						disabled={!apiKey || loading || clearing}
+						onClick={() => void clearFailures()}
+						type="button"
+					>
+						{clearing ? "Clearing…" : "Clear all"}
+					</button>
+				</div>
 			</header>
 
 			<div className="failure-log__filters">

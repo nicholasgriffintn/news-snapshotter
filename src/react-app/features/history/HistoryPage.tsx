@@ -44,7 +44,6 @@ export function HistoryPage({ preferredName, site }: { preferredName?: string; s
 				<HistoryFailureNotice
 					failures={history.failures}
 					hasMore={Boolean(history.failureCursor)}
-					site={site}
 				/>
 			) : null}
 

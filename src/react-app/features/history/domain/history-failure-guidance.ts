@@ -30,14 +30,6 @@ export function historyFailureGuidance(stage: string): HistoryFailureGuidance {
 	return GUIDANCE[stage] ?? UNKNOWN_GUIDANCE;
 }
 
-export function historyFailureLogHref(site: string): string {
-	const parameters = new URLSearchParams({ tool: "failures" });
-	if (site) {
-		parameters.set("site", site);
-	}
-	return `/admin?${parameters.toString()}`;
-}
-
 export function groupHistoryFailures(
 	failures: HistoryFailure[],
 ): Array<{ failures: HistoryFailure[]; stage: string }> {

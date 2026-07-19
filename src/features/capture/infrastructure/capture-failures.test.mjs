@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { listCaptureFailures, storeCaptureFailure } from "./capture-failures.ts";
+import {
+	clearCaptureFailureBatch,
+	listCaptureFailures,
+	storeCaptureFailure,
+} from "./capture-failures.ts";
 
 const failure = {
 	capturedAt: "2026-07-16T10:20:30.123Z",
@@ -96,4 +100,28 @@ test("lists valid failures newest first and ignores corrupt KV values", async ()
 	);
 	assert.equal(result.hasMore, false);
 	assert.equal(result.cursor, undefined);
+});
+
+test("clears one bounded capture-failure batch", async () => {
+	const deleted = [];
+	const env = {
+		CAPTURE_FAILURES: {
+			delete: async (key) => deleted.push(key),
+			list: async (options) => {
+				assert.deepEqual(options, { limit: 100, prefix: "failures/" });
+				return {
+					cursor: "next-page",
+					keys: [{ name: "failures/a.json" }, { name: "failures/b.json" }],
+					list_complete: false,
+				};
+			},
+		},
+	};
+
+	assert.deepEqual(await clearCaptureFailureBatch(env), {
+		cleared: 2,
+		cursor: "next-page",
+		hasMore: true,
+	});
+	assert.deepEqual(deleted, ["failures/a.json", "failures/b.json"]);
 });

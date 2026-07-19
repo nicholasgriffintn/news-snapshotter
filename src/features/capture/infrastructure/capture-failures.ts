@@ -23,6 +23,8 @@ export type CaptureFailurePage = {
 	hasMore: boolean;
 };
 
+const FAILURE_CLEAR_BATCH_SIZE = 100;
+
 function parseStoredFailure(value: string | null): StoredCaptureFailure | undefined {
 	if (!value) {
 		return undefined;
@@ -87,6 +89,27 @@ export async function listCaptureFailures(
 	return {
 		cursor: page.list_complete ? undefined : page.cursor,
 		failures,
+		hasMore: !page.list_complete,
+	};
+}
+
+export async function clearCaptureFailureBatch(
+	env: Pick<Env, "CAPTURE_FAILURES">,
+	cursor?: string,
+): Promise<{ cleared: number; cursor?: string; hasMore: boolean }> {
+	const options: KVNamespaceListOptions = {
+		limit: FAILURE_CLEAR_BATCH_SIZE,
+		prefix: "failures/",
+	};
+	if (cursor) {
+		options.cursor = cursor;
+	}
+	const page = await env.CAPTURE_FAILURES.list(options);
+	await Promise.all(page.keys.map(({ name }) => env.CAPTURE_FAILURES.delete(name)));
+
+	return {
+		cleared: page.keys.length,
+		cursor: page.list_complete ? undefined : page.cursor,
 		hasMore: !page.list_complete,
 	};
 }

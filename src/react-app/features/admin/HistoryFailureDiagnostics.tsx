@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import {
+	clearHistoryExtractionFailures,
 	fetchHistoryExtractionFailures,
 	type HistoryExtractionFailure,
 } from "../../platform/api-client.ts";
@@ -16,6 +17,7 @@ export function HistoryFailureDiagnostics({
 	const [cursor, setCursor] = useState<string>();
 	const [failures, setFailures] = useState<HistoryExtractionFailure[]>([]);
 	const [loading, setLoading] = useState(false);
+	const [clearing, setClearing] = useState(false);
 	const [site, setSite] = useState(initialSite);
 	const [status, setStatus] = useState("");
 
@@ -74,11 +76,41 @@ export function HistoryFailureDiagnostics({
 		};
 	}, [apiKey, initialSite]);
 
+	async function clearFailures(): Promise<void> {
+		const selectedSite = site.trim();
+		const scope = selectedSite ? ` for ${selectedSite}` : " across every site";
+		if (!apiKey || !window.confirm(`Clear all extraction failures${scope}?`)) {
+			return;
+		}
+		setClearing(true);
+		setStatus("Clearing extraction failures…");
+		try {
+			const cleared = await clearHistoryExtractionFailures(apiKey, selectedSite || undefined);
+			setCursor(undefined);
+			setFailures([]);
+			setStatus(`Cleared ${cleared} extraction ${cleared === 1 ? "failure" : "failures"}${scope}.`);
+		} catch (reason) {
+			setStatus(reason instanceof Error ? reason.message : "Could not clear extraction failures.");
+		} finally {
+			setClearing(false);
+		}
+	}
+
 	return (
 		<section className="admin-tool history-failure-diagnostics">
-			<header className="admin-tool__header">
-				<h3>Extraction failures</h3>
-				<p>Review the private error before recapturing or backfilling a site.</p>
+			<header className="admin-tool__header admin-tool__header--action">
+				<div>
+					<h3>Extraction failures</h3>
+					<p>Review the private error before recapturing or backfilling a site.</p>
+				</div>
+				<button
+					className="admin-secondary-button admin-secondary-button--danger"
+					disabled={!apiKey || loading || clearing}
+					onClick={() => void clearFailures()}
+					type="button"
+				>
+					{clearing ? "Clearing…" : site.trim() ? "Clear this site" : "Clear all"}
+				</button>
 			</header>
 			<form
 				className="history-failure-diagnostics__filter"
@@ -95,7 +127,11 @@ export function HistoryFailureDiagnostics({
 						value={site}
 					/>
 				</label>
-				<button className="admin-secondary-button" disabled={!apiKey || loading} type="submit">
+				<button
+					className="admin-secondary-button"
+					disabled={!apiKey || loading || clearing}
+					type="submit"
+				>
 					Review failures
 				</button>
 			</form>

@@ -2,6 +2,7 @@ import { decodeCursor, encodeCursor } from "../../../core/cursor.ts";
 import { InvalidInputError } from "../../../core/errors.ts";
 import type { HistoryIndexMessage } from "./index-extraction.ts";
 import {
+	clearExtractionFailures,
 	historyIndexStatus,
 	type ExtractionListOptions,
 	listIndexedExtractions,
@@ -254,7 +255,15 @@ function failureOptions(url: URL) {
 		cursor = { failedAt: decoded.failedAt, failureId };
 	}
 
-	return { cursor, limit, site: url.searchParams.get("site") ?? undefined };
+	return { cursor, limit, site: failureSite(url) };
+}
+
+function failureSite(url: URL): string | undefined {
+	const value = url.searchParams.get("site")?.trim();
+	if (value && value.length > 200) {
+		throw new InvalidInputError("site is invalid");
+	}
+	return value || undefined;
 }
 
 function extractionListOptions(url: URL): ExtractionListOptions {
@@ -311,6 +320,12 @@ export async function handleHistoryAdminRequest(
 						failureId: String(result.nextCursor.failureId),
 					})
 				: undefined,
+		});
+	}
+
+	if (request.method === "DELETE" && url.pathname === "/api/admin/history/extraction-failures") {
+		return Response.json({
+			cleared: await clearExtractionFailures(env.HISTORY_DB, failureSite(url)),
 		});
 	}
 

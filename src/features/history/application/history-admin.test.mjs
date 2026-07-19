@@ -106,6 +106,51 @@ test("serves bounded indexing status and extraction failures", async () => {
 	sqlite.close();
 });
 
+test("clears extraction failures for one site", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const insert = sqlite.prepare(
+		`INSERT INTO extraction_failures (
+			failure_key, capture_id, site, device, stage, message, failed_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+	);
+	insert.run(
+		"failure-bbc",
+		"capture-bbc",
+		"bbc-home",
+		"desktop",
+		"validation",
+		"BBC failed",
+		"2026-07-17T09:00:00.000Z",
+	);
+	insert.run(
+		"failure-sky",
+		"capture-sky",
+		"sky-home",
+		"desktop",
+		"validation",
+		"Sky failed",
+		"2026-07-17T10:00:00.000Z",
+	);
+
+	const response = await handleHistoryAdminRequest(
+		new Request("https://archive.example/api/admin/history/extraction-failures?site=bbc-home", {
+			method: "DELETE",
+		}),
+		{ HISTORY_DB: database },
+	);
+
+	assert.equal(response.status, 200);
+	assert.deepEqual(await response.json(), { cleared: 1 });
+	assert.deepEqual(
+		sqlite
+			.prepare("SELECT site FROM extraction_failures ORDER BY site")
+			.all()
+			.map(({ site }) => site),
+		["sky-home"],
+	);
+	sqlite.close();
+});
+
 test("lists indexed extractions with bounded ordering and site filtering", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	const older = historyExtraction("older", "2026-07-17T08:00:00.000Z");

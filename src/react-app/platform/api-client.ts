@@ -83,6 +83,31 @@ export async function fetchCaptureFailures(
 	return readJson(response);
 }
 
+export async function clearCaptureFailures(apiKey: string): Promise<number> {
+	let cleared = 0;
+	let cursor: string | undefined;
+	let hasMore: boolean;
+	do {
+		const search = new URLSearchParams();
+		if (cursor) {
+			search.set("cursor", cursor);
+		}
+		const query = search.size > 0 ? `?${search}` : "";
+		const response = await fetch(`/api/admin/failures${query}`, {
+			headers: { authorization: `Bearer ${apiKey}` },
+			method: "DELETE",
+		});
+		const page = await readJson<{ cleared: number; cursor?: string; hasMore: boolean }>(response);
+		cleared += page.cleared;
+		if (page.hasMore && !page.cursor) {
+			throw new Error("Capture failure clearing could not continue");
+		}
+		cursor = page.cursor;
+		hasMore = page.hasMore;
+	} while (hasMore);
+	return cleared;
+}
+
 export type BotCheckResult = {
 	profile: string;
 	results: Array<{
@@ -330,6 +355,22 @@ export async function fetchHistoryExtractionFailures(
 		headers: { authorization: `Bearer ${apiKey}` },
 	});
 	return readJson(response);
+}
+
+export async function clearHistoryExtractionFailures(
+	apiKey: string,
+	site?: string,
+): Promise<number> {
+	const search = new URLSearchParams();
+	if (site) {
+		search.set("site", site);
+	}
+	const query = search.size > 0 ? `?${search}` : "";
+	const response = await fetch(`/api/admin/history/extraction-failures${query}`, {
+		headers: { authorization: `Bearer ${apiKey}` },
+		method: "DELETE",
+	});
+	return (await readJson<{ cleared: number }>(response)).cleared;
 }
 
 export async function indexHistoryArchivePage(

@@ -153,6 +153,17 @@ export async function listExtractionFailures(
 	};
 }
 
+export async function clearExtractionFailures(
+	database: D1Database,
+	site?: string,
+): Promise<number> {
+	const statement = site
+		? database.prepare("DELETE FROM extraction_failures WHERE site = ?").bind(site)
+		: database.prepare("DELETE FROM extraction_failures");
+	const result = await statement.run();
+	return result.meta.changes;
+}
+
 export async function resetHistoryIndex(database: D1Database, site?: string): Promise<void> {
 	await database.exec("PRAGMA foreign_keys = ON");
 	const suffix = site ? " WHERE site = ?" : "";

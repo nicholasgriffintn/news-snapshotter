@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+	clearCaptureFailures,
+	clearHistoryExtractionFailures,
 	fetchAvailableHistorySites,
 	fetchCatalogue,
 	fetchElementHistory,
@@ -13,6 +15,46 @@ import {
 	fetchSnapshots,
 	searchHistory,
 } from "./api-client.ts";
+
+test("clears every capture-failure batch and site-scoped extraction failures", async () => {
+	const originalFetch = globalThis.fetch;
+	const requests = [];
+	globalThis.fetch = async (input, init) => {
+		requests.push({ headers: init?.headers, method: init?.method, url: String(input) });
+		if (String(input) === "/api/admin/failures") {
+			return Response.json({ cleared: 100, cursor: "next-page", hasMore: true });
+		}
+		if (String(input) === "/api/admin/failures?cursor=next-page") {
+			return Response.json({ cleared: 12, hasMore: false });
+		}
+		return Response.json({ cleared: 3 });
+	};
+
+	try {
+		assert.equal(await clearCaptureFailures("secret"), 112);
+		assert.equal(await clearHistoryExtractionFailures("secret", "bbc-home"), 3);
+	} finally {
+		globalThis.fetch = originalFetch;
+	}
+
+	assert.deepEqual(requests, [
+		{
+			headers: { authorization: "Bearer secret" },
+			method: "DELETE",
+			url: "/api/admin/failures",
+		},
+		{
+			headers: { authorization: "Bearer secret" },
+			method: "DELETE",
+			url: "/api/admin/failures?cursor=next-page",
+		},
+		{
+			headers: { authorization: "Bearer secret" },
+			method: "DELETE",
+			url: "/api/admin/history/extraction-failures?site=bbc-home",
+		},
+	]);
+});
 
 test("loads private extraction failures for one site", async () => {
 	const originalFetch = globalThis.fetch;

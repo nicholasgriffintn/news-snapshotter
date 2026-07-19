@@ -172,16 +172,28 @@ test("protects workflow routes with the configured API key", async () => {
 
 test("protects capture failures with the configured API key", async () => {
 	const response = await handleRequest(apiRequest("/api/admin/failures"), environment());
+	const clearResponse = await handleRequest(
+		apiRequest("/api/admin/failures", { method: "DELETE" }),
+		environment(),
+	);
 
 	assert.equal(response.status, 401);
 	assert.equal((await response.json()).message, "Invalid API key");
+	assert.equal(clearResponse.status, 401);
+	assert.equal((await clearResponse.json()).message, "Invalid API key");
 });
 
 test("protects history administration with the configured API key", async () => {
 	const response = await handleRequest(apiRequest("/api/admin/history/status"), environment());
+	const clearResponse = await handleRequest(
+		apiRequest("/api/admin/history/extraction-failures", { method: "DELETE" }),
+		environment(),
+	);
 
 	assert.equal(response.status, 401);
 	assert.equal((await response.json()).message, "Invalid API key");
+	assert.equal(clearResponse.status, 401);
+	assert.equal((await clearResponse.json()).message, "Invalid API key");
 });
 
 test("lists bounded capture failures for admins", async () => {
@@ -223,6 +235,42 @@ test("lists bounded capture failures for admins", async () => {
 	assert.deepEqual(body.failures, [record]);
 	assert.equal(body.cursor, "final-page");
 	assert.equal(body.hasMore, true);
+});
+
+test("clears a bounded capture-failure batch for admins", async () => {
+	const deleted = [];
+	const response = await handleRequest(
+		apiRequest("/api/admin/failures", {
+			headers: { authorization: "Bearer secret" },
+			method: "DELETE",
+		}),
+		environment({
+			CAPTURE_FAILURES: {
+				delete: async (key) => deleted.push(key),
+				list: async () => ({
+					keys: [{ name: "failures/a.json" }, { name: "failures/b.json" }],
+					list_complete: true,
+				}),
+			},
+		}),
+	);
+
+	assert.equal(response.status, 200);
+	assert.deepEqual(await response.json(), { cleared: 2, hasMore: false });
+	assert.deepEqual(deleted, ["failures/a.json", "failures/b.json"]);
+});
+
+test("rejects an oversized extraction-failure clear scope", async () => {
+	const response = await handleRequest(
+		apiRequest(`/api/admin/history/extraction-failures?site=${"x".repeat(201)}`, {
+			headers: { authorization: "Bearer secret" },
+			method: "DELETE",
+		}),
+		environment(),
+	);
+
+	assert.equal(response.status, 400);
+	assert.equal((await response.json()).message, "site is invalid");
 });
 
 test("rejects invalid failure list pagination", async (context) => {
