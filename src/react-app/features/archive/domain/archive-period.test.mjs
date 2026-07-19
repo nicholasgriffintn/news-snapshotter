@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
 	DEFAULT_ARCHIVE_PERIOD,
+	archiveStorageDates,
 	dateInputValue,
 	matchesArchivePeriod,
 	periodDescription,
@@ -114,4 +115,25 @@ test("period descriptions identify presets and selected custom dates", () => {
 	assert.equal(periodDescription({ ...DEFAULT_ARCHIVE_PERIOD, period: "yesterday" }), "Yesterday");
 	assert.equal(periodDescription({ day: "", period: "day" }), "Choose a day");
 	assert.equal(periodDescription({ day: "2025-11-09", period: "day" }), "9 November 2025");
+});
+
+test("loads every storage partition needed by a rolling 24-hour period", () => {
+	assert.deepEqual(
+		archiveStorageDates(
+			{ ...DEFAULT_ARCHIVE_PERIOD, period: "last-24-hours" },
+			new Date("2026-07-19T12:00:00.000Z"),
+		),
+		["2026-07-17", "2026-07-18", "2026-07-19"],
+	);
+});
+
+test("loads the preceding trigger partition for a selected calendar day", () => {
+	assert.deepEqual(
+		archiveStorageDates({ day: "2025-11-09", period: "day" }, new Date("2026-07-19T12:00:00Z")),
+		["2025-11-08", "2025-11-09"],
+	);
+	assert.deepEqual(
+		archiveStorageDates({ day: "", period: "day" }, new Date("2026-07-19T12:00:00Z")),
+		[],
+	);
 });

@@ -40,7 +40,7 @@ test("lists valid full screenshots newest first with image URLs", async () => {
 		}),
 	};
 
-	const result = await listScreenshots(bucket, new Map([["bbc-home", "BBC"]]));
+	const result = await listScreenshots(bucket, ["date=2026-07-16/"], new Map([["bbc-home", "BBC"]]));
 
 	assert.deepEqual(
 		result.screenshots.map(({ brand }) => brand),
@@ -68,7 +68,7 @@ test("ignores thumbnails, unsupported files, and incomplete metadata", async () 
 		}),
 	};
 
-	assert.deepEqual((await listScreenshots(bucket)).screenshots, []);
+	assert.deepEqual((await listScreenshots(bucket, ["date=2026-07-16/"])).screenshots, []);
 });
 
 test("excludes admin diagnostic captures from the public archive", async () => {
@@ -79,7 +79,7 @@ test("excludes admin diagnostic captures from the public archive", async () => {
 		}),
 	};
 
-	assert.deepEqual((await listScreenshots(bucket)).screenshots, []);
+	assert.deepEqual((await listScreenshots(bucket, ["date=2026-07-16/"])).screenshots, []);
 });
 
 test("follows paginated bucket listings", async () => {
@@ -93,10 +93,67 @@ test("follows paginated bucket listings", async () => {
 		},
 	};
 
-	const result = await listScreenshots(bucket);
+	const result = await listScreenshots(bucket, ["date=2026-07-16/"]);
 
 	assert.deepEqual(cursors, [undefined, "next"]);
 	assert.equal(result.screenshots.length, 2);
+});
+
+test("lists requested date partitions instead of truncating global key order", async () => {
+	const prefixes = [
+		"brand=alpha/category=news/date=2026-07-19/",
+		"brand=zulu/category=news/date=2026-07-19/",
+	];
+	const older = {
+		...olderMetadata,
+		brand: "alpha",
+		category: "news",
+		displayName: "Alpha",
+		name: "old-site",
+	};
+	const newer = {
+		...newerMetadata,
+		brand: "zulu",
+		displayName: "Zulu",
+		name: "new-site",
+	};
+	const calls = [];
+	const bucket = {
+		list: async (options) => {
+			calls.push(options);
+			if (options.prefix === prefixes[0]) {
+				return {
+					objects: [object(`${prefixes[0]}old-site-desktop.png`, older)],
+					truncated: false,
+				};
+			}
+			if (options.prefix === prefixes[1]) {
+				return {
+					objects: [object(`${prefixes[1]}new-site-mobile.png`, newer)],
+					truncated: false,
+				};
+			}
+			return {
+				cursor: "newer-publishers",
+				objects: Array.from({ length: 2_000 }, (_, index) =>
+					object(`brand=alpha/${index}.png`, older),
+				),
+				truncated: true,
+			};
+		},
+	};
+
+	const result = await listScreenshots(bucket, prefixes, new Map());
+
+	assert.deepEqual(
+		result.screenshots.map(({ name }) => name),
+		["new-site", "old-site"],
+	);
+	assert.equal(result.truncated, false);
+	assert.deepEqual(
+		calls.map(({ prefix }) => prefix),
+		prefixes,
+	);
 });
 
 test("rejects missing and unsafe screenshot keys", async () => {

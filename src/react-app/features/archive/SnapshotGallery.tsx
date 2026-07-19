@@ -3,7 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchAvailableHistorySites, fetchSnapshots } from "../../platform/api-client.ts";
 import { captureWindowKey, groupLabel } from "../../shared/format.ts";
 import type { Snapshot, SnapshotGroup } from "../../core/types.ts";
-import { DEFAULT_ARCHIVE_PERIOD, periodDescription } from "./domain/archive-period.ts";
+import {
+	DEFAULT_ARCHIVE_PERIOD,
+	archiveStorageDates,
+	periodDescription,
+} from "./domain/archive-period.ts";
 import { filterSnapshots } from "./domain/snapshot-filter.ts";
 import { groupSnapshotVariants } from "./domain/snapshot-groups.ts";
 import { SnapshotCard } from "./SnapshotCard";
@@ -27,12 +31,34 @@ export function SnapshotGallery() {
 	const [loading, setLoading] = useState(true);
 	const [now, setNow] = useState(() => new Date());
 
+	const storageDates = archiveStorageDates(filters, now);
+	const storageDateKey = storageDates.join(",");
+
 	useEffect(() => {
-		fetchSnapshots()
+		if (storageDates.length === 0) {
+			setSnapshots([]);
+			setError("");
+			setLoading(false);
+			return;
+		}
+
+		const controller = new AbortController();
+		setError("");
+		setLoading(true);
+		fetchSnapshots(storageDates, { signal: controller.signal })
 			.then(setSnapshots)
-			.catch((reason: Error) => setError(reason.message))
-			.finally(() => setLoading(false));
-	}, []);
+			.catch((reason: Error) => {
+				if (!controller.signal.aborted) {
+					setError(reason.message);
+				}
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) {
+					setLoading(false);
+				}
+			});
+		return () => controller.abort();
+	}, [storageDateKey]);
 
 	useEffect(() => {
 		fetchAvailableHistorySites()

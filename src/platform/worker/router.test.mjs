@@ -58,7 +58,18 @@ test("lists the supported capture providers", async () => {
 });
 
 test("serves the public screenshot listing", async () => {
-	const response = await handleRequest(apiRequest("/api/screenshots"), environment());
+	const listOptions = [];
+	const response = await handleRequest(
+		apiRequest("/api/screenshots?date=2026-07-19"),
+		environment({
+			SCREENSHOTS: {
+				list: async (options) => {
+					listOptions.push(options);
+					return { objects: [], truncated: false };
+				},
+			},
+		}),
+	);
 	const body = await response.json();
 
 	assert.equal(response.status, 200);
@@ -68,6 +79,18 @@ test("serves the public screenshot listing", async () => {
 		response.headers.get("cloudflare-cdn-cache-control"),
 		"max-age=300, stale-while-revalidate=3600",
 	);
+	assert.ok(listOptions.length > 0);
+	assert.ok(listOptions.every(({ prefix }) => prefix.includes("date=2026-07-19/")));
+});
+
+test("rejects invalid screenshot storage dates", async () => {
+	const response = await handleRequest(
+		apiRequest("/api/screenshots?date=2026-02-30"),
+		environment(),
+	);
+
+	assert.equal(response.status, 400);
+	assert.equal((await response.json()).message, "date parameters must be valid dates");
 });
 
 test("caches the lightweight public history availability response", async () => {

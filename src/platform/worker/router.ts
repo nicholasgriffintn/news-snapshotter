@@ -21,6 +21,10 @@ import {
 	serveScreenshot,
 } from "../../features/archive/application/snapshots.ts";
 import {
+	parseScreenshotDates,
+	screenshotPrefixes,
+} from "../../features/archive/application/screenshot-query.ts";
+import {
 	parseCaptureSelection,
 	startCaptureWorkflow,
 } from "../../features/workflows/application/start-capture.ts";
@@ -91,7 +95,10 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 	const url = new URL(request.url);
 
 	if (request.method === "GET" && url.pathname === "/api/screenshots") {
-		return Response.json(await listScreenshots(env.SCREENSHOTS, SITE_DISPLAY_NAMES));
+		const dates = parseScreenshotDates(url.searchParams.getAll("date"));
+		return Response.json(
+			await listScreenshots(env.SCREENSHOTS, screenshotPrefixes(SITES, dates), SITE_DISPLAY_NAMES),
+		);
 	}
 
 	if (request.method === "GET" && url.pathname === "/api/screenshots/image") {

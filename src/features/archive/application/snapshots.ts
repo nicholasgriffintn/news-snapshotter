@@ -2,7 +2,7 @@ import type { Env } from "../../../platform/cloudflare/env.ts";
 import { thumbnailKey } from "../../../core/storage-key.ts";
 import type { Device, ScreenshotSummary, SiteCategory } from "../../../core/domain.ts";
 
-const MAX_SCREENSHOTS = 2_000;
+const PREFIX_LIST_CONCURRENCY = 16;
 const SCREENSHOT_KEY =
 	/^brand=[a-z0-9-]+\/category=(news|sport)\/date=\d{4}-\d{2}-\d{2}\/[a-z0-9-]+-(?:(?:desktop|mobile)-)?\d{4}-\d{2}-\d{2}T[\d-]+Z(?:-thumbnail\.jpg|\.(?:jpe?g|png|webp))$/;
 
@@ -12,27 +12,40 @@ export function screenshotImageUrl(key: string): string {
 
 export async function listScreenshots(
 	bucket: R2Bucket,
+	prefixes: readonly string[],
 	displayNames: ReadonlyMap<string, string> = new Map(),
 ): Promise<{
 	screenshots: ScreenshotSummary[];
 	truncated: boolean;
 }> {
 	const objects: R2Object[] = [];
-	let cursor: string | undefined;
-	let truncated = false;
-
-	do {
-		const page = await bucket.list({ cursor, include: ["customMetadata"], limit: 1_000 });
-
-		objects.push(
-			...page.objects.filter((object) => {
-				return !object.key.includes("-thumbnail.") && /\.(?:jpe?g|png|webp)$/.test(object.key);
+	for (let index = 0; index < prefixes.length; index += PREFIX_LIST_CONCURRENCY) {
+		const batch = prefixes.slice(index, index + PREFIX_LIST_CONCURRENCY);
+		const pages = await Promise.all(
+			batch.map(async (prefix) => {
+				const prefixObjects: R2Object[] = [];
+				let cursor: string | undefined;
+				do {
+					const page = await bucket.list({
+						cursor,
+						include: ["customMetadata"],
+						limit: 1_000,
+						prefix,
+					});
+					prefixObjects.push(
+						...page.objects.filter((object) => {
+							return (
+								!object.key.includes("-thumbnail.") && /\.(?:jpe?g|png|webp)$/.test(object.key)
+							);
+						}),
+					);
+					cursor = page.truncated ? page.cursor : undefined;
+				} while (cursor);
+				return prefixObjects;
 			}),
 		);
-
-		cursor = page.truncated ? page.cursor : undefined;
-		truncated = objects.length >= MAX_SCREENSHOTS && Boolean(cursor);
-	} while (cursor && objects.length < MAX_SCREENSHOTS);
+		objects.push(...pages.flat());
+	}
 
 	const screenshots = objects.flatMap((object): ScreenshotSummary[] => {
 		const metadata = object.customMetadata;
@@ -69,7 +82,7 @@ export async function listScreenshots(
 
 	screenshots.sort((left, right) => right.capturedAt.localeCompare(left.capturedAt));
 
-	return { screenshots, truncated };
+	return { screenshots, truncated: false };
 }
 
 export async function serveScreenshot(

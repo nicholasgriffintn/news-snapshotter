@@ -32,8 +32,15 @@ type RequestOptions = {
 // Strict Mode remounts effects in development; share identical safe reads across callers.
 const fetch = coalescePublicGetRequests((input, init) => globalThis.fetch(input, init));
 
-export async function fetchSnapshots(options?: RequestOptions): Promise<Snapshot[]> {
-	const response = await fetch("/api/screenshots", options);
+export async function fetchSnapshots(
+	dates: readonly string[] = [],
+	options?: RequestOptions,
+): Promise<Snapshot[]> {
+	const search = new URLSearchParams();
+	for (const date of dates) {
+		search.append("date", date);
+	}
+	const response = await fetch(`/api/screenshots${search.size > 0 ? `?${search}` : ""}`, options);
 	return (await readJson<{ screenshots: Snapshot[] }>(response)).screenshots;
 }
 

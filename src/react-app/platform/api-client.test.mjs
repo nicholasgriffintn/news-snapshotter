@@ -237,6 +237,23 @@ test("loads the lightweight history availability contract", async () => {
 	assert.deepEqual(requests, ["/api/history/sites/available"]);
 });
 
+test("requests only the selected screenshot storage dates", async () => {
+	const originalFetch = globalThis.fetch;
+	const requests = [];
+	globalThis.fetch = async (input) => {
+		requests.push(String(input));
+		return Response.json({ screenshots: [] });
+	};
+
+	try {
+		assert.deepEqual(await fetchSnapshots(["2026-07-18", "2026-07-19"]), []);
+	} finally {
+		globalThis.fetch = originalFetch;
+	}
+
+	assert.deepEqual(requests, ["/api/screenshots?date=2026-07-18&date=2026-07-19"]);
+});
+
 test("coalesces every duplicate public GET while it is in flight", async () => {
 	const originalFetch = globalThis.fetch;
 	const requests = [];
