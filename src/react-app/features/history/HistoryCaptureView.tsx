@@ -80,7 +80,7 @@ export function HistoryCaptureView({
 											width: `${(element.position.width / pageWidth) * 100}%`,
 										}}
 									>
-										{element.position.pageOrder}
+										<span>{element.position.pageOrder}</span>
 									</span>
 								))
 							: null}

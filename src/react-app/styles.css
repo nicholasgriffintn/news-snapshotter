@@ -2008,12 +2008,25 @@ footer a {
 	min-width: 1.15rem;
 	min-height: 1rem;
 	padding: 0.08rem;
-	color: var(--ink);
-	font-size: clamp(0.35rem, 0.7vw, 0.65rem);
-	font-weight: 900;
 	background: rgba(37, 255, 230, 0.24);
 	border: 2px solid var(--cyan);
 	box-shadow: 2px 2px 0 rgba(13, 16, 36, 0.72);
+}
+
+.history-shot__box > span {
+	display: inline-grid;
+	place-items: center;
+	min-width: 1.25rem;
+	min-height: 1.15rem;
+	padding: 0.12rem 0.25rem;
+	color: var(--cream);
+	font-size: clamp(0.5rem, 0.7vw, 0.7rem);
+	font-variant-numeric: tabular-nums;
+	font-weight: 900;
+	line-height: 1;
+	background: rgba(8, 10, 28, 0.94);
+	border: 1px solid rgba(255, 247, 215, 0.92);
+	box-shadow: 2px 2px 0 rgba(8, 10, 28, 0.72);
 }
 
 .history-shot__box--lead {
