@@ -161,7 +161,7 @@ test("stores desktop analysis independently from screenshot artefacts", async (c
 			device: "desktop",
 			extractor: "bbc-front-page",
 			minimumElements: 20,
-			version: 9,
+			version: 10,
 		},
 		brand: "bbc",
 		name: "bbc-home",

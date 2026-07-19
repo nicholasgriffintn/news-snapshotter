@@ -95,9 +95,10 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		name: "bbc-front-page",
 		rules: [
 			{
-				cardSelector: "main > div:has([data-testid='billboard-canvas-background-image'])",
+				cardSelector:
+					"main > div:has([data-testid='billboard-canvas-background-image']), main > div:has(> [class*='-Canvas'] [class*='-ContentWrap'] [type='headline'])",
 				candidateSelector:
-					"main > div:has([data-testid='billboard-canvas-background-image']) a[href]:has(:is(h1, h2, h3, [type='headline']))",
+					"main > div:has([data-testid='billboard-canvas-background-image']) a[href]:has(:is(h1, h2, h3, [type='headline'])), main > div:has(> [class*='-Canvas'] [class*='-ContentWrap'] [type='headline']) a[href]:has(:is(h1, h2, h3, [type='headline']))",
 				headlineSelector: ["[type='headline']", "h1, h2, h3"],
 				kind: "story",
 				prominenceHint: "lead",
@@ -133,7 +134,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				kind: "story",
 			},
 		],
-		version: 9,
+		version: 10,
 	},
 	"bloomberg-front-page": {
 		name: "bloomberg-front-page",

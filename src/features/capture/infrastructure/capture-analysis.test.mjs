@@ -10,7 +10,7 @@ const site = {
 		device: "desktop",
 		extractor: "bbc-front-page",
 		minimumElements: 2,
-		version: 9,
+		version: 10,
 	},
 	brand: "bbc",
 	category: "news",

@@ -24,12 +24,15 @@ for (const fixture of ["bbc-home", "guardian-uk"]) {
 }
 
 test("extractor versions are explicit", () => {
-	const bbc = extractorDefinition("bbc-front-page", 9);
+	const bbc = extractorDefinition("bbc-front-page", 10);
 	assert.equal(bbc.name, "bbc-front-page");
 	assert.ok(
-		bbc.rules.some(({ candidateSelector, prominenceHint }) => {
+		bbc.rules.some(({ candidateSelector, cardSelector, prominenceHint }) => {
 			return (
-				/billboard-canvas-background-image/.test(candidateSelector) && prominenceHint === "lead"
+				/billboard-canvas-background-image/.test(candidateSelector) &&
+				/-Canvas/.test(cardSelector) &&
+				/-ContentWrap/.test(candidateSelector) &&
+				prominenceHint === "lead"
 			);
 		}),
 	);
@@ -122,7 +125,7 @@ test("extractor versions are explicit", () => {
 	const generic = extractorDefinition("generic-baseline", 4);
 	assert.equal(generic.rules[0].sectionSelector, undefined);
 	assert.doesNotMatch(generic.rules[0].candidateSelector, /^a\[href\]$/);
-	assert.throws(() => extractorDefinition("bbc-front-page", 8), /not registered/);
+	assert.throws(() => extractorDefinition("bbc-front-page", 9), /not registered/);
 	assert.throws(() => extractorDefinition("guardian-front-page", 7), /not registered/);
 	assert.throws(() => extractorDefinition("nytimes-front-page", 4), /not registered/);
 	assert.throws(() => extractorDefinition("times-front-page", 4), /not registered/);
@@ -131,7 +134,7 @@ test("extractor versions are explicit", () => {
 test("every extractor includes semantic elements from the rest of the page", () => {
 	const extractors = [
 		["generic-baseline", 4],
-		["bbc-front-page", 9],
+		["bbc-front-page", 10],
 		["bloomberg-front-page", 3],
 		["cnn-front-page", 4],
 		["dailymail-front-page", 4],
