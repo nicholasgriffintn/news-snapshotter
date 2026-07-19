@@ -51,7 +51,7 @@ test("builds deterministic private artefact keys", () => {
 	const timestamp = "2026-07-17T09-00-01-130Z";
 
 	assert.deepEqual(analysisKeys(site, "desktop", triggeredAt), {
-		extractionKey: `${prefix}/${timestamp}.extraction.v3.json.gz`,
+		extractionKey: `${prefix}/${timestamp}.extraction.v4.json.gz`,
 		failureKey: `${prefix}/${timestamp}.analysis-failure.json`,
 		htmlKey: `${prefix}/${timestamp}.rendered.html.gz`,
 	});
@@ -202,6 +202,39 @@ test("keeps media as distinct analysed content and restores visual page order", 
 		[
 			["video:short-report", "video", 1],
 			["https://www.bbc.co.uk/news/articles/story", "story", 2],
+		],
+	);
+});
+
+test("keeps repeated content placements in separate page sections", () => {
+	const newsPlacement = extractedStory({
+		canonicalUrl: "https://www.bbc.co.uk/sport/golf/live/example",
+		elementKey: "https://www.bbc.co.uk/sport/golf/live/example",
+		section: "News headlines",
+		position: { ...extractedStory().position, top: 200 },
+	});
+	const sportPlacement = extractedStory({
+		...newsPlacement,
+		section: "Sport headlines",
+		position: { ...newsPlacement.position, top: 900 },
+	});
+
+	const content = normaliseContentElements([newsPlacement, sportPlacement]);
+
+	assert.equal(content.length, 2);
+	assert.deepEqual(
+		content.map(({ elementKey, placementKey, section }) => ({ elementKey, placementKey, section })),
+		[
+			{
+				elementKey: newsPlacement.elementKey,
+				placementKey: `${newsPlacement.elementKey}#section=news-headlines&occurrence=1`,
+				section: "News headlines",
+			},
+			{
+				elementKey: sportPlacement.elementKey,
+				placementKey: `${sportPlacement.elementKey}#section=sport-headlines&occurrence=1`,
+				section: "Sport headlines",
+			},
 		],
 	);
 });

@@ -1,4 +1,8 @@
-import type { PageElement, PageExtraction } from "./extraction.ts";
+import {
+	pageElementPlacementKey,
+	type PageElement,
+	type PageExtraction,
+} from "./extraction.ts";
 
 export const POSITION_NOISE = {
 	minimumNormalisedDistance: 0.005,
@@ -41,6 +45,7 @@ export type ChangeEvent = {
 	extractorVersion: number;
 	magnitude?: number;
 	previousCaptureId: string;
+	placementKey?: string;
 	schemaVersion: number;
 	type: ChangeType;
 };
@@ -86,6 +91,7 @@ function elementChange(
 		...baseChange(previous, current, type, before, after),
 		elementKey: element.elementKey,
 		magnitude,
+		placementKey: pageElementPlacementKey(element),
 	};
 }
 
@@ -317,8 +323,12 @@ export async function diffAdjacentCaptures(
 			),
 		);
 	} else {
-		const previousContent = new Map(previous.elements.map((element) => [element.elementKey, element]));
-		const currentContent = new Map(current.elements.map((element) => [element.elementKey, element]));
+		const previousContent = new Map(
+			previous.elements.map((element) => [pageElementPlacementKey(element), element]),
+		);
+		const currentContent = new Map(
+			current.elements.map((element) => [pageElementPlacementKey(element), element]),
+		);
 
 		for (const [id, before] of previousContent) {
 			const after = currentContent.get(id);
@@ -339,8 +349,8 @@ export async function diffAdjacentCaptures(
 	}
 
 	changes.sort((left, right) => {
-		return `${left.type}:${left.elementKey ?? ""}`.localeCompare(
-			`${right.type}:${right.elementKey ?? ""}`,
+		return `${left.type}:${left.placementKey ?? left.elementKey ?? ""}`.localeCompare(
+			`${right.type}:${right.placementKey ?? right.elementKey ?? ""}`,
 		);
 	});
 
@@ -349,7 +359,7 @@ export async function diffAdjacentCaptures(
 			const identity = [
 				change.previousCaptureId,
 				change.currentCaptureId,
-				change.elementKey ?? "page",
+				change.placementKey ?? change.elementKey ?? "page",
 				change.type,
 			].join("\n");
 

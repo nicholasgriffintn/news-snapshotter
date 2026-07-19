@@ -5,17 +5,24 @@ import { HistorySearchPanel } from "./HistorySearchPanel.tsx";
 import { HistoryTrendPanel } from "./HistoryTrendPanel.tsx";
 import { useHistoryResearch } from "./useHistoryResearch.ts";
 
-export function HistoryResearchPage({ site }: { site: string }) {
+export function HistoryResearchPage({
+	preferredName,
+	site,
+}: {
+	preferredName?: string;
+	site: string;
+}) {
 	const research = useHistoryResearch(site);
+	const siteName = displayName(site, preferredName);
 
 	return (
 		<div className="history-page research-page">
 			<header className="history-heading history-heading--research">
 				<div>
-					<h1>{displayName(site)} research</h1>
+					<h1>{siteName} research</h1>
 				</div>
 				<div className="history-heading__intro">
-					<p>Search page content, compare prominence, and trace the imagery used over time.</p>
+					<p>Find coverage, see what occupied the page, and review the imagery used over time.</p>
 				</div>
 			</header>
 			<HistoryNav current="research" site={site} />
@@ -27,6 +34,7 @@ export function HistoryResearchPage({ site }: { site: string }) {
 				query={research.query}
 				results={research.results}
 				selectedContent={research.selectedContent}
+				siteName={siteName}
 				site={site}
 			/>
 			<HistoryTrendPanel

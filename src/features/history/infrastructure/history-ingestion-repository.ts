@@ -1,6 +1,6 @@
 import { contentCategory } from "../domain/content-classification.ts";
 import { diffAdjacentCaptures, type ChangeEvent } from "../domain/changes.ts";
-import type { PageExtraction } from "../domain/extraction.ts";
+import { pageElementPlacementKey, type PageExtraction } from "../domain/extraction.ts";
 import { loadCaptureExtraction } from "./history-capture-store.ts";
 
 function imageId(site: string, sourceUrl: string): string {
@@ -94,14 +94,15 @@ function contentStatements(database: D1Database, document: PageExtraction): D1Pr
 			database
 				.prepare(
 					`INSERT INTO page_elements (
-						capture_id, element_key, kind, canonical_url, headline, category, section,
+						capture_id, placement_key, element_key, kind, canonical_url, headline, category, section,
 						prominence, summary, image_id, image_source_url, image_alt, image_crop_key,
 						text_fingerprint, selector_hint, rank, top, left_position, width, height,
 						viewport_depth
-					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 				)
 				.bind(
 					document.capture.captureId,
+					pageElementPlacementKey(element),
 					element.elementKey,
 					element.kind,
 					element.canonicalUrl ?? null,
@@ -126,11 +127,12 @@ function contentStatements(database: D1Database, document: PageExtraction): D1Pr
 			database
 				.prepare(
 					`INSERT INTO content_observation_search (
-						capture_id, element_key, site, headline, summary, category, image_alt
-					) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+						capture_id, placement_key, element_key, site, headline, summary, category, image_alt
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 				)
 				.bind(
 					document.capture.captureId,
+					pageElementPlacementKey(element),
 					element.elementKey,
 					document.capture.site,
 					element.headline ?? "",
@@ -153,9 +155,9 @@ function changeStatement(
 		.prepare(
 			`INSERT INTO change_events (
 				change_id, site, device, previous_capture_id, current_capture_id,
-				element_key, change_type, before_value, after_value,
+				element_key, placement_key, change_type, before_value, after_value,
 				magnitude, extractor_name, extractor_version, schema_version, created_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT(change_id) DO UPDATE SET
 				before_value = excluded.before_value,
 				after_value = excluded.after_value,
@@ -169,6 +171,7 @@ function changeStatement(
 			change.previousCaptureId,
 			change.currentCaptureId,
 			change.elementKey ?? null,
+			change.placementKey ?? null,
 			change.type,
 			JSON.stringify(change.before),
 			JSON.stringify(change.after),

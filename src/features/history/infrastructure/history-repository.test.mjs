@@ -159,6 +159,51 @@ test("persists every content kind as the same complete page observation", async 
 	sqlite.close();
 });
 
+test("persists repeated page placements without duplicating content history points", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const elementKey = "https://www.bbc.co.uk/sport/golf/live/example";
+	const newsPlacement = historyStory({
+		canonicalUrl: elementKey,
+		elementKey,
+		placementKey: `${elementKey}#section=news-headlines&occurrence=1`,
+		prominence: "lead",
+		section: "News headlines",
+		position: { ...historyStory().position, pageOrder: 2, top: 200 },
+	});
+	const sportPlacement = historyStory({
+		...newsPlacement,
+		placementKey: `${elementKey}#section=sport-headlines&occurrence=1`,
+		prominence: "standard",
+		section: "Sport headlines",
+		position: { ...newsPlacement.position, pageOrder: 8, top: 900 },
+	});
+	const capture = historyExtraction("capture-repeated", "2026-07-19T17:05:35.721Z", {
+		elements: [newsPlacement, sportPlacement],
+	});
+
+	await ingestExtraction(database, "capture-repeated.json.gz", capture);
+	const stored = await getCapture(database, "bbc-home", "capture-repeated");
+	const history = await getContentHistory(database, "bbc-home", elementKey, { limit: 10 });
+
+	assert.equal(stored.elements.length, 2);
+	assert.deepEqual(
+		stored.elements.map(({ placementKey, section }) => [placementKey, section]),
+		[
+			[newsPlacement.placementKey, "News headlines"],
+			[sportPlacement.placementKey, "Sport headlines"],
+		],
+	);
+	assert.equal(history.observations.length, 1);
+	assert.equal(history.observations[0].section, "News headlines");
+	assert.equal(
+		rows(sqlite, "SELECT * FROM content_observation_search WHERE capture_id = 'capture-repeated'")
+			.length,
+		2,
+	);
+
+	sqlite.close();
+});
+
 test("reads a bounded media history across captures", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	const media = historyStory({

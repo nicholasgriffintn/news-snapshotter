@@ -1,6 +1,25 @@
+import { useMemo, useState } from "react";
+
 import { historyScreenshotUrl } from "../../platform/api-client.ts";
-import type { HistoryCapture } from "../../core/types.ts";
+import type { HistoryCapture, PageElementKind } from "../../core/types.ts";
 import { HistoryContentItem } from "./HistoryContentItem.tsx";
+import {
+	contentKindCounts,
+	contentWithKinds,
+	DEFAULT_HISTORY_CONTENT_KINDS,
+	HISTORY_CONTENT_KINDS,
+	toggledContentKinds,
+} from "./domain/content-kind-filter.ts";
+
+const KIND_LABELS: Readonly<Record<PageElementKind, string>> = {
+	audio: "Audio",
+	heading: "Headings",
+	image: "Images",
+	navigation: "Navigation",
+	other: "Other",
+	story: "Stories",
+	video: "Videos",
+};
 
 export function HistoryCaptureView({
 	capture,
@@ -12,9 +31,21 @@ export function HistoryCaptureView({
 	onToggleOverlay: () => void;
 }) {
 	const content = capture.elements;
+	const [visibleKinds, setVisibleKinds] = useState<ReadonlySet<PageElementKind>>(
+		() => new Set(DEFAULT_HISTORY_CONTENT_KINDS),
+	);
+	const counts = useMemo(() => contentKindCounts(content), [content]);
+	const visibleContent = useMemo(
+		() => contentWithKinds(content, visibleKinds),
+		[content, visibleKinds],
+	);
 	const pageWidth = Math.max(capture.capture.pageWidth, 1);
 	const pageHeight = Math.max(capture.capture.pageHeight, 1);
-	const contentSummary = `${content.length} items`;
+	const contentSummary = `${visibleContent.length} shown · ${content.length} total`;
+
+	function toggleKind(kind: PageElementKind) {
+		setVisibleKinds((current) => toggledContentKinds(current, kind));
+	}
 
 	return (
 		<section className="history-evidence">
@@ -37,11 +68,11 @@ export function HistoryCaptureView({
 							src={historyScreenshotUrl(capture.capture.screenshotKey)}
 						/>
 						{overlay
-							? content.map((element) => (
+							? visibleContent.map((element) => (
 									<span
 										aria-label={`${element.kind} ${element.position.pageOrder}: ${element.headline ?? "Untitled"}`}
 										className={`history-shot__box history-shot__box--${element.prominence ?? "standard"} history-shot__box--${element.kind}`}
-										key={element.elementKey}
+										key={element.placementKey ?? element.elementKey}
 										style={{
 											height: `${(element.position.height / pageHeight) * 100}%`,
 											left: `${(element.position.left / pageWidth) * 100}%`,
@@ -62,15 +93,33 @@ export function HistoryCaptureView({
 					<span>Analysed content</span>
 					<strong>{contentSummary}</strong>
 				</header>
-				<ol>
-					{content.map((element) => (
-						<HistoryContentItem
-							element={element}
-							key={element.elementKey}
-							site={capture.capture.site}
-						/>
+				<div aria-label="Filter analysed content by kind" className="history-kind-filters">
+					{HISTORY_CONTENT_KINDS.map((kind) => (
+						<button
+							aria-pressed={visibleKinds.has(kind)}
+							data-kind={kind}
+							key={kind}
+							onClick={() => toggleKind(kind)}
+							type="button"
+						>
+							<span>{KIND_LABELS[kind]}</span>
+							<strong>{counts[kind]}</strong>
+						</button>
 					))}
-				</ol>
+				</div>
+				{visibleContent.length > 0 ? (
+					<ol>
+						{visibleContent.map((element) => (
+							<HistoryContentItem
+								element={element}
+								key={element.placementKey ?? element.elementKey}
+								site={capture.capture.site}
+							/>
+						))}
+					</ol>
+				) : (
+					<p className="history-story-rail__empty">Select a content kind to show it here.</p>
+				)}
 			</aside>
 		</section>
 	);

@@ -9,6 +9,7 @@ import type {
 } from "../../core/contracts.ts";
 
 export type {
+	PageElementKind,
 	CapturePriority,
 	CaptureProviderName,
 	CaptureRegion,
@@ -58,6 +59,7 @@ export type HistoryElement = {
 	headline?: string;
 	image?: { alt?: string; sourceUrl?: string };
 	kind: PageElementKind;
+	placementKey?: string;
 	position: {
 		height: number;
 		left: number;
@@ -100,6 +102,7 @@ export type HistoryChange = {
 	currentCaptureId: string;
 	elementKey?: string;
 	magnitude?: number;
+	placementKey?: string;
 	previousCaptureId: string;
 	type: string;
 };

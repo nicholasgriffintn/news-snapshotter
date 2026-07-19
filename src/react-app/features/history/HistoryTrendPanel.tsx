@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
 import type { HistoryTrends } from "../../core/types.ts";
+import { calendarPeriodLabel } from "../../shared/format.ts";
 import { isResearchPeriod, type ResearchPeriod } from "./domain/research-state.ts";
 
 function isTrendMode(value: string): value is HistoryTrends["mode"] {
@@ -33,7 +34,11 @@ export function HistoryTrendPanel({
 		<section className="research-panel research-panel--trends">
 			<header>
 				<div>
-					<h2>Coverage over time</h2>
+					<p className="research-panel__kicker">Measure attention</p>
+					<h2>Coverage patterns</h2>
+					<p className="research-panel__description">
+						See which categories or headline terms occupied the page. Estimates use the time between consecutive captures.
+					</p>
 				</div>
 				<div className="research-controls">
 					<label>
@@ -78,43 +83,54 @@ export function HistoryTrendPanel({
 			) : latest ? (
 				mode === "category" ? (
 					<>
+						<div className="research-figure-heading">
+							<strong>{calendarPeriodLabel(latest.period)}</strong>
+							<span>Top categories · estimated content-hours</span>
+						</div>
 						<div className="trend-bars">
 							{latest.values.slice(0, 12).map((value) => (
 								<div key={value.label}>
-									<span>{value.label}</span>
-									<i style={weightedStyle("--bar", value.weightSeconds / maximum)} />
-									<small>{Math.round(value.weightSeconds / 3_600)} weighted hours</small>
+									<span className="trend-bars__label">
+										<strong>{value.label}</strong>
+										<small>{value.count} appearances</small>
+									</span>
+									<span className="trend-bars__track">
+										<i style={weightedStyle("--bar", value.weightSeconds / maximum)} />
+									</span>
+									<strong>{Math.round(value.weightSeconds / 3_600)}h</strong>
 								</div>
 							))}
 						</div>
 						{trends && trends.periods.length > 1 ? (
-							<div className="trend-periods">
+							<div className="trend-periods" aria-label="Leading category by capture period">
+								<h3>Leading category by capture period</h3>
 								{trends.periods.map((trendPeriod) => (
 									<div key={trendPeriod.period}>
-										<time>{trendPeriod.period}</time>
-										<p>
-											{trendPeriod.values
-												.slice(0, 3)
-												.map(({ label }) => label)
-												.join(" · ")}
-										</p>
+										<time>{calendarPeriodLabel(trendPeriod.period)}</time>
+										<strong>{trendPeriod.values[0]?.label ?? "No observations"}</strong>
 									</div>
 								))}
 							</div>
 						) : null}
 					</>
 				) : (
-					<div className="word-cloud" aria-label="Weighted headline words">
+					<>
+						<div className="research-figure-heading">
+							<strong>{calendarPeriodLabel(latest.period)}</strong>
+							<span>Size reflects estimated time visible in captured headlines</span>
+						</div>
+						<div className="word-cloud" aria-label="Headline terms weighted by estimated time visible">
 						{latest.values.slice(0, 40).map((value) => (
 							<span
 								key={value.label}
 								style={weightedStyle("--weight", value.weightSeconds / maximum)}
-								title={`${Math.round(value.weightSeconds / 3_600)} weighted hours`}
+								title={`${Math.round(value.weightSeconds / 3_600)} estimated content-hours`}
 							>
 								{value.label}
 							</span>
 						))}
-					</div>
+						</div>
+					</>
 				)
 			) : (
 				<p className="research-empty">No trend observations are available for this period.</p>

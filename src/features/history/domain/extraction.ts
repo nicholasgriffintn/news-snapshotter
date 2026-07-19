@@ -21,6 +21,7 @@ export type PageElement = {
 		sourceUrl?: string;
 	};
 	kind: PageElementKind;
+	placementKey?: string;
 	position: ElementPosition;
 	prominence?: "lead" | "major" | "standard" | "minor";
 	section?: string;
@@ -57,6 +58,10 @@ export type PageExtraction = {
 		message: string;
 	}>;
 };
+
+export function pageElementPlacementKey(element: PageElement): string {
+	return element.placementKey ?? element.elementKey;
+}
 
 const ELEMENT_KINDS = new Set([
 	"audio",
@@ -119,6 +124,7 @@ function isElement(value: unknown): value is PageElement {
 
 	return (
 		hasString(element, "elementKey") &&
+		isOptionalString(element.placementKey, MAX_IDENTIFIER_LENGTH) &&
 		typeof element.kind === "string" &&
 		ELEMENT_KINDS.has(element.kind) &&
 		hasString(element, "textFingerprint") &&

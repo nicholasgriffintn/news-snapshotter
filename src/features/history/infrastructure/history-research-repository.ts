@@ -111,18 +111,18 @@ export async function searchHistory(
 				CASE page_elements.prominence
 					WHEN 'lead' THEN 4 WHEN 'major' THEN 3 WHEN 'standard' THEN 2 ELSE 1
 				END AS prominenceScore,
-				bm25(content_observation_search, 0, 0, 0, 10, 4, 2, 1) AS relevance
+				bm25(content_observation_search, 0, 0, 0, 0, 10, 4, 2, 1) AS relevance
 				FROM content_observation_search
 				JOIN indexed_desktop_captures AS analysed_captures
 					ON analysed_captures.capture_id = content_observation_search.capture_id
 				JOIN page_elements
 					ON page_elements.capture_id = content_observation_search.capture_id
-					AND page_elements.element_key = content_observation_search.element_key
+					AND page_elements.placement_key = content_observation_search.placement_key
 				WHERE ${conditions.join(" AND ")}
 			), latest_matches AS (
 				SELECT *, ROW_NUMBER() OVER (
 					PARTITION BY site, elementKey
-					ORDER BY capturedAt DESC, captureId DESC
+					ORDER BY capturedAt DESC, captureId DESC, prominenceScore DESC, rank
 				) AS observationRank
 				FROM matching_observations
 			)

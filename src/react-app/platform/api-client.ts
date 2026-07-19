@@ -37,8 +37,8 @@ export async function fetchSnapshots(options?: RequestOptions): Promise<Snapshot
 	return (await readJson<{ screenshots: Snapshot[] }>(response)).screenshots;
 }
 
-export async function fetchCatalogue(): Promise<CatalogueSite[]> {
-	const response = await fetch("/api/catalogue");
+export async function fetchCatalogue(options?: RequestOptions): Promise<CatalogueSite[]> {
+	const response = await fetch("/api/catalogue", options);
 	return (await readJson<{ sites: CatalogueSite[] }>(response)).sites;
 }
 

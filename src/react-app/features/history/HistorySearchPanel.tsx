@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import type { HistorySearchResult } from "../../core/types.ts";
+import { dateTimeLabel, displayName } from "../../shared/format.ts";
 import { contentHistoryPath } from "./history-routes.ts";
 
 export function HistorySearchPanel({
@@ -11,6 +12,7 @@ export function HistorySearchPanel({
 	results,
 	selectedContent,
 	site,
+	siteName,
 }: {
 	loading: boolean;
 	onQuery: (query: string) => void;
@@ -19,6 +21,7 @@ export function HistorySearchPanel({
 	results: HistorySearchResult[];
 	selectedContent: Set<string>;
 	site: string;
+	siteName: string;
 }) {
 	const [draft, setDraft] = useState(query);
 	useEffect(() => setDraft(query), [query]);
@@ -31,10 +34,14 @@ export function HistorySearchPanel({
 		<section className="research-panel research-panel--search">
 			<header>
 				<div>
-					<h2>Search the archive</h2>
+					<p className="research-panel__kicker">Find coverage</p>
+					<h2>Search page content</h2>
+					<p className="research-panel__description">
+						Search the headlines, summaries, sections and image descriptions captured from {siteName}.
+					</p>
 				</div>
 				{selectedContent.size >= 2 ? (
-					<a href={`/history/${encodeURIComponent(site)}/compare?${compareSearch}`}>
+					<a className="research-panel__action" href={`/history/${encodeURIComponent(site)}/compare?${compareSearch}`}>
 						Compare {selectedContent.size} items →
 					</a>
 				) : null}
@@ -46,16 +53,23 @@ export function HistorySearchPanel({
 				}}
 			>
 				<label>
-					<span>Headline, summary, category or image text</span>
+					<span>Search terms</span>
 					<input
 						maxLength={200}
 						onChange={(event) => setDraft(event.target.value)}
-						placeholder="Election, climate, Downing Street…"
+						placeholder="Try a person, place, topic or phrase"
+						type="search"
 						value={draft}
 					/>
 				</label>
 				<button type="submit">Search history</button>
 			</form>
+			{query && !loading && results.length > 0 ? (
+				<div className="research-results__status">
+					<strong>{results.length} {results.length === 1 ? "result" : "results"}</strong>
+					<span>Select two or more items to compare how their position changed.</span>
+				</div>
+			) : null}
 			{loading ? (
 				<p aria-live="polite" className="research-empty" role="status">
 					Searching the archive…
@@ -68,20 +82,24 @@ export function HistorySearchPanel({
 				{!loading
 					? results.map((result) => (
 							<li key={`${result.captureId}:${result.elementKey}`}>
-								<input
-									aria-label={`Select ${result.headline ?? "content item"} for comparison`}
-									checked={selectedContent.has(result.elementKey)}
-									onChange={() => onToggleContent(result.elementKey)}
-									type="checkbox"
-								/>
 								<a href={contentHistoryPath(site, result.elementKey)}>
 									<strong>{result.headline ?? `Untitled ${result.kind}`}</strong>
 									{result.summary ? <p>{result.summary}</p> : null}
-									<small>
-										{new Date(result.capturedAt).toLocaleString("en-GB")} · {result.kind} ·{" "}
-										{result.category ?? "Front page"} · rank {result.rank}
-									</small>
+									<div className="research-result__meta">
+										<time dateTime={result.capturedAt}>{dateTimeLabel(result.capturedAt)}</time>
+										<span>{displayName(result.kind)}</span>
+										<span>{result.category ?? "Front page"}</span>
+										<span>Page position {result.rank}</span>
+									</div>
 								</a>
+								<label className="research-result__selection">
+									<input
+										checked={selectedContent.has(result.elementKey)}
+										onChange={() => onToggleContent(result.elementKey)}
+										type="checkbox"
+									/>
+									<span>Compare</span>
+								</label>
 							</li>
 						))
 					: null}

@@ -7,7 +7,15 @@ import { displayName } from "../../shared/format.ts";
 import { ContentTimelineChart } from "./ContentTimelineChart.tsx";
 import { HistoryNav } from "./HistoryNav.tsx";
 
-export function ElementHistoryPage({ elementKey, site }: { elementKey: string; site: string }) {
+export function ElementHistoryPage({
+	elementKey,
+	preferredName,
+	site,
+}: {
+	elementKey: string;
+	preferredName?: string;
+	site: string;
+}) {
 	const [history, setHistory] = useState<ElementHistory>();
 	const [error, setError] = useState<string>();
 
@@ -36,7 +44,7 @@ export function ElementHistoryPage({ elementKey, site }: { elementKey: string; s
 			<header className="history-heading history-heading--story">
 				<div>
 					<p className="eyebrow">
-						{displayName(site)} {history?.kind ?? "content"} history
+						{displayName(site, preferredName)} {history?.kind ?? "content"} history
 					</p>
 					<h1 className={title.length > 90 ? "story-title story-title--long" : "story-title"}>
 						{title}

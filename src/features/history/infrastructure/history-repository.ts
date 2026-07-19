@@ -129,7 +129,13 @@ export async function getContentHistory(
 				ON analysed_captures.capture_id = page_elements.capture_id
 			WHERE analysed_captures.site = ?
 				AND page_elements.element_key = ?
-			ORDER BY analysed_captures.captured_at DESC, page_elements.capture_id DESC
+			ORDER BY
+				analysed_captures.captured_at DESC,
+				page_elements.capture_id DESC,
+				CASE page_elements.prominence
+					WHEN 'lead' THEN 4 WHEN 'major' THEN 3 WHEN 'standard' THEN 2 ELSE 1
+				END DESC,
+				page_elements.rank
 			LIMIT 1`,
 		)
 		.bind(site, elementKey)
@@ -158,28 +164,41 @@ export async function getContentHistory(
 
 	const result = await database
 		.prepare(
-			`SELECT
-				page_elements.capture_id AS captureId,
-				analysed_captures.captured_at AS capturedAt,
-				page_elements.headline,
-				page_elements.summary,
-				page_elements.image_source_url AS imageSourceUrl,
-				page_elements.image_alt AS imageAlt,
-				page_elements.image_crop_key AS imageCropKey,
-				page_elements.category,
-				page_elements.section,
-				page_elements.prominence,
-				page_elements.rank,
-				page_elements.top,
-				page_elements.left_position AS left,
-				page_elements.width,
-				page_elements.height,
-				page_elements.viewport_depth AS viewportDepth
-			FROM page_elements
-			JOIN indexed_desktop_captures AS analysed_captures
-				ON analysed_captures.capture_id = page_elements.capture_id
-			WHERE ${conditions.join(" AND ")}
-			ORDER BY analysed_captures.captured_at DESC, page_elements.capture_id DESC
+			`WITH ranked_observations AS (
+				SELECT
+					page_elements.capture_id AS captureId,
+					analysed_captures.captured_at AS capturedAt,
+					page_elements.headline,
+					page_elements.summary,
+					page_elements.image_source_url AS imageSourceUrl,
+					page_elements.image_alt AS imageAlt,
+					page_elements.image_crop_key AS imageCropKey,
+					page_elements.category,
+					page_elements.section,
+					page_elements.prominence,
+					page_elements.rank,
+					page_elements.top,
+					page_elements.left_position AS left,
+					page_elements.width,
+					page_elements.height,
+					page_elements.viewport_depth AS viewportDepth,
+					ROW_NUMBER() OVER (
+						PARTITION BY page_elements.capture_id
+						ORDER BY
+							CASE page_elements.prominence
+								WHEN 'lead' THEN 4 WHEN 'major' THEN 3
+								WHEN 'standard' THEN 2 ELSE 1
+							END DESC,
+							page_elements.rank
+					) AS placementRank
+				FROM page_elements
+				JOIN indexed_desktop_captures AS analysed_captures
+					ON analysed_captures.capture_id = page_elements.capture_id
+				WHERE ${conditions.join(" AND ")}
+			)
+			SELECT * FROM ranked_observations
+			WHERE placementRank = 1
+			ORDER BY capturedAt DESC, captureId DESC
 			LIMIT ?`,
 		)
 		.bind(...parameters)
@@ -187,7 +206,9 @@ export async function getContentHistory(
 	const hasMore = result.results.length > options.limit;
 	const page = result.results.slice(0, options.limit);
 	const last = page.at(-1);
-	const observations = page.reverse();
+	const observations = page.reverse().map(({ placementRank: _placementRank, ...observation }) => {
+		return observation;
+	});
 
 	return {
 		...element,
@@ -234,7 +255,8 @@ export async function listChanges(
 			`SELECT
 				change_id AS changeId, previous_capture_id AS previousCaptureId,
 				current_capture_id AS currentCaptureId,
-				element_key AS elementKey, change_type AS type, before_value AS beforeValue,
+				element_key AS elementKey, placement_key AS placementKey,
+				change_type AS type, before_value AS beforeValue,
 				after_value AS afterValue, magnitude,
 				change_events.extractor_name AS extractorName,
 				change_events.extractor_version AS extractorVersion,

@@ -5,7 +5,7 @@ import { HistoryNav } from "./HistoryNav.tsx";
 import { HistoryScrubber } from "./HistoryScrubber";
 import { useHistoryPage } from "./useHistoryPage.ts";
 
-export function HistoryPage({ site }: { site: string }) {
+export function HistoryPage({ preferredName, site }: { preferredName?: string; site: string }) {
 	const history = useHistoryPage(site);
 	const latestFailure = history.failures[0];
 
@@ -13,7 +13,7 @@ export function HistoryPage({ site }: { site: string }) {
 		<div className="history-page">
 			<header className="history-heading history-heading--archive">
 				<div>
-					<h1>{displayName(site)} history</h1>
+					<h1>{displayName(site, preferredName)} history</h1>
 				</div>
 				<div className="history-heading__intro">
 					<p>Review each captured front page alongside its extracted content and layout.</p>

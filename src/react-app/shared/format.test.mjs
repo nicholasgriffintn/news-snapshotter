@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { captureWindowKey, displayName, groupLabel, timeLabel } from "./format.ts";
+import {
+	calendarPeriodLabel,
+	captureWindowKey,
+	displayName,
+	groupLabel,
+	timeLabel,
+} from "./format.ts";
 
 test("turns storage identifiers into display names", () => {
 	assert.equal(displayName("belfast-telegraph"), "Belfast Telegraph");
@@ -34,4 +40,10 @@ test("starts a new group at each five-minute boundary", () => {
 		captureWindowKey("2026-07-16T09:05:00.000Z"),
 	);
 	assert.equal(captureWindowKey("2026-07-16T09:07:42.123Z"), "2026-07-16T09:05:00.000Z");
+});
+
+test("turns trend buckets into readable calendar periods", () => {
+	assert.equal(calendarPeriodLabel("2026-07"), "July 2026");
+	assert.equal(calendarPeriodLabel("2026-07-19"), "19 Jul 2026");
+	assert.equal(calendarPeriodLabel("all"), "all");
 });

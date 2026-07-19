@@ -32,6 +32,7 @@ type ObservationRow = {
 	image_source_url: string | null;
 	kind: PageElement["kind"];
 	left_position: number;
+	placement_key: string;
 	prominence: PageElement["prominence"] | null;
 	rank: number;
 	section: string | null;
@@ -60,6 +61,7 @@ function rowToElement(row: ObservationRow): PageElement {
 		headline: row.headline ?? undefined,
 		image,
 		kind: row.kind,
+		placementKey: row.placement_key,
 		position: {
 			height: row.height,
 			left: row.left_position,
@@ -101,6 +103,7 @@ export async function loadCaptureExtraction(
 				image_source_url,
 				kind,
 				left_position,
+				placement_key,
 				prominence,
 				rank,
 				section,

@@ -201,7 +201,7 @@ export function ExtractorPreviewTool({ apiKey }: { apiKey: string }) {
 							</thead>
 							<tbody>
 								{preview.elements.map((element) => (
-									<tr key={element.elementKey}>
+									<tr key={element.placementKey ?? element.elementKey}>
 										<td>{element.elementKey}</td>
 										<td>{element.kind}</td>
 										<td>{element.headline ?? "—"}</td>

@@ -61,6 +61,9 @@ export function determineContentProminence<T extends ProminenceCandidate>(
 	const lead = explicitLead ?? inferredLead;
 
 	return classified.map((element) => {
-		return element.elementKey === lead?.elementKey ? { ...element, prominence: "lead" } : element;
+		const isLead = element.placementKey
+			? element.placementKey === lead?.placementKey
+			: element === lead;
+		return isLead ? { ...element, prominence: "lead" } : element;
 	});
 }

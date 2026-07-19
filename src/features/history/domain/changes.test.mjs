@@ -160,3 +160,48 @@ test("tracks kind, category, and prominence independently for matched content", 
 		],
 	);
 });
+
+test("tracks repeated placements independently while retaining content identity", async () => {
+	const elementKey = "https://www.bbc.co.uk/sport/golf/live/example";
+	const newsPlacement = historyStory({
+		elementKey,
+		placementKey: `${elementKey}#section=news-headlines&occurrence=1`,
+		section: "News headlines",
+		position: { ...historyStory().position, pageOrder: 2, top: 200 },
+	});
+	const sportPlacement = historyStory({
+		...newsPlacement,
+		placementKey: `${elementKey}#section=sport-headlines&occurrence=1`,
+		section: "Sport headlines",
+		position: { ...newsPlacement.position, pageOrder: 8, top: 900 },
+	});
+	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z", {
+		elements: [newsPlacement, sportPlacement],
+	});
+	const current = historyExtraction("capture-b", "2026-07-17T10:00:00.000Z", {
+		elements: [
+			newsPlacement,
+			{
+				...sportPlacement,
+				position: { ...sportPlacement.position, pageOrder: 9 },
+			},
+		],
+	});
+
+	const changes = await diffAdjacentCaptures(previous, current);
+
+	assert.deepEqual(
+		changes.map(({ elementKey: contentKey, placementKey, type }) => ({
+			contentKey,
+			placementKey,
+			type,
+		})),
+		[
+			{
+				contentKey: elementKey,
+				placementKey: sportPlacement.placementKey,
+				type: "rank-changed",
+			},
+		],
+	);
+});

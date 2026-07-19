@@ -12,7 +12,7 @@ import { extractorDefinition } from "../domain/extractor-registry.ts";
 import { determineContentProminence } from "../domain/content-prominence.ts";
 import { collectPageContent } from "./page-content-collector.ts";
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 const SANITISATION_VERSION = 1;
 
 type ScreenshotAnalysis = import("../../../core/domain.ts").ScreenshotResult["analysis"];
@@ -242,7 +242,9 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 			collected.warnings,
 		);
 		const contentHash = await sha256(collected.html);
-		const structureSource = collected.elements.map(({ elementKey }) => elementKey).join("\n");
+		const structureSource = collected.elements
+			.map(({ elementKey, placementKey }) => placementKey ?? elementKey)
+			.join("\n");
 		const structureHash = await sha256(structureSource);
 
 		const extraction = {
