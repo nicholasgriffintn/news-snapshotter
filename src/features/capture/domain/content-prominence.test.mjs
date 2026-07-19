@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { determineStoryProminence } from "./story-prominence.ts";
+import { determineContentProminence } from "./content-prominence.ts";
 
 function story(elementKey, width, viewportDepth, selectorHint = "h2") {
 	return {
@@ -21,7 +21,7 @@ function story(elementKey, width, viewportDepth, selectorHint = "h2") {
 }
 
 test("assigns one lead while keeping major, standard, and minor stories reachable", () => {
-	const stories = determineStoryProminence(
+	const stories = determineContentProminence(
 		[story("1", 500, 0.2), story("2", 450, 0.3), story("3", 300, 0.4), story("4", 150, 1.5)],
 		1_200,
 	);
@@ -33,7 +33,7 @@ test("assigns one lead while keeping major, standard, and minor stories reachabl
 });
 
 test("prefers an above-fold story heading marked h1 for the lead", () => {
-	const stories = determineStoryProminence(
+	const stories = determineContentProminence(
 		[story("1", 500, 0.2), story("2", 300, 0.3, "h1")],
 		1_200,
 	);
@@ -45,7 +45,7 @@ test("prefers an above-fold story heading marked h1 for the lead", () => {
 });
 
 test("recognises a quarter-width top story as lead without making peers major", () => {
-	const [topStory, laterStory] = determineStoryProminence(
+	const [topStory, laterStory] = determineContentProminence(
 		[story("1", 300, 0.2), story("2", 300, 1.2)],
 		1_200,
 	);
@@ -55,7 +55,7 @@ test("recognises a quarter-width top story as lead without making peers major", 
 });
 
 test("does not invent a lead when extraction starts below the fold", () => {
-	const [storyBelowFold] = determineStoryProminence([story("1", 500, 2)], 1_200);
+	const [storyBelowFold] = determineContentProminence([story("1", 500, 2)], 1_200);
 
 	assert.equal(storyBelowFold.prominence, "major");
 });
@@ -63,7 +63,7 @@ test("does not invent a lead when extraction starts below the fold", () => {
 test("honours an extractor-reviewed lead across changing billboard layouts", () => {
 	const h1 = story("1", 700, 0.15, "h1");
 	const billboard = { ...story("2", 900, 0.25), prominenceHint: "lead" };
-	const stories = determineStoryProminence([h1, billboard], 1_200);
+	const stories = determineContentProminence([h1, billboard], 1_200);
 
 	assert.deepEqual(
 		stories.map(({ prominence }) => prominence),
@@ -78,7 +78,7 @@ test("uses visual reading order when an extractor marks a row as lead candidates
 		position: { ...story("2", 500, 0.2).position, left: 600 },
 		prominenceHint: "lead",
 	};
-	const stories = determineStoryProminence([left, right], 1_200);
+	const stories = determineContentProminence([left, right], 1_200);
 
 	assert.deepEqual(
 		stories.map(({ prominence }) => prominence),

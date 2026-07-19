@@ -1952,13 +1952,12 @@ footer a {
 }
 
 .history-shot__box--video {
-	background: rgba(255, 209, 76, 0.3);
-	border-color: var(--yellow);
+	border-style: dashed;
 }
 
 .history-shot__box--audio {
-	background: rgba(255, 47, 120, 0.3);
-	border-color: var(--pink);
+	border-style: double;
+	border-width: 3px;
 }
 
 .history-story-rail {
@@ -2018,11 +2017,11 @@ footer a {
 	color: var(--cyan);
 }
 
-.history-content-item--video .history-story-rank small {
+.history-content-item--video .history-story-rank .history-content-kind {
 	color: var(--yellow);
 }
 
-.history-content-item--audio .history-story-rank small {
+.history-content-item--audio .history-story-rank .history-content-kind {
 	color: var(--cyan);
 }
 

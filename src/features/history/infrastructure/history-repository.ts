@@ -1,6 +1,6 @@
 import { diffAdjacentCaptures, type ChangeEvent } from "../domain/changes.ts";
 import type { PageElement, PageExtraction } from "../domain/extraction.ts";
-import { storyCategory } from "../domain/story-classification.ts";
+import { contentCategory } from "../domain/content-classification.ts";
 
 type CaptureRow = {
 	capture_id: string;
@@ -164,7 +164,7 @@ async function loadCaptureExtraction(
 				NULL AS image_source_url,
 				kind,
 				left_position,
-				NULL AS prominence,
+				prominence,
 				rank,
 				section,
 				selector_hint,
@@ -267,7 +267,7 @@ function storyStatements(database: D1Database, document: PageExtraction): D1Prep
 		const id = storyId(document.capture.site, element);
 		const sourceUrl = element.image?.sourceUrl;
 		const currentImageId = sourceUrl ? imageId(document.capture.site, sourceUrl) : null;
-		const category = storyCategory(element.canonicalUrl, element.category ?? element.section);
+		const category = contentCategory(element.canonicalUrl, element.category ?? element.section);
 
 		statements.push(
 			database
@@ -375,9 +375,9 @@ function pageElementStatements(
 				.prepare(
 					`INSERT INTO page_elements (
 						capture_id, element_key, kind, canonical_url, headline, category, section,
-						text_fingerprint, selector_hint, rank, top, left_position, width, height,
+						prominence, text_fingerprint, selector_hint, rank, top, left_position, width, height,
 						viewport_depth
-					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+					) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 				)
 				.bind(
 					document.capture.captureId,
@@ -387,6 +387,7 @@ function pageElementStatements(
 					element.headline ?? null,
 					element.category ?? null,
 					element.section ?? null,
+					element.prominence ?? null,
 					element.textFingerprint,
 					element.selectorHint ?? null,
 					element.position.pageOrder,

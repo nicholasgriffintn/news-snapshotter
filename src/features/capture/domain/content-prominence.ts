@@ -7,14 +7,14 @@ const MAJOR_WIDTH_RATIO = 1 / 3;
 const LEAD_WIDTH_RATIO = 1 / 4;
 const MINOR_WIDTH_RATIO = 1 / 6;
 
-export function determineStoryProminence<T extends ProminenceCandidate>(
-	stories: T[],
+export function determineContentProminence<T extends ProminenceCandidate>(
+	content: T[],
 	pageWidth: number,
 ): Array<T & { prominence: Prominence }> {
 	const width = pageWidth > 0 ? pageWidth : Number.POSITIVE_INFINITY;
 
-	const classified = stories.map((story) => {
-		const widthRatio = story.position.width / width;
+	const classified = content.map((element) => {
+		const widthRatio = element.position.width / width;
 		let prominence: Prominence = "standard";
 
 		if (widthRatio >= MAJOR_WIDTH_RATIO) {
@@ -23,7 +23,7 @@ export function determineStoryProminence<T extends ProminenceCandidate>(
 			prominence = "minor";
 		}
 
-		return { ...story, prominence };
+		return { ...element, prominence };
 	});
 
 	const explicitLead = classified
@@ -36,10 +36,10 @@ export function determineStoryProminence<T extends ProminenceCandidate>(
 			);
 		})[0];
 	const inferredLead = classified
-		.filter((story) => {
+		.filter((element) => {
 			return (
-				story.position.viewportDepth <= 1 &&
-				(story.selectorHint === "h1" || story.position.width / width >= LEAD_WIDTH_RATIO)
+				element.position.viewportDepth <= 1 &&
+				(element.selectorHint === "h1" || element.position.width / width >= LEAD_WIDTH_RATIO)
 			);
 		})
 		.sort((left, right) => {
@@ -56,7 +56,7 @@ export function determineStoryProminence<T extends ProminenceCandidate>(
 		})[0];
 	const lead = explicitLead ?? inferredLead;
 
-	return classified.map((story) => {
-		return story.elementKey === lead?.elementKey ? { ...story, prominence: "lead" } : story;
+	return classified.map((element) => {
+		return element.elementKey === lead?.elementKey ? { ...element, prominence: "lead" } : element;
 	});
 }

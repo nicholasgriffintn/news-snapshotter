@@ -129,3 +129,33 @@ test("tracks analysed media appearing and disappearing without story identities"
 	);
 	assert.notEqual(changes[0].changeId, changes[1].changeId);
 });
+
+test("tracks category and prominence changes for matched media", async () => {
+	const media = historyStory({
+		canonicalUrl: "https://www.bbc.co.uk/sport/football/videos/example",
+		elementKey: "https://www.bbc.co.uk/sport/football/videos/example",
+		kind: "video",
+	});
+	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z", {
+		elements: [media],
+	});
+	const current = historyExtraction("capture-b", "2026-07-17T10:00:00.000Z", {
+		elements: [
+			{
+				...media,
+				category: "Football",
+				prominence: "lead",
+			},
+		],
+	});
+
+	const changes = await diffAdjacentCaptures(previous, current);
+
+	assert.deepEqual(
+		changes.map(({ storyId, type }) => ({ storyId, type })),
+		[
+			{ storyId: undefined, type: "category-changed" },
+			{ storyId: undefined, type: "promoted" },
+		],
+	);
+});

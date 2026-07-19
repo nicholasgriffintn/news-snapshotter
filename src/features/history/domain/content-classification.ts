@@ -38,7 +38,7 @@ const PRODUCT_LABELS: Array<[string, string]> = [
 	["/news/", "News"],
 ];
 
-export function storyCategory(canonicalUrl?: string, extracted?: string): string {
+export function contentCategory(canonicalUrl?: string, extracted?: string): string {
 	const label = extracted?.trim().replace(/\s+headlines?$/i, "");
 	if (label && label.length <= 80) {
 		return displayLabel(label);

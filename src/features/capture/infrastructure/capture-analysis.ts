@@ -1,17 +1,17 @@
 import type { Page } from "@cloudflare/puppeteer";
 
 import type { Device, SiteDefinition } from "../../../core/domain.ts";
-import { storyCategory } from "../../history/domain/story-classification.ts";
+import { contentCategory } from "../../history/domain/content-classification.ts";
 import {
 	type CollectedElement,
 	type CollectedPage,
 	normaliseContentElements,
 } from "../domain/content-elements.ts";
 import { extractorDefinition } from "../domain/extractor-registry.ts";
-import { determineStoryProminence } from "../domain/story-prominence.ts";
+import { determineContentProminence } from "../domain/content-prominence.ts";
 import { collectPageContent } from "./page-content-collector.ts";
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const SANITISATION_VERSION = 1;
 
 type ScreenshotAnalysis = import("../../../core/domain.ts").ScreenshotResult["analysis"];
@@ -172,10 +172,7 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 		collected.warnings ??= [];
 		const canonicalElements = collected.elements.map((element) => {
 			const canonicalUrl = element.canonicalUrl ? canonicaliseUrl(element.canonicalUrl) : undefined;
-			const category =
-				element.kind === "story"
-					? storyCategory(canonicalUrl, element.category ?? element.section)
-					: element.category;
+			const category = contentCategory(canonicalUrl, element.category ?? element.section);
 
 			return {
 				...element,
@@ -185,22 +182,18 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 			};
 		});
 		const content = normaliseContentElements(canonicalElements);
-		const prominentStories = determineStoryProminence(
-			content.filter((element) => element.kind === "story"),
-			collected.pageWidth,
-		);
-		const storiesByKey = new Map(prominentStories.map((story) => [story.elementKey, story]));
+		const prominentContent = determineContentProminence(content, collected.pageWidth);
 
-		collected.elements = content.map((element) => {
-			const resolved = storiesByKey.get(element.elementKey) ?? element;
-			const { prominenceHint: _prominenceHint, ...storedElement } = resolved;
+		collected.elements = prominentContent.map((element) => {
+			const { prominenceHint: _prominenceHint, ...storedElement } = element;
 			return storedElement;
 		});
 
 		const minimumElements = site?.analysis?.minimumElements ?? 0;
-		const storyCount = collected.elements.filter(({ kind }) => kind === "story").length;
-		if (storyCount < minimumElements) {
-			throw new Error(`Expected at least ${minimumElements} story elements, found ${storyCount}`);
+		if (collected.elements.length < minimumElements) {
+			throw new Error(
+				`Expected at least ${minimumElements} analysed elements, found ${collected.elements.length}`,
+			);
 		}
 
 		collected.elements = await storeOptionalImageCrops(

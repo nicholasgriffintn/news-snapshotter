@@ -6,13 +6,12 @@ function storyId(site: string, element: HistoryElement): string {
 }
 
 export function HistoryContentItem({ element, site }: { element: HistoryElement; site: string }) {
-	const label = element.kind === "story" ? (element.prominence ?? "standard") : element.kind;
 	const copy = (
 		<>
 			<strong>{element.headline ?? `Untitled ${element.kind}`}</strong>
 			{element.summary ? <p>{element.summary}</p> : null}
 			<div className="history-story-tags">
-				<small>{element.section ?? element.category ?? "Front page"}</small>
+				<small>{element.category ?? element.section ?? "Front page"}</small>
 				<small>{element.position.viewportDepth.toFixed(1)} pages down</small>
 			</div>
 		</>
@@ -22,7 +21,8 @@ export function HistoryContentItem({ element, site }: { element: HistoryElement;
 		<li className={`history-content-item history-content-item--${element.kind}`}>
 			<div className="history-story-rank">
 				<span>{String(element.position.pageOrder).padStart(2, "0")}</span>
-				<small>{label}</small>
+				<small>{element.prominence ?? "standard"}</small>
+				<small className="history-content-kind">{element.kind}</small>
 			</div>
 			{element.kind === "story" ? (
 				<a className="history-content-copy" href={storyHistoryPath(site, storyId(site, element))}>

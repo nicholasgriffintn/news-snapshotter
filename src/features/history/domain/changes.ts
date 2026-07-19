@@ -78,7 +78,7 @@ function baseChange(
 	};
 }
 
-function storyChange(
+function elementChange(
 	previous: PageExtraction,
 	current: PageExtraction,
 	element: PageElement,
@@ -91,21 +91,7 @@ function storyChange(
 		...baseChange(previous, current, type, before, after),
 		elementKey: element.elementKey,
 		magnitude,
-		storyId: storyId(current.capture.site, element),
-	};
-}
-
-function contentChange(
-	previous: PageExtraction,
-	current: PageExtraction,
-	element: PageElement,
-	type: "appeared" | "disappeared",
-	before: ChangeValue,
-	after: ChangeValue,
-): PendingChange {
-	return {
-		...baseChange(previous, current, type, before, after),
-		elementKey: element.elementKey,
+		...(element.kind === "story" ? { storyId: storyId(current.capture.site, element) } : {}),
 	};
 }
 
@@ -119,7 +105,7 @@ function stringChange(
 	after: string | undefined,
 ): void {
 	if ((before ?? null) !== (after ?? null)) {
-		changes.push(storyChange(previous, current, element, type, before ?? null, after ?? null));
+		changes.push(elementChange(previous, current, element, type, before ?? null, after ?? null));
 	}
 }
 
@@ -127,7 +113,7 @@ function prominenceScore(value: PageElement["prominence"]): number {
 	return { lead: 4, major: 3, standard: 2, minor: 1 }[value ?? "minor"];
 }
 
-function addMatchedStoryChanges(
+function addMatchedElementChanges(
 	changes: PendingChange[],
 	previous: PageExtraction,
 	current: PageExtraction,
@@ -175,7 +161,7 @@ function addMatchedStoryChanges(
 
 	if (before.position.pageOrder !== after.position.pageOrder) {
 		changes.push(
-			storyChange(
+			elementChange(
 				previous,
 				current,
 				after,
@@ -191,7 +177,7 @@ function addMatchedStoryChanges(
 	const afterProminence = prominenceScore(after.prominence);
 	if (beforeProminence !== afterProminence) {
 		changes.push(
-			storyChange(
+			elementChange(
 				previous,
 				current,
 				after,
@@ -224,7 +210,7 @@ function addMatchedStoryChanges(
 		normalisedDistance >= POSITION_NOISE.minimumNormalisedDistance
 	) {
 		changes.push(
-			storyChange(
+			elementChange(
 				previous,
 				current,
 				after,
@@ -247,7 +233,7 @@ function addMatchedStoryChanges(
 		sizeRatio >= POSITION_NOISE.minimumSizeRatio
 	) {
 		changes.push(
-			storyChange(
+			elementChange(
 				previous,
 				current,
 				after,
@@ -336,55 +322,41 @@ export async function diffAdjacentCaptures(
 			),
 		);
 	} else {
-		const previousStories = new Map(
+		const previousContent = new Map(
 			previous.elements
-				.filter((element) => element.kind === "story")
-				.map((element) => [storyId(previous.capture.site, element), element]),
+				.filter(({ kind }) => isAnalysedContentKind(kind))
+				.map((element) => [
+					element.kind === "story"
+						? storyId(previous.capture.site, element)
+						: element.elementKey,
+					element,
+				]),
 		);
-		const currentStories = new Map(
+		const currentContent = new Map(
 			current.elements
-				.filter((element) => element.kind === "story")
-				.map((element) => [storyId(current.capture.site, element), element]),
+				.filter(({ kind }) => isAnalysedContentKind(kind))
+				.map((element) => [
+					element.kind === "story"
+						? storyId(current.capture.site, element)
+						: element.elementKey,
+					element,
+				]),
 		);
 
-		for (const [id, before] of previousStories) {
-			const after = currentStories.get(id);
+		for (const [id, before] of previousContent) {
+			const after = currentContent.get(id);
 			if (!after) {
 				changes.push(
-					storyChange(previous, current, before, "disappeared", before.elementKey, null),
+					elementChange(previous, current, before, "disappeared", before.elementKey, null),
 				);
 				continue;
 			}
-			addMatchedStoryChanges(changes, previous, current, before, after);
+			addMatchedElementChanges(changes, previous, current, before, after);
 		}
 
-		for (const [id, after] of currentStories) {
-			if (!previousStories.has(id)) {
-				changes.push(storyChange(previous, current, after, "appeared", null, after.elementKey));
-			}
-		}
-
-		const previousMedia = new Map(
-			previous.elements
-				.filter(({ kind }) => isAnalysedContentKind(kind) && kind !== "story")
-				.map((element) => [element.elementKey, element]),
-		);
-		const currentMedia = new Map(
-			current.elements
-				.filter(({ kind }) => isAnalysedContentKind(kind) && kind !== "story")
-				.map((element) => [element.elementKey, element]),
-		);
-
-		for (const [id, before] of previousMedia) {
-			if (!currentMedia.has(id)) {
-				changes.push(
-					contentChange(previous, current, before, "disappeared", before.elementKey, null),
-				);
-			}
-		}
-		for (const [id, after] of currentMedia) {
-			if (!previousMedia.has(id)) {
-				changes.push(contentChange(previous, current, after, "appeared", null, after.elementKey));
+		for (const [id, after] of currentContent) {
+			if (!previousContent.has(id)) {
+				changes.push(elementChange(previous, current, after, "appeared", null, after.elementKey));
 			}
 		}
 	}

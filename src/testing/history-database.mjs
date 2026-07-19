@@ -9,6 +9,7 @@ const MIGRATIONS = [
 	"0003_history_operations.sql",
 	"0004_story_categories.sql",
 	"0005_page_element_context.sql",
+	"0006_page_element_prominence.sql",
 ];
 
 export async function createHistoryTestDatabase() {

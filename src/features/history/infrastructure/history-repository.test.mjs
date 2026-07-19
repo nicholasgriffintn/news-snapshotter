@@ -110,20 +110,20 @@ test("persists video and audio elements without turning them into stories", asyn
 	const stored = await getCapture(database, "bbc-home", "capture-media");
 
 	assert.deepEqual(
-		stored.elements.map(({ elementKey, kind }) => [elementKey, kind]),
+		stored.elements.map(({ elementKey, kind, prominence }) => [elementKey, kind, prominence]),
 		[
-			["https://www.bbc.co.uk/news/articles/story-one", "story"],
-			["video:short-report", "video"],
-			["https://www.bbc.co.uk/sounds/play/example", "audio"],
+			["https://www.bbc.co.uk/news/articles/story-one", "story", "standard"],
+			["video:short-report", "video", "standard"],
+			["https://www.bbc.co.uk/sounds/play/example", "audio", "standard"],
 		],
 	);
 	assert.equal(rows(sqlite, "SELECT COUNT(*) AS count FROM stories")[0].count, 1);
 	assert.deepEqual(
 		rows(
 			sqlite,
-			"SELECT category, section FROM page_elements WHERE element_key = 'video:short-report'",
+			"SELECT category, prominence, section FROM page_elements WHERE element_key = 'video:short-report'",
 		),
-		[{ category: "Sport", section: "Shorts" }],
+		[{ category: "Sport", prominence: "standard", section: "Shorts" }],
 	);
 
 	sqlite.close();

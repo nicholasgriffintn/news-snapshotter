@@ -81,7 +81,10 @@ export function collectDocument(extractorDefinition: ExtractorDefinition): strin
 				return [];
 			}
 
-			const href = candidate.href ?? candidate.getAttribute("href") ?? undefined;
+			const link = candidate.matches("a[href]")
+				? candidate
+				: (candidate.closest("a[href]") ?? card.querySelector("a[href]"));
+			const href = link?.href ?? link?.getAttribute("href") ?? undefined;
 			const canonicalUrl = href ? new URL(href, document.baseURI).toString() : undefined;
 			const rect = card.getBoundingClientRect();
 			const image = card.querySelector("img");

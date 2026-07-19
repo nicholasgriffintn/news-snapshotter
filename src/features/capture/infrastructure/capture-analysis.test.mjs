@@ -50,7 +50,7 @@ test("builds deterministic private artefact keys", () => {
 	const timestamp = "2026-07-17T09-00-01-130Z";
 
 	assert.deepEqual(analysisKeys(site, "desktop", triggeredAt), {
-		extractionKey: `${prefix}/${timestamp}.extraction.v2.json.gz`,
+		extractionKey: `${prefix}/${timestamp}.extraction.v3.json.gz`,
 		failureKey: `${prefix}/${timestamp}.analysis-failure.json`,
 		htmlKey: `${prefix}/${timestamp}.rendered.html.gz`,
 	});
@@ -197,6 +197,53 @@ test("stores compressed HTML and extraction artefacts", async () => {
 	assert.match(writes[0][2].customMetadata.structureHash, /^[a-f0-9]{64}$/);
 });
 
+test("assigns prominence independently of analysed content kind", async () => {
+	const writes = [];
+	const page = {
+		evaluate: async () =>
+			JSON.stringify({
+				elements: [
+					extractedStory({
+						position: { ...extractedStory().position, width: 700 },
+						prominenceHint: "lead",
+					}),
+					extractedStory({
+						canonicalUrl: "https://www.bbc.co.uk/sport/football/videos/example",
+						elementKey: "video",
+						headline: "Watch the match highlights",
+						kind: "video",
+						position: { ...extractedStory().position, top: 500, width: 500 },
+						textFingerprint: "watch the match highlights",
+					}),
+				],
+				html: "<html></html>",
+				pageHeight: 2_000,
+				pageWidth: 1_200,
+				warnings: [],
+			}),
+	};
+
+	await collectAndStoreAnalysis({
+		bucket: { put: async (...args) => writes.push(args) },
+		capturedAt: "2026-07-17T09:00:10.000Z",
+		device: "desktop",
+		page,
+		profile: "bbc",
+		screenshotKey: "screenshot.png",
+		site,
+		triggeredAt,
+	});
+
+	const extractionStream = new Blob([writes[1][1]])
+		.stream()
+		.pipeThrough(new DecompressionStream("gzip"));
+	const extraction = await new Response(extractionStream).json();
+	const video = extraction.elements.find(({ kind }) => kind === "video");
+
+	assert.equal(video.category, "Sport");
+	assert.equal(video.prominence, "major");
+});
+
 test("optionally stores bounded screenshot-region crops in the screenshot bucket", async () => {
 	const archiveWrites = [];
 	const cropWrites = [];
@@ -269,7 +316,7 @@ test("stores an explicit failure when extraction is unexpectedly empty", async (
 
 	assert.equal(outcome.status, "failed");
 	assert.match(outcome.failureKey, /analysis-failure\.json$/);
-	assert.match(writes[0][1], /Expected at least 2 story elements/);
+	assert.match(writes[0][1], /Expected at least 2 analysed elements/);
 });
 
 test("reports analysis failure without throwing when private storage is unavailable", async () => {
