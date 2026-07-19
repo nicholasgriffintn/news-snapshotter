@@ -10,7 +10,7 @@ export const HACKER_NEWS_SITES = [
 			device: "desktop" as const,
 			extractor: "hackernews-front-page" as const,
 			minimumElements: 25,
-			version: 2,
+			version: 3,
 		},
 	},
 ];

@@ -123,6 +123,11 @@ export type HistorySearchResult = {
 	summary?: string;
 };
 
+export type HistorySearchPage = {
+	cursor?: string;
+	results: HistorySearchResult[];
+};
+
 export type HistoryImageObservation = {
 	alt?: string;
 	captureId: string;
@@ -134,6 +139,11 @@ export type HistoryImageObservation = {
 	sourceUrl: string;
 	elementKey: string;
 	kind: HistoryElement["kind"];
+};
+
+export type HistoryImagePage = {
+	cursor?: string;
+	images: HistoryImageObservation[];
 };
 
 export type HistoryTrendValue = {

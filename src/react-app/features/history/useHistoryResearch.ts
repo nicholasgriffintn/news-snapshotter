@@ -1,17 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { isAbortError } from "../../shared/errors.ts";
-import type {
-	HistoryImageObservation,
-	HistorySearchResult,
-	HistoryTrends,
-} from "../../core/types.ts";
-import {
-	fetchHistoryImages,
-	fetchHistoryTrends,
-	searchHistory,
-} from "../../platform/api-client.ts";
+import type { HistoryTrends } from "../../core/types.ts";
+import { fetchHistoryTrends } from "../../platform/api-client.ts";
 import { researchStateFromSearch, type ResearchPeriod } from "./domain/research-state.ts";
+import { useHistoryImages } from "./useHistoryImages.ts";
+import { useHistorySearch } from "./useHistorySearch.ts";
 
 function updateResearchUrl(values: Record<string, string>): void {
 	const url = new URL(window.location.href);
@@ -31,40 +25,12 @@ export function useHistoryResearch(site: string) {
 	const [period, setPeriod] = useState(initial.period);
 	const [month, setMonth] = useState(initial.month);
 	const [mode, setMode] = useState<HistoryTrends["mode"]>(initial.mode);
-	const [results, setResults] = useState<HistorySearchResult[]>([]);
-	const [images, setImages] = useState<HistoryImageObservation[]>([]);
 	const [trends, setTrends] = useState<HistoryTrends>();
 	const [selectedContent, setSelectedContent] = useState(new Set<string>());
-	const [searchError, setSearchError] = useState<string>();
-	const [imageError, setImageError] = useState<string>();
 	const [trendError, setTrendError] = useState<string>();
-	const [searching, setSearching] = useState(false);
-	const [loadingImages, setLoadingImages] = useState(true);
 	const [loadingTrends, setLoadingTrends] = useState(true);
-
-	useEffect(() => {
-		const controller = new AbortController();
-		setImageError(undefined);
-		setImages([]);
-		setLoadingImages(true);
-		fetchHistoryImages(site, month, { signal: controller.signal })
-			.then((nextImages) => {
-				if (!controller.signal.aborted) {
-					setImages(nextImages);
-				}
-			})
-			.catch((reason: unknown) => {
-				if (!isAbortError(reason)) {
-					setImageError(reason instanceof Error ? reason.message : "Could not load image history");
-				}
-			})
-			.finally(() => {
-				if (!controller.signal.aborted) {
-					setLoadingImages(false);
-				}
-			});
-		return () => controller.abort();
-	}, [month, site]);
+	const imageHistory = useHistoryImages(site, month);
+	const search = useHistorySearch(site, query);
 
 	useEffect(() => {
 		const controller = new AbortController();
@@ -89,35 +55,6 @@ export function useHistoryResearch(site: string) {
 			});
 		return () => controller.abort();
 	}, [mode, period, site]);
-
-	useEffect(() => {
-		const controller = new AbortController();
-		setSearchError(undefined);
-		if (!query) {
-			setResults([]);
-			setSearching(false);
-			return () => controller.abort();
-		}
-		setResults([]);
-		setSearching(true);
-		searchHistory({ query, site }, { signal: controller.signal })
-			.then((nextResults) => {
-				if (!controller.signal.aborted) {
-					setResults(nextResults);
-				}
-			})
-			.catch((reason: unknown) => {
-				if (!isAbortError(reason)) {
-					setSearchError(reason instanceof Error ? reason.message : "Could not search history");
-				}
-			})
-			.finally(() => {
-				if (!controller.signal.aborted) {
-					setSearching(false);
-				}
-			});
-		return () => controller.abort();
-	}, [query, site]);
 
 	const changeQuery = useCallback((value: string) => {
 		setQuery(value);
@@ -152,16 +89,22 @@ export function useHistoryResearch(site: string) {
 		changeMonth,
 		changePeriod,
 		changeQuery,
-		error: [searchError, trendError, imageError].filter(Boolean).join(" · ") || undefined,
-		images,
-		loadingImages,
+		error: [search.error, trendError, imageHistory.error].filter(Boolean).join(" · ") || undefined,
+		hasMoreImages: imageHistory.hasMore,
+		hasMoreResults: search.hasMore,
+		images: imageHistory.images,
+		loadMoreImages: imageHistory.loadMore,
+		loadMoreResults: search.loadMore,
+		loadingImages: imageHistory.loading,
+		loadingMoreImages: imageHistory.loadingMore,
+		loadingMoreResults: search.loadingMore,
 		loadingTrends,
 		mode,
 		month,
 		period,
 		query,
-		results,
-		searching,
+		results: search.results,
+		searching: search.loading,
 		selectedContent,
 		toggleContent,
 		trends,

@@ -5,14 +5,20 @@ import { contentHistoryPath } from "./history-routes.ts";
 
 export function HistoryImageTimeline({
 	images,
+	hasMore,
 	loading,
+	loadingMore,
 	month,
+	onLoadMore,
 	onMonth,
 	site,
 }: {
+	hasMore: boolean;
 	images: HistoryImageObservation[];
 	loading: boolean;
+	loadingMore: boolean;
 	month: string;
+	onLoadMore: () => void;
 	onMonth: (month: string) => void;
 	site: string;
 }) {
@@ -33,7 +39,10 @@ export function HistoryImageTimeline({
 			</header>
 			{!loading && images.length > 0 ? (
 				<div className="research-results__status">
-					<strong>{images.length} unique {images.length === 1 ? "image" : "images"}</strong>
+					<strong>
+						{images.length} unique {images.length === 1 ? "image" : "images"}{" "}
+						{hasMore ? "loaded" : ""}
+					</strong>
 					<span>Open an image to see the history of its associated content.</span>
 				</div>
 			) : null}
@@ -63,6 +72,14 @@ export function HistoryImageTimeline({
 						))
 					: null}
 			</div>
+			{hasMore ? (
+				<div className="research-pagination">
+					<span>More images are available for this month</span>
+					<button disabled={loadingMore} onClick={onLoadMore} type="button">
+						{loadingMore ? "Loading more…" : "Load more images"}
+					</button>
+				</div>
+			) : null}
 			{!loading && images.length === 0 ? (
 				<p className="research-empty">No content images were observed in this month.</p>
 			) : null}

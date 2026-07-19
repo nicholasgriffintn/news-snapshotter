@@ -6,6 +6,9 @@ import { contentHistoryPath } from "./history-routes.ts";
 
 export function HistorySearchPanel({
 	loading,
+	loadingMore,
+	hasMore,
+	onLoadMore,
 	onQuery,
 	onToggleContent,
 	query,
@@ -14,7 +17,10 @@ export function HistorySearchPanel({
 	site,
 	siteName,
 }: {
+	hasMore: boolean;
 	loading: boolean;
+	loadingMore: boolean;
+	onLoadMore: () => void;
 	onQuery: (query: string) => void;
 	onToggleContent: (elementKey: string) => void;
 	query: string;
@@ -37,11 +43,15 @@ export function HistorySearchPanel({
 					<p className="research-panel__kicker">Find coverage</p>
 					<h2>Search page content</h2>
 					<p className="research-panel__description">
-						Search the headlines, summaries, sections and image descriptions captured from {siteName}.
+						Search the headlines, summaries, sections and image descriptions captured from{" "}
+						{siteName}.
 					</p>
 				</div>
 				{selectedContent.size >= 2 ? (
-					<a className="research-panel__action" href={`/history/${encodeURIComponent(site)}/compare?${compareSearch}`}>
+					<a
+						className="research-panel__action"
+						href={`/history/${encodeURIComponent(site)}/compare?${compareSearch}`}
+					>
 						Compare {selectedContent.size} items →
 					</a>
 				) : null}
@@ -66,7 +76,9 @@ export function HistorySearchPanel({
 			</form>
 			{query && !loading && results.length > 0 ? (
 				<div className="research-results__status">
-					<strong>{results.length} {results.length === 1 ? "result" : "results"}</strong>
+					<strong>
+						{results.length} {results.length === 1 ? "result" : "results"} {hasMore ? "loaded" : ""}
+					</strong>
 					<span>Select two or more items to compare how their position changed.</span>
 				</div>
 			) : null}
@@ -104,6 +116,14 @@ export function HistorySearchPanel({
 						))
 					: null}
 			</ul>
+			{hasMore ? (
+				<div className="research-pagination">
+					<span>More matching content is available</span>
+					<button disabled={loadingMore} onClick={onLoadMore} type="button">
+						{loadingMore ? "Loading more…" : "Load more results"}
+					</button>
+				</div>
+			) : null}
 		</section>
 	);
 }

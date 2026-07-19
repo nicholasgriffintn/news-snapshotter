@@ -6,9 +6,41 @@ import {
 	fetchCatalogue,
 	fetchElementHistory,
 	fetchHistoryCapture,
+	fetchHistoryImages,
 	fetchHistorySites,
 	fetchSnapshots,
+	searchHistory,
 } from "./api-client.ts";
+
+test("preserves research pagination cursors", async () => {
+	const originalFetch = globalThis.fetch;
+	const requests = [];
+	globalThis.fetch = async (input) => {
+		const url = String(input);
+		requests.push(url);
+		return url.startsWith("/api/history/search?")
+			? Response.json({ cursor: "next-search", results: [{ elementKey: "story-2" }] })
+			: Response.json({ cursor: "next-image", images: [{ imageId: "image-2" }] });
+	};
+
+	try {
+		assert.deepEqual(
+			await searchHistory({ query: "Burnham", site: "bbc-home" }, { cursor: "search/page-2" }),
+			{ cursor: "next-search", results: [{ elementKey: "story-2" }] },
+		);
+		assert.deepEqual(await fetchHistoryImages("bbc-home", "2026-07", { cursor: "image/page-2" }), {
+			cursor: "next-image",
+			images: [{ imageId: "image-2" }],
+		});
+	} finally {
+		globalThis.fetch = originalFetch;
+	}
+
+	assert.deepEqual(requests, [
+		"/api/history/search?limit=100&q=Burnham&site=bbc-home&cursor=search%2Fpage-2",
+		"/api/history/bbc-home/images?limit=100&month=2026-07&cursor=image%2Fpage-2",
+	]);
+});
 
 test("continues content history from the supplied cursor", async () => {
 	const originalFetch = globalThis.fetch;

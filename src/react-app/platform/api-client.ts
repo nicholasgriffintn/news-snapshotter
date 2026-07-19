@@ -7,8 +7,8 @@ import type {
 	HistoryCaptureSummary,
 	HistoryChange,
 	HistoryFailure,
-	HistoryImageObservation,
-	HistorySearchResult,
+	HistoryImagePage,
+	HistorySearchPage,
 	HistorySite,
 	HistoryTrends,
 	SavedTimeline,
@@ -197,8 +197,8 @@ export async function searchHistory(
 		query: string;
 		site?: string;
 	},
-	options?: RequestOptions,
-): Promise<HistorySearchResult[]> {
+	options?: RequestOptions & { cursor?: string },
+): Promise<HistorySearchPage> {
 	const search = new URLSearchParams({ limit: "100", q: input.query });
 	if (input.site) {
 		search.set("site", input.site);
@@ -206,24 +206,33 @@ export async function searchHistory(
 	if (input.category) {
 		search.set("category", input.category);
 	}
-	const response = await fetch(`/api/history/search?${search}`, options);
-	return (await readJson<{ results: HistorySearchResult[] }>(response)).results;
+	if (options?.cursor) {
+		search.set("cursor", options.cursor);
+	}
+	const response = await fetch(
+		`/api/history/search?${search}`,
+		options?.signal ? { signal: options.signal } : undefined,
+	);
+	return readJson(response);
 }
 
 export async function fetchHistoryImages(
 	site: string,
 	month?: string,
-	options?: RequestOptions,
-): Promise<HistoryImageObservation[]> {
+	options?: RequestOptions & { cursor?: string },
+): Promise<HistoryImagePage> {
 	const search = new URLSearchParams({ limit: "100" });
 	if (month) {
 		search.set("month", month);
 	}
+	if (options?.cursor) {
+		search.set("cursor", options.cursor);
+	}
 	const response = await fetch(
 		`/api/history/${encodeURIComponent(site)}/images?${search}`,
-		options,
+		options?.signal ? { signal: options.signal } : undefined,
 	);
-	return (await readJson<{ images: HistoryImageObservation[] }>(response)).images;
+	return readJson(response);
 }
 
 export async function fetchHistoryTrends(

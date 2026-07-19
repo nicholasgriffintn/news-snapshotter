@@ -2615,6 +2615,29 @@ footer a {
 	text-transform: uppercase;
 }
 
+.research-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding-top: 1.25rem;
+	margin-top: 1.25rem;
+	border-top: 1px solid rgba(255, 247, 215, 0.18);
+}
+
+.research-pagination span {
+	color: var(--muted);
+	font-size: 0.68rem;
+	font-weight: 800;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+}
+
+.research-pagination button:disabled {
+	cursor: wait;
+	opacity: 0.6;
+}
+
 .research-results,
 .story-observations,
 .saved-timeline {
@@ -3357,6 +3380,7 @@ footer a {
 	}
 
 	.research-results__status,
+	.research-pagination,
 	.research-figure-heading {
 		align-items: flex-start;
 		flex-direction: column;

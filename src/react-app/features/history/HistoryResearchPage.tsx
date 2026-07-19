@@ -28,7 +28,10 @@ export function HistoryResearchPage({
 			<HistoryNav current="research" site={site} />
 			{research.error ? <div className="history-alert">{research.error}</div> : null}
 			<HistorySearchPanel
+				hasMore={research.hasMoreResults}
 				loading={research.searching}
+				loadingMore={research.loadingMoreResults}
+				onLoadMore={research.loadMoreResults}
 				onQuery={research.changeQuery}
 				onToggleContent={research.toggleContent}
 				query={research.query}
@@ -46,9 +49,12 @@ export function HistoryResearchPage({
 				trends={research.trends}
 			/>
 			<HistoryImageTimeline
+				hasMore={research.hasMoreImages}
 				images={research.images}
 				loading={research.loadingImages}
+				loadingMore={research.loadingMoreImages}
 				month={research.month}
+				onLoadMore={research.loadMoreImages}
 				onMonth={research.changeMonth}
 				site={site}
 			/>

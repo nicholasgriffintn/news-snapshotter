@@ -369,6 +369,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				candidateSelector: "tr.athing .titleline > a[href]",
 				headlineSelector: ".titleline > a",
 				kind: "story",
+				minimumHeadlineLength: 1,
 			},
 			{
 				cardSelector: "a[href]",
@@ -380,7 +381,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				scope: "page",
 			},
 		],
-		version: 2,
+		version: 3,
 	},
 	"inews-front-page": {
 		name: "inews-front-page",

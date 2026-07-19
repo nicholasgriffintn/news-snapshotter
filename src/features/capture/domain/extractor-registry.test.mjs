@@ -166,7 +166,7 @@ test("extractor versions are explicit", () => {
 	assert.ok(
 		googleNewsExtractor.rules.some(({ candidateSelector }) => /JtKRv/.test(candidateSelector)),
 	);
-	const hackerNews = extractorDefinition("hackernews-front-page", 2);
+	const hackerNews = extractorDefinition("hackernews-front-page", 3);
 	assert.match(hackerNews.rules[0].candidateSelector, /titleline/);
 	assert.equal(hackerNews.rules[0].categorySelector, undefined);
 	assert.ok(
@@ -218,6 +218,12 @@ test("extractor versions are explicit", () => {
 	assert.throws(() => extractorDefinition("times-front-page", 4), /not registered/);
 });
 
+test("Hacker News keeps valid short titles", () => {
+	const storyRule = extractorDefinition("hackernews-front-page", 3).rules[0];
+
+	assert.equal(storyRule.minimumHeadlineLength, 1);
+});
+
 test("every extractor includes semantic elements from the rest of the page", () => {
 	const extractors = [
 		["generic-baseline", 4],
@@ -233,7 +239,7 @@ test("every extractor includes semantic elements from the rest of the page", () 
 		["foxnews-front-page", 1],
 		["google-news-front-page", 2],
 		["guardian-front-page", 8],
-		["hackernews-front-page", 2],
+		["hackernews-front-page", 3],
 		["inews-front-page", 1],
 		["nbcnews-front-page", 1],
 		["nytimes-front-page", 5],
