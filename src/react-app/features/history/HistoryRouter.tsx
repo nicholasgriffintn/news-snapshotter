@@ -1,10 +1,10 @@
 import { HistoryPage } from "./HistoryPage.tsx";
+import { ElementHistoryPage } from "./ElementHistoryPage.tsx";
 import { HistoryIndexPage } from "./HistoryIndexPage.tsx";
 import { HistoryResearchPage } from "./HistoryResearchPage.tsx";
 import { SavedTimelinePage } from "./SavedTimelinePage.tsx";
-import { StoryComparisonPage } from "./StoryComparisonPage.tsx";
-import { StoryHistoryPage } from "./StoryHistoryPage.tsx";
-import { storyIdFromSearch } from "./history-routes.ts";
+import { ContentComparisonPage } from "./ContentComparisonPage.tsx";
+import { contentKeyFromSearch } from "./history-routes.ts";
 
 export function HistoryRouter({ site }: { site: string }) {
 	if (!site) {
@@ -18,13 +18,13 @@ export function HistoryRouter({ site }: { site: string }) {
 		return <HistoryResearchPage site={site} />;
 	}
 	if (resource === "compare") {
-		const storyIds = [...new Set(new URLSearchParams(window.location.search).getAll("story"))];
-		return <StoryComparisonPage site={site} storyIds={storyIds} />;
+		const elementKeys = [...new Set(new URLSearchParams(window.location.search).getAll("element"))];
+		return <ContentComparisonPage elementKeys={elementKeys} site={site} />;
 	}
-	if (resource === "stories") {
-		const storyId = storyIdFromSearch(window.location.search);
-		if (storyId) {
-			return <StoryHistoryPage site={site} storyId={storyId} />;
+	if (resource === "content") {
+		const elementKey = contentKeyFromSearch(window.location.search);
+		if (elementKey) {
+			return <ElementHistoryPage elementKey={elementKey} site={site} />;
 		}
 	}
 	if (resource === "timelines" && identifier) {

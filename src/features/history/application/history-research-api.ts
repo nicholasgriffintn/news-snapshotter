@@ -1,18 +1,20 @@
 import { decodeCursor, encodeCursor } from "../../../core/cursor.ts";
+import { InvalidInputError } from "../../../core/errors.ts";
 import {
 	getSavedTimeline,
-	historyTrends,
 	listHistoryImages,
 	searchHistory,
 	type ResearchCursor,
+	type SearchCursor,
 } from "../infrastructure/history-research-repository.ts";
+import { historyTrends } from "../infrastructure/history-trend-repository.ts";
 
 function limit(url: URL): number {
 	const value = url.searchParams.get("limit");
 	const parsed = value === null ? 50 : Number(value);
 
 	if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
-		throw new Error("limit must be between 1 and 100");
+		throw new InvalidInputError("limit must be between 1 and 100");
 	}
 
 	return parsed;
@@ -26,7 +28,7 @@ function timestamp(url: URL, name: string): string | undefined {
 	}
 
 	if (!/^\d{4}-\d{2}-\d{2}T/.test(value) || !Number.isFinite(Date.parse(value))) {
-		throw new Error(`${name} must be an ISO timestamp`);
+		throw new InvalidInputError(`${name} must be an ISO timestamp`);
 	}
 
 	return new Date(value).toISOString();
@@ -42,7 +44,7 @@ function cursor(url: URL): ResearchCursor | undefined {
 	const decoded = decodeCursor(value);
 
 	if (!decoded.capturedAt || !decoded.id) {
-		throw new Error("cursor is invalid");
+		throw new InvalidInputError("cursor is invalid");
 	}
 
 	return { capturedAt: decoded.capturedAt, id: decoded.id };
@@ -50,6 +52,33 @@ function cursor(url: URL): ResearchCursor | undefined {
 
 function encodedCursor(value: ResearchCursor | undefined): string | undefined {
 	return value ? encodeCursor(value) : undefined;
+}
+
+function searchCursor(url: URL): SearchCursor | undefined {
+	const value = url.searchParams.get("cursor");
+	if (!value) {
+		return undefined;
+	}
+	const decoded = decodeCursor(value);
+	const required = ["capturedAt", "id", "prominence", "rank", "relevance", "site"] as const;
+	if (!required.every((key) => decoded[key])) {
+		throw new InvalidInputError("cursor is invalid");
+	}
+	if (
+		!Number.isFinite(Number(decoded.prominence)) ||
+		!Number.isFinite(Number(decoded.rank)) ||
+		!Number.isFinite(Number(decoded.relevance))
+	) {
+		throw new InvalidInputError("cursor is invalid");
+	}
+	return {
+		capturedAt: decoded.capturedAt,
+		id: decoded.id,
+		prominence: decoded.prominence,
+		rank: decoded.rank,
+		relevance: decoded.relevance,
+		site: decoded.site,
+	};
 }
 
 type TrendPeriod = "24h" | "7d" | "30d" | "90d" | "all";
@@ -75,11 +104,11 @@ export async function handleHistoryResearchRequest(
 	if (url.pathname === "/api/history/search") {
 		const query = url.searchParams.get("q")?.trim();
 		if (!query || query.length > 200) {
-			throw new Error("q must be between 1 and 200 characters");
+			throw new InvalidInputError("q must be between 1 and 200 characters");
 		}
 		const result = await searchHistory(database, {
 			category: url.searchParams.get("category") ?? undefined,
-			cursor: cursor(url),
+			cursor: searchCursor(url),
 			from: timestamp(url, "from"),
 			limit: limit(url),
 			query,
@@ -93,7 +122,7 @@ export async function handleHistoryResearchRequest(
 	if (timelineMatch) {
 		const slug = decodeURIComponent(timelineMatch[1]);
 		if (!slug || slug.length > 100) {
-			throw new Error("Timeline slug is invalid");
+			throw new InvalidInputError("Timeline slug is invalid");
 		}
 		const timeline = await getSavedTimeline(database, slug);
 		return timeline
@@ -109,7 +138,7 @@ export async function handleHistoryResearchRequest(
 	if (match[2] === "images") {
 		const month = url.searchParams.get("month") ?? undefined;
 		if (month && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
-			throw new Error("month must use YYYY-MM");
+			throw new InvalidInputError("month must use YYYY-MM");
 		}
 		const result = await listHistoryImages(database, site, month, {
 			cursor: cursor(url),
@@ -121,10 +150,10 @@ export async function handleHistoryResearchRequest(
 	const period = url.searchParams.get("period") ?? "30d";
 	const mode = url.searchParams.get("mode") ?? "category";
 	if (!isTrendPeriod(period)) {
-		throw new Error("period is invalid");
+		throw new InvalidInputError("period is invalid");
 	}
 	if (!isTrendMode(mode)) {
-		throw new Error("mode is invalid");
+		throw new InvalidInputError("mode is invalid");
 	}
 	return Response.json(await historyTrends(database, site, period, mode));
 }

@@ -7,6 +7,11 @@ const MAJOR_WIDTH_RATIO = 1 / 3;
 const LEAD_WIDTH_RATIO = 1 / 4;
 const MINOR_WIDTH_RATIO = 1 / 6;
 
+function visualImpact(element: PageElement): number {
+	const area = element.position.width * element.position.height;
+	return area / (1 + Math.max(element.position.viewportDepth, 0));
+}
+
 export function determineContentProminence<T extends ProminenceCandidate>(
 	content: T[],
 	pageWidth: number,
@@ -27,7 +32,9 @@ export function determineContentProminence<T extends ProminenceCandidate>(
 	});
 
 	const explicitLead = classified
-		.filter(({ prominenceHint }) => prominenceHint === "lead")
+		.filter(({ position, prominenceHint }) => {
+			return prominenceHint === "lead" && position.viewportDepth <= 1;
+		})
 		.sort((left, right) => {
 			return (
 				left.position.top - right.position.top ||
@@ -39,20 +46,17 @@ export function determineContentProminence<T extends ProminenceCandidate>(
 		.filter((element) => {
 			return (
 				element.position.viewportDepth <= 1 &&
-				(element.selectorHint === "h1" || element.position.width / width >= LEAD_WIDTH_RATIO)
+				element.position.width / width >= LEAD_WIDTH_RATIO
 			);
 		})
 		.sort((left, right) => {
-			const headingDifference =
-				Number(right.selectorHint === "h1") - Number(left.selectorHint === "h1");
-			if (headingDifference !== 0) {
-				return headingDifference;
+			const impactDifference = visualImpact(right) - visualImpact(left);
+			if (impactDifference !== 0) {
+				return impactDifference;
 			}
-			const widthDifference = right.position.width - left.position.width;
-			if (widthDifference !== 0) {
-				return widthDifference;
-			}
-			return left.position.top - right.position.top;
+			return (
+				left.position.top - right.position.top || left.position.left - right.position.left
+			);
 		})[0];
 	const lead = explicitLead ?? inferredLead;
 

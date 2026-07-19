@@ -11,5 +11,6 @@ export default defineConfig({
 	plugins: [react(), cloudflare()],
 	server: {
 		port: 8787,
+		strictPort: true,
 	},
 });

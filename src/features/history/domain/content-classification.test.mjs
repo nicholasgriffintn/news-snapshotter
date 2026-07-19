@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { contentCategory } from "./content-classification.ts";
 
-test("keeps extracted publisher sections ahead of URL inference", () => {
+test("keeps explicit publisher categories ahead of URL inference", () => {
 	assert.equal(
 		contentCategory("https://www.bbc.co.uk/news/articles/story", "UK politics"),
 		"UK politics",
@@ -18,5 +18,11 @@ test("infers useful product and desk categories from publisher URLs", () => {
 	assert.equal(contentCategory("https://www.theguardian.com/culture/story"), "Culture");
 	assert.equal(contentCategory("https://www.telegraph.co.uk/politics/story"), "Politics");
 	assert.equal(contentCategory("https://www.washingtonpost.com/weather/story"), "Weather");
+	assert.equal(contentCategory("https://www.theguardian.com/society/story"), "Society");
+	assert.equal(
+		contentCategory("https://www.theguardian.com/world/story", undefined, "News"),
+		"World",
+	);
+	assert.equal(contentCategory(undefined, undefined, "Sport headlines"), "Sport");
 	assert.equal(contentCategory(undefined), "Front page");
 });

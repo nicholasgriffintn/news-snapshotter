@@ -10,7 +10,7 @@ const BBC_NEWS_SITES = [
 			device: "desktop" as const,
 			extractor: "bbc-front-page" as const,
 			minimumElements: 20,
-			version: 6,
+			version: 9,
 		},
 	},
 	{
@@ -25,7 +25,7 @@ const BBC_NEWS_SITES = [
 			device: "desktop" as const,
 			extractor: "bbc-front-page" as const,
 			minimumElements: 20,
-			version: 6,
+			version: 9,
 		},
 	},
 	{
@@ -105,7 +105,7 @@ const BBC_SPORT_SITES = [
 			device: "desktop" as const,
 			extractor: "bbc-front-page" as const,
 			minimumElements: 20,
-			version: 6,
+			version: 9,
 		},
 	},
 	{

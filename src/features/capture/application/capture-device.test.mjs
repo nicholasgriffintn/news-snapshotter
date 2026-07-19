@@ -161,7 +161,7 @@ test("stores desktop analysis independently from screenshot artefacts", async (c
 			device: "desktop",
 			extractor: "bbc-front-page",
 			minimumElements: 20,
-			version: 6,
+			version: 9,
 		},
 		brand: "bbc",
 		name: "bbc-home",
@@ -263,6 +263,36 @@ test("runs optional profile clicks before applying cleanup styles", async (conte
 
 	assert.equal(result.status, "success");
 	assert.deepEqual(events.slice(0, 2), ["click", "styles"]);
+});
+
+test("acknowledges CNN legal terms before capturing the page", async (context) => {
+	const clicked = [];
+	const page = successfulPage({
+		url: () => "https://edition.cnn.com/",
+		waitForSelector: async (selector) => {
+			if (!selector.includes('div[role="dialog"][aria-modal="true"]')) {
+				return null;
+			}
+			return { click: async () => clicked.push(selector) };
+		},
+	});
+	context.mock.method(puppeteer, "launch", async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { env } = environment();
+
+	const result = await captureDevice(
+		env,
+		{ ...site, brand: "cnn", name: "cnn-com", url: "https://edition.cnn.com/" },
+		"desktop",
+		triggeredAt,
+	);
+
+	assert.equal(result.status, "success");
+	assert.deepEqual(clicked, [
+		'div[role="dialog"][aria-modal="true"] > a[role="button"][href="#"]',
+	]);
 });
 
 test("unlocks the document layout before progressively scrolling a full-page capture", async (context) => {

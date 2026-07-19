@@ -38,7 +38,7 @@ test("indexes a compressed extraction artefact from private R2", async () => {
 
 	assert.deepEqual(result, { changeCount: 0 });
 	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM analysed_captures").get().count, 1);
-	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM story_observations").get().count, 1);
+	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM page_elements").get().count, 1);
 	const metrics = sqlite
 		.prepare(
 			"SELECT compressed_bytes AS compressedBytes, element_count AS elementCount FROM history_ingestion_metrics",

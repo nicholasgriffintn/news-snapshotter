@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
-import { ingestExtraction } from "../infrastructure/history-repository.ts";
+import { ingestExtraction } from "../infrastructure/history-ingestion-repository.ts";
 import { historyExtraction, historyStory } from "../testing/extraction-fixture.mjs";
 import { handleHistoryRequest } from "./history-api.ts";
 
@@ -26,6 +26,11 @@ test("serves bounded capture history without private archive keys", async () => 
 	const sitesBody = await sitesResponse.json();
 	assert.equal(sitesBody.sites[0].site, "bbc-home");
 	assert.equal(sitesBody.sites[0].captureCount, 2);
+	const availableSitesResponse = await handleHistoryRequest(
+		request("/api/history/sites/available"),
+		database,
+	);
+	assert.deepEqual(await availableSitesResponse.json(), { sites: ["bbc-home"] });
 
 	const firstPage = await handleHistoryRequest(
 		request("/api/history/bbc-home/captures?limit=1"),
@@ -102,9 +107,8 @@ test("serves a reindexed capture immediately instead of an edge-cached stale res
 	}
 });
 
-test("serves story observations and filtered adjacent changes", async () => {
+test("serves content observations and filtered adjacent changes", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
-	const storyId = "bbc-home:https://www.bbc.co.uk/news/articles/story-one";
 	await ingestExtraction(
 		database,
 		"capture-a.json.gz",
@@ -119,15 +123,16 @@ test("serves story observations and filtered adjacent changes", async () => {
 	);
 
 	const storyResponse = await handleHistoryRequest(
-		request(`/api/history/bbc-home/stories/${encodeURIComponent(storyId)}`),
+		request(`/api/history/bbc-home/content/${encodeURIComponent("https://www.bbc.co.uk/news/articles/story-one")}`),
 		database,
 	);
 	const storyBody = await storyResponse.json();
-	assert.equal(storyBody.storyId, storyId);
+	assert.equal(storyBody.elementKey, "https://www.bbc.co.uk/news/articles/story-one");
+	assert.equal(storyBody.kind, "story");
 	assert.equal(storyBody.observations.length, 2);
 
 	const firstObservation = await handleHistoryRequest(
-		request(`/api/history/bbc-home/stories/${encodeURIComponent(storyId)}?limit=1`),
+		request(`/api/history/bbc-home/content/${encodeURIComponent("https://www.bbc.co.uk/news/articles/story-one")}?limit=1`),
 		database,
 	);
 	const firstObservationBody = await firstObservation.json();
@@ -177,6 +182,42 @@ test("serves story observations and filtered adjacent changes", async () => {
 	await assert.rejects(
 		handleHistoryRequest(request("/api/history/bbc-home/changes?type=unknown"), database),
 		/type is not a supported change type/,
+	);
+
+	sqlite.close();
+});
+
+test("serves every content kind from the same endpoint", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const media = historyStory({
+		canonicalUrl: "https://www.bbc.co.uk/sounds/play/example",
+		elementKey: "https://www.bbc.co.uk/sounds/play/example",
+		headline: "Listen to the programme",
+		kind: "audio",
+	});
+	await ingestExtraction(
+		database,
+		"capture-media.json.gz",
+		historyExtraction("capture-media", "2026-07-17T09:00:00.000Z", { elements: [media] }),
+	);
+
+	const response = await handleHistoryRequest(
+		request(`/api/history/bbc-home/content/${encodeURIComponent(media.elementKey)}`),
+		database,
+	);
+	const body = await response.json();
+
+	assert.equal(response.status, 200);
+	assert.equal(body.kind, "audio");
+	assert.equal(body.elementKey, media.elementKey);
+	assert.equal(body.observations.length, 1);
+	assert.equal(body.observations[0].headline, "Listen to the programme");
+	await assert.rejects(
+		handleHistoryRequest(
+			request(`/api/history/bbc-home/content/${"x".repeat(4_097)}`),
+			database,
+		),
+		/resource identifier is invalid/,
 	);
 
 	sqlite.close();

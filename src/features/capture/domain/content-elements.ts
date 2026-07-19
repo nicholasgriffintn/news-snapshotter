@@ -1,9 +1,9 @@
-import type { AnalysedContentKind } from "../../../core/contracts.ts";
+import type { PageElementKind } from "../../../core/contracts.ts";
 import type { ElementPosition, PageElement } from "../../history/domain/extraction.ts";
 
 export type CollectedElement = PageElement & {
 	headline: string;
-	kind: AnalysedContentKind;
+	kind: PageElementKind;
 	position: ElementPosition;
 	prominenceHint?: "lead";
 	selectorHint: string;
@@ -21,9 +21,7 @@ export function normaliseContentElements(
 	elements: CollectedPage["elements"],
 ): CollectedPage["elements"] {
 	const visibleElements = elements.filter((element) => {
-		return (
-			element.selectorHint !== "a" && element.position.height > 0 && element.position.width > 0
-		);
+		return element.position.height > 0 && element.position.width > 0;
 	});
 	const uniqueElements = new Map<string, CollectedElement>();
 

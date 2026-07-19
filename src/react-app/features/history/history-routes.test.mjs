@@ -1,14 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { storyHistoryPath, storyIdFromSearch } from "./history-routes.ts";
+import {
+	contentHistoryPath,
+	contentKeyFromSearch,
+} from "./history-routes.ts";
 
-const storyId = "bbc-home:https://www.bbc.co.uk/sounds/play/m002ym7v";
+const contentKey = "https://www.bbc.co.uk/sounds/play/m002ym7v";
 
-test("keeps story URLs out of path segments", () => {
-	const path = storyHistoryPath("bbc-home", storyId);
+test("keeps every content identity out of path segments", () => {
+	const path = contentHistoryPath("bbc-home", contentKey);
 	const url = new URL(path, "https://archive.example");
-	assert.equal(url.pathname, "/history/bbc-home/stories");
-	assert.equal(url.searchParams.get("story"), storyId);
-	assert.equal(storyIdFromSearch(url.search), storyId);
+	assert.equal(url.pathname, "/history/bbc-home/content");
+	assert.equal(url.searchParams.get("element"), contentKey);
+	assert.equal(contentKeyFromSearch(url.search), contentKey);
 });

@@ -1,14 +1,16 @@
 import type { HistoryImageObservation } from "../../core/types.ts";
 import { historyScreenshotUrl } from "../../platform/api-client.ts";
-import { storyHistoryPath } from "./history-routes.ts";
+import { contentHistoryPath } from "./history-routes.ts";
 
 export function HistoryImageTimeline({
 	images,
+	loading,
 	month,
 	onMonth,
 	site,
 }: {
 	images: HistoryImageObservation[];
+	loading: boolean;
 	month: string;
 	onMonth: (month: string) => void;
 	site: string;
@@ -24,26 +26,33 @@ export function HistoryImageTimeline({
 					<input onChange={(event) => onMonth(event.target.value)} type="month" value={month} />
 				</label>
 			</header>
-			<div className="history-image-grid">
-				{images.map((image) => (
-					<a
-						href={storyHistoryPath(site, image.storyId)}
-						key={`${image.captureId}:${image.imageId}`}
-					>
-						<img
-							alt={image.alt ?? "Publisher story image"}
-							loading="lazy"
-							src={image.cropKey ? historyScreenshotUrl(image.cropKey) : image.sourceUrl}
-						/>
-						<strong>{image.headline ?? image.alt ?? "Untitled image"}</strong>
-						<time dateTime={image.capturedAt}>
-							{new Date(image.capturedAt).toLocaleString("en-GB")}
-						</time>
-					</a>
-				))}
+			{loading ? (
+				<p aria-live="polite" className="research-empty" role="status">
+					Loading monthly imagery…
+				</p>
+			) : null}
+			<div aria-busy={loading} className="history-image-grid">
+				{!loading
+					? images.map((image) => (
+							<a
+								href={contentHistoryPath(site, image.elementKey)}
+								key={`${image.captureId}:${image.imageId}`}
+							>
+								<img
+									alt={image.alt ?? "Publisher content image"}
+									loading="lazy"
+									src={image.cropKey ? historyScreenshotUrl(image.cropKey) : image.sourceUrl}
+								/>
+								<strong>{image.headline ?? image.alt ?? "Untitled image"}</strong>
+								<time dateTime={image.capturedAt}>
+									{new Date(image.capturedAt).toLocaleString("en-GB")}
+								</time>
+							</a>
+						))
+					: null}
 			</div>
-			{images.length === 0 ? (
-				<p className="research-empty">No story images were observed in this month.</p>
+			{!loading && images.length === 0 ? (
+				<p className="research-empty">No content images were observed in this month.</p>
 			) : null}
 		</section>
 	);

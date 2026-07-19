@@ -1,3 +1,5 @@
+import { InvalidInputError } from "./errors.ts";
+
 export function encodeCursor(value: Record<string, string>): string {
 	const bytes = new TextEncoder().encode(JSON.stringify(value));
 	let binary = "";
@@ -11,7 +13,7 @@ export function encodeCursor(value: Record<string, string>): string {
 
 export function decodeCursor(value: string): Record<string, string> {
 	if (!/^[A-Za-z0-9_-]+$/.test(value) || value.length > 2_048) {
-		throw new Error("cursor is invalid");
+		throw new InvalidInputError("cursor is invalid");
 	}
 
 	try {
@@ -35,6 +37,6 @@ export function decodeCursor(value: string): Record<string, string> {
 
 		return Object.fromEntries(entries);
 	} catch {
-		throw new Error("cursor is invalid");
+		throw new InvalidInputError("cursor is invalid");
 	}
 }

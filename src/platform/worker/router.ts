@@ -10,7 +10,7 @@ import { CAPTURE_PROVIDER_NAMES } from "../../features/capture/adapters/provider
 import { sendContactMessage } from "../../features/contact/application/send-contact-message.ts";
 import type { Env } from "../cloudflare/env.ts";
 import { isAuthorised } from "./auth.ts";
-import { errorMessage } from "../../core/errors.ts";
+import { errorMessage, InvalidInputError } from "../../core/errors.ts";
 import { thumbnailKey } from "../../core/storage-key.ts";
 import {
 	listScreenshots,
@@ -24,6 +24,7 @@ import {
 import { handleHistoryRequest } from "../../features/history/application/history-api.ts";
 import { handleHistoryAdminRequest } from "../../features/history/application/history-admin.ts";
 import { handleHistoryResearchRequest } from "../../features/history/application/history-research-api.ts";
+import { applyApiCachePolicy } from "./cache-control.ts";
 
 const SITE_DISPLAY_NAMES = new Map<string, string>();
 for (const site of SITES) {
@@ -46,12 +47,12 @@ async function readCaptureSelection(request: Request) {
 async function startBotCheck(request: Request, env: Env): Promise<Response> {
 	const body: unknown = await request.json();
 	if (!body || typeof body !== "object" || Array.isArray(body)) {
-		throw new Error("Bot check request must be a JSON object");
+		throw new InvalidInputError("Bot check request must be a JSON object");
 	}
 
 	const { profile } = body as Record<string, unknown>;
 	if (typeof profile !== "string" || !hasCaptureProfile(profile)) {
-		throw new Error("Choose a valid capture profile");
+		throw new InvalidInputError("Choose a valid capture profile");
 	}
 
 	const result = await runBotCheck(env, profile);
@@ -75,10 +76,10 @@ function failureListOptions(url: URL): { cursor?: string; limit: number } {
 	const limitValue = url.searchParams.get("limit");
 	const limit = limitValue === null ? 50 : Number(limitValue);
 	if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-		throw new Error("limit must be between 1 and 100");
+		throw new InvalidInputError("limit must be between 1 and 100");
 	}
 	if (cursor !== undefined && (cursor.length === 0 || cursor.length > 1_024)) {
-		throw new Error("cursor is invalid");
+		throw new InvalidInputError("cursor is invalid");
 	}
 	return { cursor, limit };
 }
@@ -180,10 +181,26 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 }
 
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
+	let response: Response;
+
 	try {
-		return await routeRequest(request, env);
+		response = await routeRequest(request, env);
 	} catch (error) {
-		console.error("Request failed", { error: errorMessage(error) });
-		return jsonError(errorMessage(error), 400);
+		if (error instanceof InvalidInputError) {
+			response = jsonError(error.message, 400);
+		} else if (error instanceof SyntaxError) {
+			response = jsonError("Request body must be valid JSON", 400);
+		} else if (error instanceof URIError) {
+			response = jsonError("URL path is malformed", 400);
+		} else {
+			console.error("Request failed", { error: errorMessage(error) });
+			response = jsonError("Internal server error", 500);
+		}
 	}
+
+	return applyApiCachePolicy(
+		request,
+		response,
+		isAuthorised(request.headers.get("authorization"), env.API_KEY),
+	);
 }

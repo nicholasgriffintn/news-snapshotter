@@ -3,10 +3,11 @@ import test from "node:test";
 
 import {
 	getCapture,
-	ingestExtraction,
+	getContentHistory,
 	listCaptures,
 	listHistorySites,
 } from "./history-repository.ts";
+import { ingestExtraction } from "./history-ingestion-repository.ts";
 import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { historyExtraction, historyStory } from "../testing/extraction-fixture.mjs";
 
@@ -71,18 +72,18 @@ test("late and repeated ingestion converges on the two true adjacent edges", asy
 		eventIds,
 	);
 	assert.equal(
-		rows(sqlite, "SELECT * FROM story_observations WHERE capture_id = 'capture-b'").length,
+		rows(sqlite, "SELECT * FROM page_elements WHERE capture_id = 'capture-b'").length,
 		1,
 	);
 	assert.equal(
-		rows(sqlite, "SELECT * FROM story_observation_search WHERE capture_id = 'capture-b'").length,
+		rows(sqlite, "SELECT * FROM content_observation_search WHERE capture_id = 'capture-b'").length,
 		1,
 	);
 
 	sqlite.close();
 });
 
-test("persists video and audio elements without turning them into stories", async () => {
+test("persists every content kind as the same complete page observation", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	const capture = historyExtraction("capture-media", "2026-07-17T09:00:00.000Z", {
 		elements: [
@@ -117,13 +118,108 @@ test("persists video and audio elements without turning them into stories", asyn
 			["https://www.bbc.co.uk/sounds/play/example", "audio", "standard"],
 		],
 	);
-	assert.equal(rows(sqlite, "SELECT COUNT(*) AS count FROM stories")[0].count, 1);
 	assert.deepEqual(
 		rows(
 			sqlite,
-			"SELECT category, prominence, section FROM page_elements WHERE element_key = 'video:short-report'",
+			`SELECT kind, headline, summary, image_source_url AS imageSourceUrl,
+				category, prominence, section
+			FROM page_elements ORDER BY rank`,
 		),
-		[{ category: "Sport", prominence: "standard", section: "Shorts" }],
+		[
+			{
+				category: "News",
+				headline: "Original BBC headline",
+				imageSourceUrl: "https://ichef.bbci.co.uk/one.jpg",
+				kind: "story",
+				prominence: "standard",
+				section: "Top stories",
+				summary: "Original summary",
+			},
+			{
+				category: "Sport",
+				headline: "Short report from the scene",
+				imageSourceUrl: "https://ichef.bbci.co.uk/one.jpg",
+				kind: "video",
+				prominence: "standard",
+				section: "Shorts",
+				summary: "Original summary",
+			},
+			{
+				category: "Sounds",
+				headline: "Listen to the latest bulletin",
+				imageSourceUrl: "https://ichef.bbci.co.uk/one.jpg",
+				kind: "audio",
+				prominence: "standard",
+				section: "Top stories",
+				summary: "Original summary",
+			},
+		],
+	);
+
+	sqlite.close();
+});
+
+test("reads a bounded media history across captures", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const media = historyStory({
+		canonicalUrl: "https://www.bbc.co.uk/sport/football/videos/example",
+		category: "Football",
+		elementKey: "https://www.bbc.co.uk/sport/football/videos/example",
+		headline: "Opening match highlights",
+		kind: "video",
+		prominence: "major",
+	});
+	await ingestExtraction(
+		database,
+		"capture-media-a.json.gz",
+		historyExtraction("capture-media-a", "2026-07-17T09:00:00.000Z", { elements: [media] }),
+	);
+	await ingestExtraction(
+		database,
+		"capture-media-b.json.gz",
+		historyExtraction("capture-media-b", "2026-07-17T10:00:00.000Z", {
+			elements: [
+				{
+					...media,
+					headline: "Extended match highlights",
+					prominence: "lead",
+				},
+			],
+		}),
+	);
+	await ingestExtraction(
+		database,
+		"capture-media-c.json.gz",
+		historyExtraction("capture-media-c", "2026-07-17T11:00:00.000Z", {
+			elements: [{ ...media, headline: "Final match highlights", prominence: "standard" }],
+		}),
+	);
+
+	const history = await getContentHistory(database, "bbc-home", media.elementKey, {
+		limit: 2,
+	});
+
+	assert.equal(history.kind, "video");
+	assert.equal(history.canonicalUrl, media.canonicalUrl);
+	assert.deepEqual(
+		history.observations.map(({ headline, prominence }) => [headline, prominence]),
+		[
+			["Extended match highlights", "lead"],
+			["Final match highlights", "standard"],
+		],
+	);
+	assert.ok(history.nextCursor);
+	const older = await getContentHistory(database, "bbc-home", media.elementKey, {
+		cursor: history.nextCursor,
+		limit: 2,
+	});
+	assert.deepEqual(
+		older.observations.map(({ headline }) => headline),
+		["Opening match highlights"],
+	);
+	assert.equal(
+		await getContentHistory(database, "bbc-news", media.elementKey, { limit: 10 }),
+		null,
 	);
 
 	sqlite.close();

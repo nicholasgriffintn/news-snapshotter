@@ -2,6 +2,7 @@ import type {
 	CaptureFailure,
 	CaptureProviderName,
 	CatalogueSite,
+	ElementHistory,
 	HistoryCapture,
 	HistoryCaptureSummary,
 	HistoryChange,
@@ -12,9 +13,9 @@ import type {
 	HistoryTrends,
 	SavedTimeline,
 	Snapshot,
-	StoryHistory,
 } from "../core/types.ts";
 import type { CaptureDispatch, CaptureSelection } from "../../core/contracts.ts";
+import { coalescePublicGetRequests } from "../shared/requests.ts";
 
 async function readJson<T>(response: Response): Promise<T> {
 	const body = (await response.json()) as T & { message?: string };
@@ -24,8 +25,15 @@ async function readJson<T>(response: Response): Promise<T> {
 	return body;
 }
 
-export async function fetchSnapshots(): Promise<Snapshot[]> {
-	const response = await fetch("/api/screenshots");
+type RequestOptions = {
+	signal?: AbortSignal;
+};
+
+// Strict Mode remounts effects in development; share identical safe reads across callers.
+const fetch = coalescePublicGetRequests((input, init) => globalThis.fetch(input, init));
+
+export async function fetchSnapshots(options?: RequestOptions): Promise<Snapshot[]> {
+	const response = await fetch("/api/screenshots", options);
 	return (await readJson<{ screenshots: Snapshot[] }>(response)).screenshots;
 }
 
@@ -117,29 +125,40 @@ export async function sendContactMessage(message: {
 	await readJson(response);
 }
 
-export async function fetchHistorySites(): Promise<HistorySite[]> {
-	const response = await fetch("/api/history/sites");
+export async function fetchHistorySites(options?: RequestOptions): Promise<HistorySite[]> {
+	const response = await fetch("/api/history/sites", options);
 	return (await readJson<{ sites: HistorySite[] }>(response)).sites;
+}
+
+export async function fetchAvailableHistorySites(options?: RequestOptions): Promise<string[]> {
+	const response = await fetch("/api/history/sites/available", options);
+	return (await readJson<{ sites: string[] }>(response)).sites;
 }
 
 export async function fetchHistoryCaptures(
 	site: string,
 	cursor?: string,
+	options?: RequestOptions,
 ): Promise<{ captures: HistoryCaptureSummary[]; cursor?: string }> {
 	const search = new URLSearchParams({ limit: "100" });
 	if (cursor) {
 		search.set("cursor", cursor);
 	}
-	const response = await fetch(`/api/history/${encodeURIComponent(site)}/captures?${search}`);
+	const response = await fetch(
+		`/api/history/${encodeURIComponent(site)}/captures?${search}`,
+		options,
+	);
 	return readJson(response);
 }
 
 export async function fetchHistoryCapture(
 	site: string,
 	captureId: string,
+	options?: RequestOptions,
 ): Promise<HistoryCapture> {
 	const response = await fetch(
 		`/api/history/${encodeURIComponent(site)}/captures/${encodeURIComponent(captureId)}`,
+		options,
 	);
 	return readJson(response);
 }
@@ -147,14 +166,24 @@ export async function fetchHistoryCapture(
 export async function fetchHistoryChanges(
 	site: string,
 	capturedAt: string,
+	options?: RequestOptions,
 ): Promise<HistoryChange[]> {
 	const search = new URLSearchParams({ from: capturedAt, limit: "100", to: capturedAt });
-	const response = await fetch(`/api/history/${encodeURIComponent(site)}/changes?${search}`);
+	const response = await fetch(
+		`/api/history/${encodeURIComponent(site)}/changes?${search}`,
+		options,
+	);
 	return (await readJson<{ changes: HistoryChange[] }>(response)).changes;
 }
 
-export async function fetchHistoryFailures(site: string): Promise<HistoryFailure[]> {
-	const response = await fetch(`/api/history/${encodeURIComponent(site)}/failures?limit=100`);
+export async function fetchHistoryFailures(
+	site: string,
+	options?: RequestOptions,
+): Promise<HistoryFailure[]> {
+	const response = await fetch(
+		`/api/history/${encodeURIComponent(site)}/failures?limit=100`,
+		options,
+	);
 	return (await readJson<{ failures: HistoryFailure[] }>(response)).failures;
 }
 
@@ -162,11 +191,14 @@ export function historyScreenshotUrl(key: string): string {
 	return `/api/screenshots/image?key=${encodeURIComponent(key)}`;
 }
 
-export async function searchHistory(input: {
-	category?: string;
-	query: string;
-	site?: string;
-}): Promise<HistorySearchResult[]> {
+export async function searchHistory(
+	input: {
+		category?: string;
+		query: string;
+		site?: string;
+	},
+	options?: RequestOptions,
+): Promise<HistorySearchResult[]> {
 	const search = new URLSearchParams({ limit: "100", q: input.query });
 	if (input.site) {
 		search.set("site", input.site);
@@ -174,19 +206,23 @@ export async function searchHistory(input: {
 	if (input.category) {
 		search.set("category", input.category);
 	}
-	const response = await fetch(`/api/history/search?${search}`);
+	const response = await fetch(`/api/history/search?${search}`, options);
 	return (await readJson<{ results: HistorySearchResult[] }>(response)).results;
 }
 
 export async function fetchHistoryImages(
 	site: string,
 	month?: string,
+	options?: RequestOptions,
 ): Promise<HistoryImageObservation[]> {
 	const search = new URLSearchParams({ limit: "100" });
 	if (month) {
 		search.set("month", month);
 	}
-	const response = await fetch(`/api/history/${encodeURIComponent(site)}/images?${search}`);
+	const response = await fetch(
+		`/api/history/${encodeURIComponent(site)}/images?${search}`,
+		options,
+	);
 	return (await readJson<{ images: HistoryImageObservation[] }>(response)).images;
 }
 
@@ -194,21 +230,33 @@ export async function fetchHistoryTrends(
 	site: string,
 	period: string,
 	mode: HistoryTrends["mode"],
+	options?: RequestOptions,
 ): Promise<HistoryTrends> {
 	const search = new URLSearchParams({ mode, period });
-	const response = await fetch(`/api/history/${encodeURIComponent(site)}/trends?${search}`);
-	return readJson(response);
-}
-
-export async function fetchStoryHistory(site: string, storyId: string): Promise<StoryHistory> {
 	const response = await fetch(
-		`/api/history/${encodeURIComponent(site)}/stories/${encodeURIComponent(storyId)}?limit=100`,
+		`/api/history/${encodeURIComponent(site)}/trends?${search}`,
+		options,
 	);
 	return readJson(response);
 }
 
-export async function fetchSavedTimeline(slug: string): Promise<SavedTimeline> {
-	const response = await fetch(`/api/history/timelines/${encodeURIComponent(slug)}`);
+export async function fetchElementHistory(
+	site: string,
+	elementKey: string,
+	options?: RequestOptions,
+): Promise<ElementHistory> {
+	const response = await fetch(
+		`/api/history/${encodeURIComponent(site)}/content/${encodeURIComponent(elementKey)}?limit=100`,
+		options,
+	);
+	return readJson(response);
+}
+
+export async function fetchSavedTimeline(
+	slug: string,
+	options?: RequestOptions,
+): Promise<SavedTimeline> {
+	const response = await fetch(`/api/history/timelines/${encodeURIComponent(slug)}`, options);
 	return readJson(response);
 }
 
@@ -221,7 +269,7 @@ export type HistoryAdminStatus = {
 		indexedChanges: number;
 		indexedElements: number;
 		indexedImages: number;
-		indexedStories: number;
+		indexedContent: number;
 		measuredAt: string;
 		site: string;
 	}>;
@@ -231,9 +279,9 @@ export type HistoryAdminStatus = {
 		lastCaptureAt: string;
 		lastIndexedAt: string;
 		site: string;
-		storyCount: number;
+		contentCount: number;
 	}>;
-	totals: Record<"captures" | "changes" | "failures" | "observations" | "stories", number>;
+	totals: Record<"captures" | "changes" | "content" | "failures" | "observations", number>;
 };
 
 export async function fetchHistoryAdminStatus(apiKey: string): Promise<HistoryAdminStatus> {
@@ -271,7 +319,7 @@ export async function indexHistoryArchivePage(
 
 export async function createHistoryTimeline(
 	apiKey: string,
-	input: { name: string; site: string; storyIds: string[] },
+	input: { elementKeys: string[]; name: string; site: string },
 ): Promise<{ slug: string; timelineId: string }> {
 	const response = await fetch("/api/admin/history/timelines", {
 		body: JSON.stringify(input),

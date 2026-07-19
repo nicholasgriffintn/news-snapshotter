@@ -3,15 +3,17 @@ import test from "node:test";
 
 import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { historyExtraction, historyStory } from "../testing/extraction-fixture.mjs";
-import { ingestExtraction } from "./history-repository.ts";
+import { ingestExtraction } from "./history-ingestion-repository.ts";
 import {
 	createSavedTimeline,
 	getSavedTimeline,
-	historyTrends,
 	listHistoryImages,
-	materialiseHistoryMonth,
 	searchHistory,
 } from "./history-research-repository.ts";
+import {
+	historyTrends,
+	materialiseHistoryMonth,
+} from "./history-trend-repository.ts";
 
 function researchCapture(captureId, capturedAt, headline) {
 	return historyExtraction(captureId, capturedAt, {
@@ -27,6 +29,14 @@ function researchCapture(captureId, capturedAt, headline) {
 					sourceUrl: "https://ichef.bbci.co.uk/two.jpg",
 				},
 				position: { ...historyStory().position, pageOrder: 2, top: 1_200 },
+			}),
+			historyStory({
+				canonicalUrl: "https://www.bbc.co.uk/videos/election-result",
+				elementKey: "https://www.bbc.co.uk/videos/election-result",
+				headline: "Election result video analysis",
+				kind: "video",
+				position: { ...historyStory().position, pageOrder: 99, top: 8_000, width: 180 },
+				prominence: "minor",
 			}),
 		],
 	});
@@ -44,6 +54,13 @@ test("searches FTS fields and builds image and time-weighted trend timelines", a
 		"capture-b.json.gz",
 		researchCapture("capture-b", "2026-07-17T10:00:00.000Z", "Election result reaction"),
 	);
+	const mobileCapture = researchCapture(
+		"capture-mobile",
+		"2026-07-17T10:30:00.000Z",
+		"Election result mobile update",
+	);
+	mobileCapture.capture.device = "mobile";
+	await ingestExtraction(database, "capture-mobile.json.gz", mobileCapture);
 
 	const search = await searchHistory(database, {
 		limit: 10,
@@ -51,6 +68,30 @@ test("searches FTS fields and builds image and time-weighted trend timelines", a
 		site: "bbc-home",
 	});
 	assert.equal(search.results.length, 2);
+	assert.deepEqual(
+		search.results.map(({ elementKey, rank }) => [elementKey, rank]),
+		[
+			["https://www.bbc.co.uk/news/articles/story-one", 2],
+			["https://www.bbc.co.uk/videos/election-result", 99],
+		],
+	);
+	assert.ok(search.results.every(({ captureId }) => captureId !== "capture-mobile"));
+	const firstSearchPage = await searchHistory(database, {
+		limit: 1,
+		query: "election result",
+		site: "bbc-home",
+	});
+	assert.ok(firstSearchPage.nextCursor);
+	const secondSearchPage = await searchHistory(database, {
+		cursor: firstSearchPage.nextCursor,
+		limit: 1,
+		query: "election result",
+		site: "bbc-home",
+	});
+	assert.equal(
+		secondSearchPage.results[0].elementKey,
+		"https://www.bbc.co.uk/videos/election-result",
+	);
 
 	const images = await listHistoryImages(database, "bbc-home", "2026-07", { limit: 10 });
 	assert.equal(images.images.length, 2);
@@ -82,26 +123,26 @@ test("searches FTS fields and builds image and time-weighted trend timelines", a
 	sqlite.close();
 });
 
-test("creates and reads a shareable multi-story timeline", async () => {
+test("creates and reads a shareable multi-content timeline", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	await ingestExtraction(
 		database,
 		"capture-a.json.gz",
 		researchCapture("capture-a", "2026-07-17T09:00:00.000Z", "Election result live"),
 	);
-	const storyIds = [
-		"bbc-home:https://www.bbc.co.uk/news/articles/story-one",
-		"bbc-home:https://www.bbc.co.uk/news/articles/story-two",
+	const elementKeys = [
+		"https://www.bbc.co.uk/news/articles/story-one",
+		"https://www.bbc.co.uk/news/articles/story-two",
 	];
 	const created = await createSavedTimeline(database, {
 		name: "Election and markets",
 		site: "bbc-home",
-		storyIds,
+		elementKeys,
 	});
 	const timeline = await getSavedTimeline(database, created.slug);
 
 	assert.match(created.slug, /^election-and-markets-/);
 	assert.equal(timeline.name, "Election and markets");
-	assert.equal(new Set(timeline.observations.map(({ storyId }) => storyId)).size, 2);
+	assert.equal(new Set(timeline.observations.map(({ elementKey }) => elementKey)).size, 2);
 	sqlite.close();
 });

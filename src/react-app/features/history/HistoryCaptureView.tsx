@@ -1,4 +1,3 @@
-import { isAnalysedContentKind } from "../../../core/contracts.ts";
 import { historyScreenshotUrl } from "../../platform/api-client.ts";
 import type { HistoryCapture } from "../../core/types.ts";
 import { HistoryContentItem } from "./HistoryContentItem.tsx";
@@ -12,17 +11,10 @@ export function HistoryCaptureView({
 	overlay: boolean;
 	onToggleOverlay: () => void;
 }) {
-	const content = capture.elements.filter(({ kind }) => isAnalysedContentKind(kind));
-	const stories = content.filter(({ kind }) => kind === "story");
-	const videos = content.filter(({ kind }) => kind === "video");
-	const audio = content.filter(({ kind }) => kind === "audio");
+	const content = capture.elements;
 	const pageWidth = Math.max(capture.capture.pageWidth, 1);
 	const pageHeight = Math.max(capture.capture.pageHeight, 1);
-	const contentSummary = [
-		`${stories.length} stories`,
-		...(videos.length > 0 ? [`${videos.length} videos`] : []),
-		...(audio.length > 0 ? [`${audio.length} audio`] : []),
-	].join(" · ");
+	const contentSummary = `${content.length} items`;
 
 	return (
 		<section className="history-evidence">

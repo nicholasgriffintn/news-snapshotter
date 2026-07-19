@@ -10,6 +10,10 @@ const MIGRATIONS = [
 	"0004_story_categories.sql",
 	"0005_page_element_context.sql",
 	"0006_page_element_prominence.sql",
+	"0007_page_element_timeline.sql",
+	"0008_unified_content_observations.sql",
+	"0009_remove_story_storage.sql",
+	"0010_indexed_desktop_captures.sql",
 ];
 
 export async function createHistoryTestDatabase() {

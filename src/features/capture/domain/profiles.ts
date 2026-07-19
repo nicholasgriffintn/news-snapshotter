@@ -247,6 +247,18 @@ const PROFILES: Record<string, CaptureProfile> = {
 			},
 		},
 	},
+	cnn: {
+		deviceConfig: forBothDevices({
+			clickActions: [
+				{
+					selector:
+						'div[role="dialog"][aria-modal="true"] > a[role="button"][href="#"]',
+					timeoutMs: 5_000,
+					waitAfterMs: 1_000,
+				},
+			],
+		}),
+	},
 	guardian: {
 		deviceConfig: forBothDevices({
 			clickActions: [

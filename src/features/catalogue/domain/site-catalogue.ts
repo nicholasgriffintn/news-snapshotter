@@ -1,4 +1,5 @@
 import type { CapturePriority, SiteDefinition, SiteSource } from "../../../core/domain.ts";
+import { InvalidInputError } from "../../../core/errors.ts";
 
 export type SiteSelection = {
 	brand?: string;
@@ -89,13 +90,13 @@ export function selectSites(sites: SiteDefinition[], selection: SiteSelection): 
 	});
 
 	if (selectors.length > 1) {
-		throw new Error("Specify only one of brand, name, or priority");
+		throw new InvalidInputError("Specify only one of brand, name, or priority");
 	}
 
 	if (selection.name) {
 		const site = sites.find((candidate) => candidate.name === selection.name);
 		if (!site) {
-			throw new Error(`Unknown site name: ${selection.name}`);
+			throw new InvalidInputError(`Unknown site name: ${selection.name}`);
 		}
 		return [site];
 	}
@@ -105,7 +106,7 @@ export function selectSites(sites: SiteDefinition[], selection: SiteSelection): 
 			return site.brand === selection.brand;
 		});
 		if (matchingSites.length === 0) {
-			throw new Error(`Unknown brand: ${selection.brand}`);
+			throw new InvalidInputError(`Unknown brand: ${selection.brand}`);
 		}
 		return matchingSites;
 	}

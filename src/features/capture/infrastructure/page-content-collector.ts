@@ -6,7 +6,9 @@ import type { CollectedElement, CollectedPage } from "../domain/content-elements
 type DomElement = {
 	attributes: ArrayLike<{ name: string }>;
 	cloneNode: (deep: boolean) => DomElement;
+	contains: (element: DomElement) => boolean;
 	closest: (selector: string) => DomElement | null;
+	currentSrc?: string;
 	getAttribute: (name: string) => string | null;
 	getBoundingClientRect: () => { height: number; left: number; top: number; width: number };
 	href?: string;
@@ -33,6 +35,19 @@ export function collectDocument(extractorDefinition: ExtractorDefinition): strin
 		scrollY: number;
 	};
 	const { document } = browser;
+	// page.evaluate serialises this callback, so browser-realm policy must remain self-contained.
+	const resolveWebUrl = (value: string): string | undefined => {
+		try {
+			const url = new URL(value, document.baseURI);
+			return url.protocol === "https:" || url.protocol === "http:" ? url.toString() : undefined;
+		} catch {
+			return undefined;
+		}
+	};
+	const contentUrlAllowed = (url: string, excludedPathPrefixes: readonly string[] = []) => {
+		const path = new URL(url).pathname;
+		return !excludedPathPrefixes.some((prefix) => path.startsWith(prefix));
+	};
 
 	const text = (element: DomElement | null): string => {
 		if (!element) {
@@ -65,19 +80,28 @@ export function collectDocument(extractorDefinition: ExtractorDefinition): strin
 		}
 	});
 
+	const contentCards: DomElement[] = [];
 	const elements = extractorDefinition.rules.flatMap((rule) => {
 		const candidates = Array.from(document.querySelectorAll(rule.candidateSelector));
 
 		return candidates.flatMap((candidate) => {
+			if (
+				rule.scope === "page" &&
+				contentCards.some((contentCard) => contentCard.contains(candidate))
+			) {
+				return [];
+			}
 			const card = candidate.closest(rule.cardSelector) ?? candidate;
 			const headlineSelectors =
 				typeof rule.headlineSelector === "string" ? [rule.headlineSelector] : rule.headlineSelector;
 			const heading = headlineSelectors
-				.map((selector) => card.querySelector(selector))
+				.map((selector) => (card.matches(selector) ? card : card.querySelector(selector)))
 				.find((element) => element !== null);
-			const headline = text(heading ?? null) || text(candidate);
+			const headline = rule.headlineAttribute
+				? (heading?.getAttribute(rule.headlineAttribute)?.trim() ?? "")
+				: text(heading ?? null) || text(candidate);
 
-			if (!heading || headline.length < 10) {
+			if (!heading || headline.length < (rule.minimumHeadlineLength ?? 10)) {
 				return [];
 			}
 
@@ -85,9 +109,15 @@ export function collectDocument(extractorDefinition: ExtractorDefinition): strin
 				? candidate
 				: (candidate.closest("a[href]") ?? card.querySelector("a[href]"));
 			const href = link?.href ?? link?.getAttribute("href") ?? undefined;
-			const canonicalUrl = href ? new URL(href, document.baseURI).toString() : undefined;
+			const canonicalUrl = href ? resolveWebUrl(href) : undefined;
+			if (
+				canonicalUrl &&
+				!contentUrlAllowed(canonicalUrl, rule.excludedUrlPathPrefixes)
+			) {
+				return [];
+			}
 			const rect = card.getBoundingClientRect();
-			const image = card.querySelector("img");
+			const image = card.matches("img") ? card : card.querySelector("img");
 			const summary = rule.summarySelector ? text(card.querySelector(rule.summarySelector)) : "";
 			const headingName = heading.tagName.toLowerCase();
 			const sectionContainer = rule.sectionSelector ? card.closest(rule.sectionSelector) : null;
@@ -117,18 +147,25 @@ export function collectDocument(extractorDefinition: ExtractorDefinition): strin
 			const categoryValue = rule.categoryAttribute
 				? categoryElement?.getAttribute(rule.categoryAttribute)
 				: text(categoryElement);
-			const category = categoryValue?.trim().replace(/\s+/g, " ") || section;
+			const extractedCategory = categoryValue?.trim().replace(/\s+/g, " ");
+			const category = rule.fixedCategory ?? extractedCategory;
 			const absoluteTop = rect.top + browser.scrollY;
 			const textFingerprint = headline.toLowerCase();
-			const elementKey = canonicalUrl ?? `${rule.kind}:${textFingerprint}`;
 			let imageDetails: CollectedElement["image"];
 
 			if (image) {
-				const imageSource = image.getAttribute("src");
+				const imageSource =
+					image.currentSrc || image.getAttribute("src") || image.getAttribute("data-src");
 				imageDetails = {
 					alt: image.getAttribute("alt") ?? undefined,
-					sourceUrl: imageSource ? new URL(imageSource, document.baseURI).toString() : undefined,
+					sourceUrl: imageSource ? resolveWebUrl(imageSource) : undefined,
 				};
+			}
+			const elementKey =
+				canonicalUrl ?? imageDetails?.sourceUrl ?? `${rule.kind}:${textFingerprint}`;
+
+			if (rule.scope !== "page") {
+				contentCards.push(card);
 			}
 
 			return [

@@ -1,4 +1,5 @@
 import type { Env } from "../../../platform/cloudflare/env.ts";
+import { InvalidInputError } from "../../../core/errors.ts";
 
 const EMAIL_PATTERN = /^[^\s@\r\n]+@[^\s@\r\n]+\.[^\s@\r\n]+$/;
 const CONTACT_REASONS = ["general", "privacy", "rights-holder"] as const;
@@ -21,7 +22,7 @@ function isContactReason(value: unknown): value is ContactReason {
 
 function parseContactRequest(value: unknown): ContactRequest {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
-		throw new Error("Contact request must be a JSON object");
+		throw new InvalidInputError("Contact request must be a JSON object");
 	}
 
 	const body = value as Record<string, unknown>;
@@ -32,7 +33,7 @@ function parseContactRequest(value: unknown): ContactRequest {
 		body.name.length > 100 ||
 		/[\r\n]/.test(body.name)
 	) {
-		throw new Error("Enter a name between 2 and 100 characters");
+		throw new InvalidInputError("Enter a name between 2 and 100 characters");
 	}
 
 	if (
@@ -40,7 +41,7 @@ function parseContactRequest(value: unknown): ContactRequest {
 		body.email.length > 254 ||
 		!EMAIL_PATTERN.test(body.email)
 	) {
-		throw new Error("Enter a valid email address");
+		throw new InvalidInputError("Enter a valid email address");
 	}
 
 	if (
@@ -48,22 +49,22 @@ function parseContactRequest(value: unknown): ContactRequest {
 		body.message.trim().length < 20 ||
 		body.message.length > 4_000
 	) {
-		throw new Error("Enter a message between 20 and 4,000 characters");
+		throw new InvalidInputError("Enter a message between 20 and 4,000 characters");
 	}
 
 	if (!isContactReason(body.reason)) {
-		throw new Error("Choose a valid contact reason");
+		throw new InvalidInputError("Choose a valid contact reason");
 	}
 
-	if (typeof body.startedAt !== "number") {
-		throw new Error("Invalid form submission");
+	if (typeof body.startedAt !== "number" || !Number.isFinite(body.startedAt)) {
+		throw new InvalidInputError("Invalid form submission");
 	}
 
 	if (
 		body.sourceUrl !== undefined &&
 		(typeof body.sourceUrl !== "string" || body.sourceUrl.length > 2_048)
 	) {
-		throw new Error("Source URL is too long");
+		throw new InvalidInputError("Source URL is too long");
 	}
 
 	return {
@@ -85,7 +86,9 @@ export async function sendContactMessage(request: Request, env: Env): Promise<Re
 		return Response.json({ status: "success" });
 	}
 
-	const rateLimit = await env.CONTACT_RATE_LIMIT.limit({ key: contact.email.toLowerCase() });
+	const connectingIp = request.headers.get("cf-connecting-ip")?.trim().toLowerCase();
+	const rateLimitKey = connectingIp && connectingIp.length <= 64 ? `ip:${connectingIp}` : "ip:unknown";
+	const rateLimit = await env.CONTACT_RATE_LIMIT.limit({ key: rateLimitKey });
 
 	if (!rateLimit.success) {
 		return Response.json({ message: "Too many messages. Try again later." }, { status: 429 });

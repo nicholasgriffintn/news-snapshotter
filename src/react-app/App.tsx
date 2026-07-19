@@ -22,6 +22,14 @@ export default function App() {
 					<img alt="" aria-hidden="true" src="/pashi-logo.svg" />
 					<span>Pashi</span>
 				</a>
+				<nav aria-label="Main" className="main-nav">
+					<a className={page === "archive" ? "active" : ""} href="/" aria-current={page === "archive" ? "page" : undefined}>
+						Archive
+					</a>
+					<a className={page === "history" ? "active" : ""} href="/history" aria-current={page === "history" ? "page" : undefined}>
+						History
+					</a>
+				</nav>
 			</header>
 
 			{page === "archive" ? (
@@ -34,7 +42,7 @@ export default function App() {
 						</h1>
 					</div>
 					<div className="hero__intro">
-						<p>Browse full-page records of the stories, layouts and moments shaping the day.</p>
+						<p>Browse full-page records of the content, layouts and moments shaping the day.</p>
 						<button
 							className="hero__disclosure-action"
 							onClick={() => setDisclosureOpen(true)}
@@ -48,16 +56,20 @@ export default function App() {
 			) : null}
 
 			{page === "admin" ? <AdminPage /> : null}
+
 			{page === "archive" ? (
 				<>
 					<SnapshotGallery />
 					<Disclosure onContact={() => setContactOpen(true)} />
 				</>
 			) : null}
+
 			{page === "history" ? <HistoryRouter site={historySite} /> : null}
+
 			{page === "privacy" ? (
 				<LegalPage kind="privacy" onContact={() => setContactOpen(true)} />
 			) : null}
+
 			{page === "terms" ? <LegalPage kind="terms" onContact={() => setContactOpen(true)} /> : null}
 
 			<nav aria-label="Legal and contact" className="legal-nav">
@@ -75,6 +87,7 @@ export default function App() {
 			</footer>
 
 			{contactOpen ? <ContactModal onClose={() => setContactOpen(false)} /> : null}
+
 			{disclosureOpen ? (
 				<DisclosureModal
 					onClose={() => setDisclosureOpen(false)}

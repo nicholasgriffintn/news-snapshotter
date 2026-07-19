@@ -32,7 +32,7 @@ test("rejects unsafe URLs, unsupported kinds, and oversized element sets", () =>
 			elements: [historyStory({ kind: "script" })],
 		}),
 		historyExtraction("capture-c", capturedAt, {
-			elements: Array.from({ length: 201 }, (_, index) => {
+			elements: Array.from({ length: 1_001 }, (_, index) => {
 				return historyStory({ elementKey: `story-${index}` });
 			}),
 		}),

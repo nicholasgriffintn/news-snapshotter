@@ -1,76 +1,12 @@
-import { useEffect, useState } from "react";
-
-import type {
-	HistoryImageObservation,
-	HistorySearchResult,
-	HistoryTrends,
-} from "../../core/types.ts";
-import {
-	fetchHistoryImages,
-	fetchHistoryTrends,
-	searchHistory,
-} from "../../platform/api-client.ts";
 import { displayName } from "../../shared/format.ts";
 import { HistoryImageTimeline } from "./HistoryImageTimeline.tsx";
 import { HistoryNav } from "./HistoryNav.tsx";
 import { HistorySearchPanel } from "./HistorySearchPanel.tsx";
 import { HistoryTrendPanel } from "./HistoryTrendPanel.tsx";
-
-function initialMonth(): string {
-	return new Date().toISOString().slice(0, 7);
-}
-
-function updateUrl(values: Record<string, string>): void {
-	const url = new URL(window.location.href);
-	for (const [name, value] of Object.entries(values)) {
-		if (value) {
-			url.searchParams.set(name, value);
-		} else {
-			url.searchParams.delete(name);
-		}
-	}
-	window.history.replaceState(null, "", url);
-}
+import { useHistoryResearch } from "./useHistoryResearch.ts";
 
 export function HistoryResearchPage({ site }: { site: string }) {
-	const initial = new URLSearchParams(window.location.search);
-	const [query, setQuery] = useState(initial.get("q") ?? "");
-	const [period, setPeriod] = useState(initial.get("period") ?? "30d");
-	const [month, setMonth] = useState(initial.get("month") ?? initialMonth());
-	const [mode, setMode] = useState<HistoryTrends["mode"]>("category");
-	const [results, setResults] = useState<HistorySearchResult[]>([]);
-	const [images, setImages] = useState<HistoryImageObservation[]>([]);
-	const [trends, setTrends] = useState<HistoryTrends>();
-	const [selectedStories, setSelectedStories] = useState(new Set<string>());
-	const [error, setError] = useState<string>();
-
-	useEffect(() => {
-		fetchHistoryImages(site, month)
-			.then(setImages)
-			.catch((reason: unknown) => {
-				setError(reason instanceof Error ? reason.message : "Could not load image history");
-			});
-	}, [month, site]);
-
-	useEffect(() => {
-		fetchHistoryTrends(site, period, mode)
-			.then(setTrends)
-			.catch((reason: unknown) => {
-				setError(reason instanceof Error ? reason.message : "Could not load trends");
-			});
-	}, [mode, period, site]);
-
-	useEffect(() => {
-		if (!query) {
-			setResults([]);
-			return;
-		}
-		searchHistory({ query, site })
-			.then(setResults)
-			.catch((reason: unknown) => {
-				setError(reason instanceof Error ? reason.message : "Could not search history");
-			});
-	}, [query, site]);
+	const research = useHistoryResearch(site);
 
 	return (
 		<div className="history-page research-page">
@@ -79,52 +15,33 @@ export function HistoryResearchPage({ site }: { site: string }) {
 					<h1>{displayName(site)} research</h1>
 				</div>
 				<div className="history-heading__intro">
-					<p>Search stories, compare their prominence, and trace the imagery used over time.</p>
+					<p>Search page content, compare prominence, and trace the imagery used over time.</p>
 				</div>
 			</header>
 			<HistoryNav current="research" site={site} />
-			{error ? <div className="history-alert">{error}</div> : null}
+			{research.error ? <div className="history-alert">{research.error}</div> : null}
 			<HistorySearchPanel
-				onQuery={(value) => {
-					setQuery(value);
-					updateUrl({ q: value });
-				}}
-				onToggleStory={(storyId) => {
-					setSelectedStories((current) => {
-						const next = new Set(current);
-						if (next.has(storyId)) {
-							next.delete(storyId);
-						} else {
-							next.add(storyId);
-						}
-						return next;
-					});
-				}}
-				query={query}
-				results={results}
-				selectedStories={selectedStories}
+				loading={research.searching}
+				onQuery={research.changeQuery}
+				onToggleContent={research.toggleContent}
+				query={research.query}
+				results={research.results}
+				selectedContent={research.selectedContent}
 				site={site}
 			/>
 			<HistoryTrendPanel
-				mode={mode}
-				onMode={(value) => {
-					setMode(value);
-					updateUrl({ mode: value });
-				}}
-				onPeriod={(value) => {
-					setPeriod(value);
-					updateUrl({ period: value });
-				}}
-				period={period}
-				trends={trends}
+				loading={research.loadingTrends}
+				mode={research.mode}
+				onMode={research.changeMode}
+				onPeriod={research.changePeriod}
+				period={research.period}
+				trends={research.trends}
 			/>
 			<HistoryImageTimeline
-				images={images}
-				month={month}
-				onMonth={(value) => {
-					setMonth(value);
-					updateUrl({ month: value });
-				}}
+				images={research.images}
+				loading={research.loadingImages}
+				month={research.month}
+				onMonth={research.changeMonth}
 				site={site}
 			/>
 		</div>

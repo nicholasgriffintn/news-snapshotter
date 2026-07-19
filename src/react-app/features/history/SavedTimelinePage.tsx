@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { isAbortError } from "../../shared/errors.ts";
 import type { SavedTimeline } from "../../core/types.ts";
 import { fetchSavedTimeline } from "../../platform/api-client.ts";
 import { historyScreenshotUrl } from "../../platform/api-client.ts";
@@ -10,11 +11,21 @@ export function SavedTimelinePage({ site, slug }: { site: string; slug: string }
 	const [error, setError] = useState<string>();
 
 	useEffect(() => {
-		fetchSavedTimeline(slug)
-			.then(setTimeline)
+		const controller = new AbortController();
+		setError(undefined);
+		setTimeline(undefined);
+		fetchSavedTimeline(slug, { signal: controller.signal })
+			.then((nextTimeline) => {
+				if (!controller.signal.aborted) {
+					setTimeline(nextTimeline);
+				}
+			})
 			.catch((reason: unknown) => {
-				setError(reason instanceof Error ? reason.message : "Could not load saved timeline");
+				if (!isAbortError(reason)) {
+					setError(reason instanceof Error ? reason.message : "Could not load saved timeline");
+				}
 			});
+		return () => controller.abort();
 	}, [slug]);
 
 	return (
@@ -32,7 +43,7 @@ export function SavedTimelinePage({ site, slug }: { site: string; slug: string }
 			) : null}
 			<ol className="saved-timeline">
 				{timeline?.observations.map((observation, index) => (
-					<li key={`${observation.storyId}:${observation.captureId ?? index}`}>
+					<li key={`${observation.elementKey}:${observation.captureId ?? index}`}>
 						{observation.imageCropKey || observation.imageSourceUrl ? (
 							<img
 								alt=""
@@ -49,7 +60,7 @@ export function SavedTimelinePage({ site, slug }: { site: string; slug: string }
 									{new Date(observation.capturedAt).toLocaleString("en-GB")}
 								</time>
 							) : null}
-							<strong>{observation.headline ?? observation.storyId}</strong>
+							<strong>{observation.headline ?? observation.elementKey}</strong>
 							{observation.rank ? <span>Rank {observation.rank}</span> : null}
 						</div>
 					</li>

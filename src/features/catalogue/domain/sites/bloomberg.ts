@@ -15,7 +15,7 @@ export const BLOOMBERG_SITES = [
 			device: "desktop" as const,
 			extractor: "bloomberg-front-page" as const,
 			minimumElements: 20,
-			version: 1,
+			version: 2,
 		},
 	},
 ].map((site) => {

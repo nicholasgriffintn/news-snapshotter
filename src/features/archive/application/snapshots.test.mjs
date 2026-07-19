@@ -125,14 +125,18 @@ test("returns 404 when a valid screenshot key does not exist", async () => {
 	assert.equal(response.status, 404);
 });
 
-test("serves stored screenshots with content, cache, and entity headers", async () => {
+test("serves stored screenshots with immutable caching and entity headers", async () => {
+	const getOptions = [];
 	const env = {
 		SCREENSHOTS: {
-			get: async () => ({
+			get: async (_key, options) => {
+				getOptions.push(options);
+				return {
 				body: "image bytes",
 				httpEtag: "etag-value",
 				writeHttpMetadata: (headers) => headers.set("content-type", "image/png"),
-			}),
+				};
+			},
 		},
 	};
 	const key = "brand=bbc/category=news/date=2026-07-16/bbc-desktop-2026-07-16T10-20-30-123Z.png";
@@ -145,6 +149,34 @@ test("serves stored screenshots with content, cache, and entity headers", async 
 	assert.equal(response.status, 200);
 	assert.equal(await response.text(), "image bytes");
 	assert.equal(response.headers.get("content-type"), "image/png");
-	assert.equal(response.headers.get("cache-control"), "public, max-age=3600");
+	assert.equal(response.headers.get("cache-control"), "public, max-age=31536000, immutable");
 	assert.equal(response.headers.get("etag"), "etag-value");
+	assert.equal(getOptions[0].onlyIf.get("if-none-match"), null);
+});
+
+test("returns not modified when the screenshot entity matches", async () => {
+	const getOptions = [];
+	const env = {
+		SCREENSHOTS: {
+			get: async (_key, options) => {
+				getOptions.push(options);
+				return {
+					httpEtag: '"etag-value"',
+					writeHttpMetadata: (headers) => headers.set("content-type", "image/png"),
+				};
+			},
+		},
+	};
+	const key = "brand=bbc/category=news/date=2026-07-16/bbc-desktop-2026-07-16T10-20-30-123Z.png";
+	const response = await serveScreenshot(
+		new Request(`https://archive.example/api/screenshots/image?key=${encodeURIComponent(key)}`, {
+			headers: { "if-none-match": '"etag-value"' },
+		}),
+		env,
+	);
+
+	assert.equal(response.status, 304);
+	assert.equal(response.headers.get("cache-control"), "public, max-age=31536000, immutable");
+	assert.equal(response.headers.get("etag"), '"etag-value"');
+	assert.equal(getOptions[0].onlyIf.get("if-none-match"), '"etag-value"');
 });

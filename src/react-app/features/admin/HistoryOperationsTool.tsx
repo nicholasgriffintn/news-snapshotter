@@ -20,7 +20,7 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 	const [status, setStatus] = useState<HistoryAdminStatus>();
 	const [timelineName, setTimelineName] = useState("");
 	const [timelineSite, setTimelineSite] = useState("");
-	const [timelineStories, setTimelineStories] = useState("");
+	const [timelineContent, setTimelineContent] = useState("");
 	const [timelineStatus, setTimelineStatus] = useState("");
 
 	useEffect(() => {
@@ -75,7 +75,7 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 		if (!apiKey) {
 			return;
 		}
-		const storyIds = timelineStories
+		const elementKeys = timelineContent
 			.split(/\r?\n/)
 			.map((value) => value.trim())
 			.filter(Boolean);
@@ -83,7 +83,7 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 			const timeline = await createHistoryTimeline(apiKey, {
 				name: timelineName.trim(),
 				site: timelineSite.trim(),
-				storyIds,
+				elementKeys,
 			});
 			setTimelineStatus(
 				`Saved: /history/${encodeURIComponent(timelineSite.trim())}/timelines/${timeline.slug}`,
@@ -185,11 +185,11 @@ export function HistoryOperationsTool({ apiKey }: { apiKey: string }) {
 						/>
 					</label>
 					<label className="history-story-ids">
-						<span>Story IDs (one per line, 2–10)</span>
+						<span>Content keys (one per line, 2–10)</span>
 						<textarea
-							onChange={(event) => setTimelineStories(event.target.value)}
+							onChange={(event) => setTimelineContent(event.target.value)}
 							rows={8}
-							value={timelineStories}
+							value={timelineContent}
 						/>
 					</label>
 					<button

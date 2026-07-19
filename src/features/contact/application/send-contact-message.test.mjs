@@ -39,12 +39,31 @@ function environment(overrides = {}) {
 
 test("valid contact requests are rate-limited and delivered", async (context) => {
 	context.mock.method(Date, "now", () => NOW);
-	const { env, sent } = environment();
+	const rateLimitKeys = [];
+	const { env, sent } = environment({
+		CONTACT_RATE_LIMIT: {
+			limit: async ({ key }) => {
+				rateLimitKeys.push(key);
+				return { success: true };
+			},
+		},
+	});
 
-	const response = await sendContactMessage(request(contactBody()), env);
+	const response = await sendContactMessage(
+		new Request("https://archive.example/api/contact", {
+			body: JSON.stringify(contactBody()),
+			headers: {
+				"cf-connecting-ip": "203.0.113.9",
+				"content-type": "application/json",
+			},
+			method: "POST",
+		}),
+		env,
+	);
 
 	assert.equal(response.status, 200);
 	assert.equal(sent.length, 1);
+	assert.deepEqual(rateLimitKeys, ["ip:203.0.113.9"]);
 	assert.equal(sent[0].to, "pashi@nicholasgriffin.dev");
 	assert.match(sent[0].text, /Email: reader@example\.com/);
 	assert.match(sent[0].text, /sufficiently detailed archive enquiry/);
@@ -118,5 +137,17 @@ test("invalid contact fields are rejected before delivery", async (context) => {
 	await assert.rejects(
 		() => sendContactMessage(request(contactBody({ reason: "sales" })), env),
 		/Choose a valid contact reason/,
+	);
+	await assert.rejects(
+		() =>
+			sendContactMessage(
+				new Request("https://archive.example/api/contact", {
+					body: JSON.stringify(contactBody()).replace(String(NOW - 5_000), "1e400"),
+					headers: { "content-type": "application/json" },
+					method: "POST",
+				}),
+				env,
+			),
+		/Invalid form submission/,
 	);
 });

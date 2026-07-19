@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { fetchHistorySites, fetchSnapshots } from "../../platform/api-client.ts";
+import { fetchAvailableHistorySites, fetchSnapshots } from "../../platform/api-client.ts";
 import { captureWindowKey, groupLabel } from "../../shared/format.ts";
 import type { Snapshot, SnapshotGroup } from "../../core/types.ts";
 import { DEFAULT_ARCHIVE_PERIOD, periodDescription } from "./domain/archive-period.ts";
@@ -9,6 +9,7 @@ import { groupSnapshotVariants } from "./domain/snapshot-groups.ts";
 import { SnapshotCard } from "./SnapshotCard";
 import { SnapshotFilters, type Filters } from "./SnapshotFilters";
 import { SnapshotModal } from "./SnapshotModal";
+import { ArchiveSkeleton } from "./ArchiveSkeleton";
 
 const EMPTY_FILTERS: Filters = {
 	brand: "",
@@ -34,8 +35,8 @@ export function SnapshotGallery() {
 	}, []);
 
 	useEffect(() => {
-		fetchHistorySites()
-			.then((sites) => setAnalysedSites(new Set(sites.map(({ site }) => site))))
+		fetchAvailableHistorySites()
+			.then((sites) => setAnalysedSites(new Set(sites)))
 			.catch(() => setAnalysedSites(new Set()));
 	}, []);
 
@@ -67,7 +68,14 @@ export function SnapshotGallery() {
 				</button>
 			</div>
 
-			{loading ? <div className="empty-state">Loading the archive…</div> : null}
+			{loading ? (
+				<>
+					<p aria-live="polite" className="sr-only">
+						Loading the archive…
+					</p>
+					<ArchiveSkeleton />
+				</>
+			) : null}
 			{error ? (
 				<div className="empty-state empty-state--error">Could not load snapshots. {error}</div>
 			) : null}

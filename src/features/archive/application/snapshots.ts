@@ -81,15 +81,19 @@ export async function serveScreenshot(
 		return Response.json({ message: "Invalid screenshot key" }, { status: 400 });
 	}
 
-	const object = await env.SCREENSHOTS.get(key);
+	const object = await env.SCREENSHOTS.get(key, { onlyIf: request.headers });
 	if (!object) {
 		return Response.json({ message: "Screenshot not found" }, { status: 404 });
 	}
 
 	const headers = new Headers();
 	object.writeHttpMetadata(headers);
-	headers.set("cache-control", "public, max-age=3600");
+	headers.set("cache-control", "public, max-age=31536000, immutable");
 	headers.set("etag", object.httpEtag);
+
+	if (!("body" in object)) {
+		return new Response(null, { headers, status: 304 });
+	}
 
 	return new Response(object.body, { headers });
 }

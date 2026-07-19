@@ -1,4 +1,4 @@
-import type { AnalysedContentKind } from "../../../core/contracts.ts";
+import type { PageElementKind } from "../../../core/contracts.ts";
 import type { ExtractorName } from "../../../core/domain.ts";
 
 export type { ExtractorName } from "../../../core/domain.ts";
@@ -8,9 +8,14 @@ export type ExtractorContentRule = {
 	candidateSelector: string;
 	categoryAttribute?: string;
 	categorySelector?: string;
+	excludedUrlPathPrefixes?: readonly string[];
+	fixedCategory?: string;
+	headlineAttribute?: string;
 	headlineSelector: string | readonly string[];
-	kind: AnalysedContentKind;
+	kind: PageElementKind;
+	minimumHeadlineLength?: number;
 	prominenceHint?: "lead";
+	scope?: "content" | "page";
 	sectionHeadingSelector?: string;
 	sectionSelector?: string;
 	summarySelector?: string;
@@ -38,6 +43,39 @@ const BBC_PROMO_RULE = {
 	summarySelector: "p, [data-testid*='summary']",
 } as const;
 
+const PAGE_HEADING_SELECTOR = "main h1, main h2, main h3, [role='main'] h1, [role='main'] h2, [role='main'] h3";
+const PAGE_ELEMENT_RULES: readonly ExtractorContentRule[] = [
+	{
+		cardSelector: "h1, h2, h3",
+		candidateSelector: PAGE_HEADING_SELECTOR,
+		headlineSelector: "h1, h2, h3",
+		kind: "heading",
+		minimumHeadlineLength: 1,
+		scope: "page",
+	},
+	{
+		cardSelector: "img",
+		candidateSelector:
+			"main img[alt]:not([alt='']), [role='main'] img[alt]:not([alt=''])",
+		headlineAttribute: "alt",
+		headlineSelector: "img",
+		kind: "image",
+		minimumHeadlineLength: 1,
+		scope: "page",
+		sectionHeadingSelector: PAGE_HEADING_SELECTOR,
+	},
+	{
+		cardSelector: "a[href], button",
+		candidateSelector:
+			"header a[href], header button, nav a[href], nav button, footer a[href], footer button",
+		fixedCategory: "Navigation",
+		headlineSelector: "a[href], button",
+		kind: "navigation",
+		minimumHeadlineLength: 1,
+		scope: "page",
+	},
+];
+
 const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 	"generic-baseline": {
 		name: "generic-baseline",
@@ -51,7 +89,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: "p",
 			},
 		],
-		version: 3,
+		version: 4,
 	},
 	"bbc-front-page": {
 		name: "bbc-front-page",
@@ -67,13 +105,16 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 			},
 			{
 				...BBC_PROMO_RULE,
-				candidateSelector: "[data-testid='promo'] a[href*='/sounds/']",
+				candidateSelector:
+					"[data-testid='promo'] :is(h1, h2, h3) a[href*='/sounds/'], [data-testid='promo'] a[href*='/sounds/']:has([class*='-PromoHeadline'])",
+				excludedUrlPathPrefixes: ["/sounds/my/"],
 				kind: "audio",
 			},
 			{
 				...BBC_PROMO_RULE,
 				candidateSelector:
-					"[data-testid='promo'] a[href*='/videos/'], [data-testid='promo'] a[href*='/iplayer/']",
+					"[data-testid='promo'] :is(h1, h2, h3) a[href*='/videos/'], [data-testid='promo'] :is(h1, h2, h3) a[href*='/iplayer/'], [data-testid='promo'] a[href*='/videos/']:has([class*='-PromoHeadline']), [data-testid='promo'] a[href*='/iplayer/']:has([class*='-PromoHeadline'])",
+				excludedUrlPathPrefixes: ["/iplayer/watchlist"],
 				kind: "video",
 			},
 			{
@@ -92,7 +133,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				kind: "story",
 			},
 		],
-		version: 6,
+		version: 9,
 	},
 	"bloomberg-front-page": {
 		name: "bloomberg-front-page",
@@ -118,7 +159,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: "[data-component='summary']",
 			},
 		],
-		version: 1,
+		version: 2,
 	},
 	"cnn-front-page": {
 		name: "cnn-front-page",
@@ -133,7 +174,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: "[data-editable='description'], .container__description",
 			},
 		],
-		version: 3,
+		version: 4,
 	},
 	"dailymail-front-page": {
 		name: "dailymail-front-page",
@@ -148,7 +189,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: ".articletext > div, .articletext",
 			},
 		],
-		version: 3,
+		version: 4,
 	},
 	"financialtimes-front-page": {
 		name: "financialtimes-front-page",
@@ -167,7 +208,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: ".standfirst, .o-teaser__standfirst, .o-teaser__summary, p",
 			},
 		],
-		version: 1,
+		version: 2,
 	},
 	"guardian-front-page": {
 		name: "guardian-front-page",
@@ -176,14 +217,13 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				cardSelector: "li",
 				candidateSelector:
 					"a[data-link-name='article'][href], a[data-link-name*=' | card-@'][href], a[data-link-name*='media-'][href], li[data-link-name^='sublinks'] a[href]",
-				categorySelector: ".card-headline > div",
 				headlineSelector: [".headline-text", "[data-gu-name='headline']", "h1, h2, h3"],
 				kind: "story",
 				sectionSelector: "section[data-component]",
 				summarySelector: "p, [data-link-name='standfirst']",
 			},
 		],
-		version: 6,
+		version: 8,
 	},
 	"nytimes-front-page": {
 		name: "nytimes-front-page",
@@ -200,7 +240,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: "[data-tpl='bo'] p",
 			},
 		],
-		version: 4,
+		version: 5,
 	},
 	"telegraph-front-page": {
 		name: "telegraph-front-page",
@@ -215,7 +255,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: "[data-test='standfirst']",
 			},
 		],
-		version: 2,
+		version: 3,
 	},
 	"times-front-page": {
 		name: "times-front-page",
@@ -244,7 +284,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: ".short-summary p, a:not(.article-headline) > p",
 			},
 		],
-		version: 4,
+		version: 5,
 	},
 	"washingtonpost-front-page": {
 		name: "washingtonpost-front-page",
@@ -257,7 +297,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: ".font-size-blurb",
 			},
 		],
-		version: 2,
+		version: 3,
 	},
 };
 
@@ -270,5 +310,8 @@ export function extractorDefinition(name: ExtractorName, version: number): Extra
 		);
 	}
 
-	return definition;
+	return {
+		...definition,
+		rules: [...definition.rules, ...PAGE_ELEMENT_RULES],
+	};
 }

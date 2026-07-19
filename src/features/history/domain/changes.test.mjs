@@ -56,7 +56,7 @@ test("ignores sub-pixel layout noise", async () => {
 	assert.deepEqual(await diffAdjacentCaptures(previous, current), []);
 });
 
-test("marks extractor upgrades without interpreting story-level changes", async () => {
+test("marks extractor upgrades without interpreting element-level changes", async () => {
 	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z");
 	const current = historyExtraction("capture-b", "2026-07-17T10:00:00.000Z", {
 		extractorVersion: 2,
@@ -71,7 +71,7 @@ test("marks extractor upgrades without interpreting story-level changes", async 
 	);
 });
 
-test("marks missing scheduled captures and story appearance or disappearance", async () => {
+test("marks missing scheduled captures and content appearance or disappearance", async () => {
 	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z", {
 		elements: [historyStory()],
 	});
@@ -92,7 +92,7 @@ test("marks missing scheduled captures and story appearance or disappearance", a
 	);
 });
 
-test("tracks analysed media appearing and disappearing without story identities", async () => {
+test("tracks every content kind through its page element identity", async () => {
 	const previous = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z", {
 		elements: [
 			historyStory(),
@@ -117,20 +117,19 @@ test("tracks analysed media appearing and disappearing without story identities"
 	const changes = await diffAdjacentCaptures(previous, current);
 
 	assert.deepEqual(
-		changes.map(({ elementKey, storyId, type }) => ({ elementKey, storyId, type })),
+		changes.map(({ elementKey, type }) => ({ elementKey, type })),
 		[
 			{
 				elementKey: "https://www.bbc.co.uk/sounds/play/latest",
-				storyId: undefined,
 				type: "appeared",
 			},
-			{ elementKey: "video:earlier-clip", storyId: undefined, type: "disappeared" },
+			{ elementKey: "video:earlier-clip", type: "disappeared" },
 		],
 	);
 	assert.notEqual(changes[0].changeId, changes[1].changeId);
 });
 
-test("tracks category and prominence changes for matched media", async () => {
+test("tracks kind, category, and prominence independently for matched content", async () => {
 	const media = historyStory({
 		canonicalUrl: "https://www.bbc.co.uk/sport/football/videos/example",
 		elementKey: "https://www.bbc.co.uk/sport/football/videos/example",
@@ -144,6 +143,7 @@ test("tracks category and prominence changes for matched media", async () => {
 			{
 				...media,
 				category: "Football",
+				kind: "audio",
 				prominence: "lead",
 			},
 		],
@@ -152,10 +152,11 @@ test("tracks category and prominence changes for matched media", async () => {
 	const changes = await diffAdjacentCaptures(previous, current);
 
 	assert.deepEqual(
-		changes.map(({ storyId, type }) => ({ storyId, type })),
+		changes.map(({ type }) => ({ type })),
 		[
-			{ storyId: undefined, type: "category-changed" },
-			{ storyId: undefined, type: "promoted" },
+			{ type: "category-changed" },
+			{ type: "kind-changed" },
+			{ type: "promoted" },
 		],
 	);
 });

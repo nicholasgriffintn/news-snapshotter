@@ -93,7 +93,7 @@ Analysed history is exposed through bounded public reads:
 ```text
 GET /api/history/:site/captures?from=&to=&limit=&cursor=
 GET /api/history/:site/captures/:captureId
-GET /api/history/:site/stories/:storyId?from=&to=&limit=&cursor=
+GET /api/history/:site/content/:elementKey?from=&to=&limit=&cursor=
 GET /api/history/:site/changes?from=&to=&type=&limit=&cursor=
 ```
 

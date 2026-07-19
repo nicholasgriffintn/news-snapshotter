@@ -10,7 +10,7 @@ export const TELEGRAPH_SITES = [
 			device: "desktop" as const,
 			extractor: "telegraph-front-page" as const,
 			minimumElements: 20,
-			version: 2,
+			version: 3,
 		},
 	},
 	{

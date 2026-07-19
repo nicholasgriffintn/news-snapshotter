@@ -1,4 +1,5 @@
 import { decodeCursor, encodeCursor } from "../../../core/cursor.ts";
+import { InvalidInputError } from "../../../core/errors.ts";
 import type { HistoryIndexMessage } from "./index-extraction.ts";
 import {
 	historyIndexStatus,
@@ -7,10 +8,8 @@ import {
 	listExtractionFailures,
 	resetHistoryIndex,
 } from "../infrastructure/history-admin-repository.ts";
-import {
-	createSavedTimeline,
-	materialiseHistoryMonth,
-} from "../infrastructure/history-research-repository.ts";
+import { createSavedTimeline } from "../infrastructure/history-research-repository.ts";
+import { materialiseHistoryMonth } from "../infrastructure/history-trend-repository.ts";
 import { parsePageExtraction } from "../domain/extraction.ts";
 import { SITES } from "../../catalogue/domain/sites.ts";
 
@@ -39,7 +38,7 @@ function optionalString(
 		return undefined;
 	}
 	if (typeof value !== "string" || value.length === 0 || value.length > maximumLength) {
-		throw new Error(`${key} is invalid`);
+		throw new InvalidInputError(`${key} is invalid`);
 	}
 	return value;
 }
@@ -50,7 +49,7 @@ function timestamp(value: string | undefined, name: string): string | undefined 
 	}
 
 	if (!/^\d{4}-\d{2}-\d{2}T/.test(value) || !Number.isFinite(Date.parse(value))) {
-		throw new Error(`${name} must be an ISO timestamp`);
+		throw new InvalidInputError(`${name} must be an ISO timestamp`);
 	}
 
 	return new Date(value).toISOString();
@@ -64,21 +63,21 @@ async function requestOptions(request: Request, allowReset: boolean): Promise<Ar
 	}
 
 	if (!body || typeof body !== "object" || Array.isArray(body)) {
-		throw new Error("History indexing request must be an object");
+		throw new InvalidInputError("History indexing request must be an object");
 	}
 
 	const record = body as Record<string, unknown>;
 	const limit = record.limit === undefined ? 250 : Number(record.limit);
 
 	if (!Number.isInteger(limit) || limit < 1 || limit > 1_000) {
-		throw new Error("limit must be between 1 and 1000");
+		throw new InvalidInputError("limit must be between 1 and 1000");
 	}
 
 	const reset = allowReset && record.reset === true;
 	const cursor = optionalString(record, "cursor", 2_048);
 
 	if (reset && cursor) {
-		throw new Error("reset is only valid on the first reindex page");
+		throw new InvalidInputError("reset is only valid on the first reindex page");
 	}
 
 	return {
@@ -149,7 +148,7 @@ function extractionKey(url: URL): string {
 		key.includes("..") ||
 		!/\.extraction\.v\d+\.json\.gz$/.test(key)
 	) {
-		throw new Error("A valid extraction artefact key is required");
+		throw new InvalidInputError("A valid extraction artefact key is required");
 	}
 
 	return key;
@@ -240,7 +239,7 @@ function failureOptions(url: URL) {
 	const limit = limitValue === null ? 50 : Number(limitValue);
 
 	if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-		throw new Error("limit must be between 1 and 100");
+		throw new InvalidInputError("limit must be between 1 and 100");
 	}
 
 	const cursorValue = url.searchParams.get("cursor");
@@ -250,7 +249,7 @@ function failureOptions(url: URL) {
 		const decoded = decodeCursor(cursorValue);
 		const failureId = Number(decoded.failureId);
 		if (!decoded.failedAt || !Number.isInteger(failureId)) {
-			throw new Error("cursor is invalid");
+			throw new InvalidInputError("cursor is invalid");
 		}
 		cursor = { failedAt: decoded.failedAt, failureId };
 	}
@@ -263,20 +262,20 @@ function extractionListOptions(url: URL): ExtractionListOptions {
 	const limit = limitValue === null ? 25 : Number(limitValue);
 
 	if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
-		throw new Error("limit must be between 1 and 100");
+		throw new InvalidInputError("limit must be between 1 and 100");
 	}
 
 	const sortValue = url.searchParams.get("sort") ?? "newest";
 
 	if (sortValue !== "newest" && sortValue !== "oldest") {
-		throw new Error("sort must be newest or oldest");
+		throw new InvalidInputError("sort must be newest or oldest");
 	}
 
 	const sort = sortValue === "oldest" ? "oldest" : "newest";
 	const siteValue = url.searchParams.get("site")?.trim();
 
 	if (siteValue && siteValue.length > 200) {
-		throw new Error("site is invalid");
+		throw new InvalidInputError("site is invalid");
 	}
 
 	return { limit, site: siteValue || undefined, sort };
@@ -331,12 +330,12 @@ export async function handleHistoryAdminRequest(
 		const body: unknown = await request.json();
 
 		if (!body || typeof body !== "object" || Array.isArray(body)) {
-			throw new Error("Timeline request must be an object");
+			throw new InvalidInputError("Timeline request must be an object");
 		}
 
 		const record = body as Record<string, unknown>;
-		const storyIds = Array.isArray(record.storyIds)
-			? record.storyIds.filter((storyId): storyId is string => typeof storyId === "string")
+		const elementKeys = Array.isArray(record.elementKeys)
+			? record.elementKeys.filter((key): key is string => typeof key === "string")
 			: [];
 
 		if (
@@ -346,21 +345,23 @@ export async function handleHistoryAdminRequest(
 			typeof record.site !== "string" ||
 			record.site.length === 0 ||
 			record.site.length > 200 ||
-			!Array.isArray(record.storyIds) ||
-			storyIds.length !== record.storyIds.length ||
-			storyIds.length < 2 ||
-			storyIds.length > 10 ||
-			storyIds.some((storyId) => storyId.length > 4_096) ||
-			new Set(storyIds).size !== storyIds.length
+			!Array.isArray(record.elementKeys) ||
+			elementKeys.length !== record.elementKeys.length ||
+			elementKeys.length < 2 ||
+			elementKeys.length > 10 ||
+			elementKeys.some((key) => key.length > 4_096) ||
+			new Set(elementKeys).size !== elementKeys.length
 		) {
-			throw new Error("Timeline requires a name, site, and 2 to 10 unique story IDs");
+			throw new InvalidInputError(
+				"Timeline requires a name, site, and 2 to 10 unique content keys",
+			);
 		}
 
 		return Response.json(
 			await createSavedTimeline(env.HISTORY_DB, {
 				name: record.name.trim(),
 				site: record.site,
-				storyIds,
+				elementKeys,
 			}),
 			{ status: 201 },
 		);
@@ -370,7 +371,7 @@ export async function handleHistoryAdminRequest(
 		const body: unknown = await request.json();
 
 		if (!body || typeof body !== "object" || Array.isArray(body)) {
-			throw new Error("Aggregate request must be an object");
+			throw new InvalidInputError("Aggregate request must be an object");
 		}
 
 		const record = body as Record<string, unknown>;
@@ -381,7 +382,10 @@ export async function handleHistoryAdminRequest(
 			record.site.length > 200 ||
 			typeof record.month !== "string"
 		) {
-			throw new Error("Aggregate request requires a site and month");
+			throw new InvalidInputError("Aggregate request requires a site and month");
+		}
+		if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(record.month)) {
+			throw new InvalidInputError("month must use YYYY-MM");
 		}
 
 		return Response.json(await materialiseHistoryMonth(env.HISTORY_DB, record.site, record.month), {

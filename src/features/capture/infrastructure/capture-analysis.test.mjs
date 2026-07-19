@@ -3,13 +3,14 @@ import test from "node:test";
 
 import { analysisKeys, canonicaliseUrl, collectAndStoreAnalysis } from "./capture-analysis.ts";
 import { normaliseContentElements } from "../domain/content-elements.ts";
+import { parsePageExtraction } from "../../history/domain/extraction.ts";
 
 const site = {
 	analysis: {
 		device: "desktop",
 		extractor: "bbc-front-page",
 		minimumElements: 2,
-		version: 6,
+		version: 9,
 	},
 	brand: "bbc",
 	category: "news",
@@ -63,7 +64,49 @@ test("canonicalises story URLs for stable identity", () => {
 	);
 });
 
-test("keeps visible headline links and rejects navigation or hidden card actions", () => {
+test("retains page actions without treating non-web targets as publisher URLs", async () => {
+	const writes = [];
+	const page = {
+		evaluate: async () =>
+			JSON.stringify({
+				elements: [
+					extractedStory(),
+					extractedStory({
+						canonicalUrl: "javascript:openPrivacySettings()",
+						elementKey: "javascript:openPrivacySettings()",
+						headline: "Privacy Settings",
+						kind: "navigation",
+						position: { ...extractedStory().position, top: 500 },
+						selectorHint: "a",
+						textFingerprint: "privacy settings",
+					}),
+				],
+				html: "<!doctype html><html><body>Archive</body></html>",
+				pageHeight: 2_000,
+				pageWidth: 1_740,
+			}),
+	};
+
+	await collectAndStoreAnalysis({
+		bucket: { put: async (...args) => writes.push(args) },
+		capturedAt: "2026-07-17T09:00:10.000Z",
+		device: "desktop",
+		page,
+		profile: "bbc",
+		screenshotKey: "screenshot.png",
+		site,
+		triggeredAt,
+	});
+
+	const stream = new Blob([writes[1][1]]).stream().pipeThrough(new DecompressionStream("gzip"));
+	const extraction = parsePageExtraction(await new Response(stream).json());
+	const action = extraction.elements.find(({ headline }) => headline === "Privacy Settings");
+
+	assert.equal(action.canonicalUrl, undefined);
+	assert.equal(action.elementKey, "navigation:privacy settings");
+});
+
+test("keeps every visible semantic kind and rejects hidden elements", () => {
 	const base = {
 		canonicalUrl: "https://www.bbc.co.uk/news/articles/story",
 		elementKey: "story",
@@ -88,6 +131,8 @@ test("keeps visible headline links and rejects navigation or hidden card actions
 			...base,
 			elementKey: "navigation",
 			headline: "Accessibility Help",
+			kind: "navigation",
+			position: { ...base.position, top: 120 },
 			selectorHint: "a",
 		},
 		{
@@ -101,10 +146,12 @@ test("keeps visible headline links and rejects navigation or hidden card actions
 		},
 	]);
 
-	assert.equal(stories.length, 1);
+	assert.equal(stories.length, 2);
 	assert.equal(stories[0].elementKey, "story");
 	assert.equal(stories[0].position.pageOrder, 1);
 	assert.equal(stories[0].summary, undefined);
+	assert.equal(stories[1].kind, "navigation");
+	assert.equal(stories[1].position.pageOrder, 2);
 });
 
 test("keeps a visible responsive card when a hidden duplicate appears first", () => {

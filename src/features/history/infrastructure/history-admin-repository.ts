@@ -33,9 +33,6 @@ export async function listIndexedExtractions(
 				extractor_version AS extractorVersion,
 				site,
 				(
-					SELECT COUNT(*) FROM story_observations
-					WHERE story_observations.capture_id = analysed_captures.capture_id
-				) + (
 					SELECT COUNT(*) FROM page_elements
 					WHERE page_elements.capture_id = analysed_captures.capture_id
 				) AS matchedElements
@@ -59,8 +56,8 @@ export async function historyIndexStatus(database: D1Database): Promise<{
 		.prepare(
 			`SELECT
 				(SELECT COUNT(*) FROM analysed_captures) AS captures,
-				(SELECT COUNT(*) FROM stories) AS stories,
-				(SELECT COUNT(*) FROM story_observations) AS observations,
+				(SELECT COUNT(DISTINCT element_key) FROM page_elements) AS content,
+				(SELECT COUNT(*) FROM page_elements) AS observations,
 				(SELECT COUNT(*) FROM change_events) AS changes,
 				(SELECT COUNT(*) FROM extraction_failures) AS failures`,
 		)
@@ -73,10 +70,10 @@ export async function historyIndexStatus(database: D1Database): Promise<{
 				MIN(analysed_captures.captured_at) AS firstCaptureAt,
 				MAX(analysed_captures.captured_at) AS lastCaptureAt,
 				MAX(analysed_captures.indexed_at) AS lastIndexedAt,
-				COUNT(DISTINCT story_observations.story_id) AS storyCount
+				COUNT(DISTINCT page_elements.element_key) AS contentCount
 			FROM analysed_captures
-			LEFT JOIN story_observations
-				ON story_observations.capture_id = analysed_captures.capture_id
+			LEFT JOIN page_elements
+				ON page_elements.capture_id = analysed_captures.capture_id
 			GROUP BY analysed_captures.site
 			ORDER BY analysed_captures.site`,
 		)
@@ -89,7 +86,7 @@ export async function historyIndexStatus(database: D1Database): Promise<{
 				SUM(compressed_bytes) AS compressedExtractionBytes,
 				SUM(decompressed_bytes) AS decompressedExtractionBytes,
 				SUM(element_count) AS indexedElements,
-				SUM(story_count) AS indexedStories,
+				SUM(content_count) AS indexedContent,
 				SUM(image_count) AS indexedImages,
 				SUM(change_count) AS indexedChanges,
 				SUM(d1_statement_count) AS d1WriteStatements,
@@ -103,7 +100,7 @@ export async function historyIndexStatus(database: D1Database): Promise<{
 	return {
 		resourceUsage: resourceUsage.results,
 		sites: sites.results,
-		totals: totals ?? { captures: 0, changes: 0, failures: 0, observations: 0, stories: 0 },
+		totals: totals ?? { captures: 0, changes: 0, content: 0, failures: 0, observations: 0 },
 	};
 }
 
@@ -161,10 +158,9 @@ export async function resetHistoryIndex(database: D1Database, site?: string): Pr
 	const statements = [
 		statement("DELETE FROM history_monthly_aggregates"),
 		statement("DELETE FROM history_ingestion_metrics"),
-		statement("DELETE FROM story_observation_search"),
+		statement("DELETE FROM content_observation_search"),
 		statement("DELETE FROM saved_timelines"),
 		statement("DELETE FROM analysed_captures"),
-		statement("DELETE FROM stories"),
 		statement("DELETE FROM images"),
 		statement("DELETE FROM extraction_failures"),
 	];

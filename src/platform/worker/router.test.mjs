@@ -42,6 +42,11 @@ test("serves the public site catalogue without authentication", async () => {
 			return [1, 2, 3, 4].includes(site.priority);
 		}),
 	);
+	assert.equal(response.headers.get("cache-control"), "public, max-age=3600");
+	assert.equal(
+		response.headers.get("cloudflare-cdn-cache-control"),
+		"max-age=86400, stale-while-revalidate=604800",
+	);
 });
 
 test("lists the supported capture providers", async () => {
@@ -58,6 +63,53 @@ test("serves the public screenshot listing", async () => {
 
 	assert.equal(response.status, 200);
 	assert.deepEqual(body, { screenshots: [], truncated: false });
+	assert.equal(response.headers.get("cache-control"), "public, max-age=60");
+	assert.equal(
+		response.headers.get("cloudflare-cdn-cache-control"),
+		"max-age=300, stale-while-revalidate=3600",
+	);
+});
+
+test("caches the lightweight public history availability response", async () => {
+	const response = await handleRequest(
+		apiRequest("/api/history/sites/available"),
+		environment({
+			HISTORY_DB: {
+				prepare: () => ({
+					all: async () => ({ results: [{ site: "bbc-home" }] }),
+				}),
+			},
+		}),
+	);
+
+	assert.equal(response.status, 200);
+	assert.deepEqual(await response.json(), { sites: ["bbc-home"] });
+	assert.equal(response.headers.get("cache-control"), "public, max-age=60");
+	assert.equal(
+		response.headers.get("cloudflare-cdn-cache-control"),
+		"max-age=300, stale-while-revalidate=3600",
+	);
+});
+
+test("does not expose unexpected infrastructure failures", async (context) => {
+	context.mock.method(console, "error", () => undefined);
+	const response = await handleRequest(
+		apiRequest("/api/screenshots"),
+		environment({
+			SCREENSHOTS: {
+				list: async () => {
+					throw new Error("private R2 failure details");
+				},
+			},
+		}),
+	);
+
+	assert.equal(response.status, 500);
+	assert.equal(response.headers.get("cache-control"), null);
+	assert.deepEqual(await response.json(), {
+		message: "Internal server error",
+		status: "error",
+	});
 });
 
 test("lists the supported capture profiles", async () => {
@@ -115,6 +167,7 @@ test("protects workflow routes with the configured API key", async () => {
 
 	assert.equal(response.status, 401);
 	assert.equal((await response.json()).message, "Invalid API key");
+	assert.equal(response.headers.get("cache-control"), "private, no-store");
 });
 
 test("protects capture failures with the configured API key", async () => {
@@ -346,6 +399,22 @@ test("returns workflow status by identifier", async () => {
 	assert.equal(response.status, 200);
 	assert.equal(body.workflowId, "workflow-123");
 	assert.deepEqual(body.workflowStatus, { status: "running" });
+	assert.equal(response.headers.get("cache-control"), "private, no-store");
+});
+
+test("rejects malformed JSON without exposing parser details", async (context) => {
+	context.mock.method(console, "error", () => undefined);
+	const response = await handleRequest(
+		apiRequest("/api/workflows", {
+			body: "{",
+			headers: { authorization: "Bearer secret", "content-type": "application/json" },
+			method: "POST",
+		}),
+		environment(),
+	);
+
+	assert.equal(response.status, 400);
+	assert.equal((await response.json()).message, "Request body must be valid JSON");
 });
 
 test("turns invalid workflow selections into a 400 response", async (context) => {

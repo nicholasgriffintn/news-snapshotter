@@ -4,27 +4,28 @@ import { SITES } from "../../catalogue/domain/sites.ts";
 import type { CaptureSelection } from "../../../core/contracts.ts";
 import type { Env } from "../../../platform/cloudflare/env.ts";
 import { selectSites } from "../../catalogue/domain/site-catalogue.ts";
+import { InvalidInputError } from "../../../core/errors.ts";
 
 export function parseCaptureSelection(body: unknown): CaptureSelection {
 	if (!body || typeof body !== "object" || Array.isArray(body)) {
-		throw new Error("Request body must be a JSON object");
+		throw new InvalidInputError("Request body must be a JSON object");
 	}
 
 	const { brand, name, priority, provider } = body as Record<string, unknown>;
 	if (brand !== undefined && (typeof brand !== "string" || brand.length === 0)) {
-		throw new Error("brand must be a non-empty string");
+		throw new InvalidInputError("brand must be a non-empty string");
 	}
 	if (name !== undefined && (typeof name !== "string" || name.length === 0)) {
-		throw new Error("name must be a non-empty string");
+		throw new InvalidInputError("name must be a non-empty string");
 	}
 	if (
 		priority !== undefined &&
 		(typeof priority !== "number" || ![1, 2, 3, 4].includes(priority))
 	) {
-		throw new Error("priority must be 1, 2, 3, or 4");
+		throw new InvalidInputError("priority must be 1, 2, 3, or 4");
 	}
 	if (provider !== undefined && (typeof provider !== "string" || !hasCaptureProvider(provider))) {
-		throw new Error("provider must be cloudflare or hyperbrowser");
+		throw new InvalidInputError("provider must be cloudflare or hyperbrowser");
 	}
 
 	return {

@@ -16,7 +16,7 @@ export function HistoryPage({ site }: { site: string }) {
 					<h1>{displayName(site)} history</h1>
 				</div>
 				<div className="history-heading__intro">
-					<p>Review each captured front page alongside its extracted stories and layout.</p>
+					<p>Review each captured front page alongside its extracted content and layout.</p>
 					{history.capture ? (
 						<a
 							className="history-text-link"

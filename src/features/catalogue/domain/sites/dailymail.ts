@@ -9,7 +9,7 @@ export const DAILYMAIL_SITES = [
 			device: "desktop" as const,
 			extractor: "dailymail-front-page" as const,
 			minimumElements: 20,
-			version: 3,
+			version: 4,
 		},
 	},
 	{

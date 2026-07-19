@@ -1,6 +1,6 @@
 import { errorMessage } from "../../../core/errors.ts";
 import { parsePageExtraction } from "../domain/extraction.ts";
-import { ingestExtraction } from "../infrastructure/history-repository.ts";
+import { ingestExtraction } from "../infrastructure/history-ingestion-repository.ts";
 
 export type HistoryIndexMessage =
 	| {

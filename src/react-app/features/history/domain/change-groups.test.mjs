@@ -7,12 +7,13 @@ test("groups history changes into reader-facing categories", () => {
 	const grouped = groupHistoryChanges([
 		{ type: "appeared" },
 		{ type: "headline-changed" },
+		{ type: "kind-changed" },
 		{ type: "promoted" },
 		{ type: "position-changed" },
 	]);
 
 	assert.equal(grouped.get("appeared").length, 1);
-	assert.equal(grouped.get("content").length, 1);
+	assert.equal(grouped.get("content").length, 2);
 	assert.equal(grouped.get("prominence").length, 1);
 	assert.equal(grouped.get("position").length, 1);
 });

@@ -34,6 +34,9 @@ export function HistoryScrubber({
 
 	return (
 		<section aria-label="Capture timeline" className="history-scrubber">
+			<button disabled={!older} onClick={() => older && onSelect(older.captureId)} type="button">
+				← Previous
+			</button>
 			<div className="history-scrubber__clock">
 				<span>Archive time</span>
 				<strong>{selected ? fullTime(selected.capturedAt) : "No capture selected"}</strong>
@@ -59,9 +62,6 @@ export function HistoryScrubber({
 				</div>
 			</div>
 			<div className="history-scrubber__actions">
-				<button disabled={!older} onClick={() => older && onSelect(older.captureId)} type="button">
-					← Previous
-				</button>
 				<button disabled={!newer} onClick={() => newer && onSelect(newer.captureId)} type="button">
 					Next →
 				</button>

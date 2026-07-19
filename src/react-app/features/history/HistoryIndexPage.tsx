@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { isAbortError } from "../../shared/errors.ts";
 import type { HistorySite } from "../../core/types.ts";
 import { fetchHistorySites } from "../../platform/api-client.ts";
 import { displayName } from "../../shared/format.ts";
@@ -11,12 +12,24 @@ export function HistoryIndexPage() {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		fetchHistorySites()
-			.then(setSites)
-			.catch((reason: unknown) => {
-				setError(reason instanceof Error ? reason.message : "Could not load history sites");
+		const controller = new AbortController();
+		fetchHistorySites({ signal: controller.signal })
+			.then((nextSites) => {
+				if (!controller.signal.aborted) {
+					setSites(nextSites);
+				}
 			})
-			.finally(() => setLoading(false));
+			.catch((reason: unknown) => {
+				if (!isAbortError(reason)) {
+					setError(reason instanceof Error ? reason.message : "Could not load history sites");
+				}
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) {
+					setLoading(false);
+				}
+			});
+		return () => controller.abort();
 	}, []);
 
 	return (
@@ -26,7 +39,7 @@ export function HistoryIndexPage() {
 					<h1>Site history</h1>
 				</div>
 				<div className="history-heading__intro">
-					<p>See what publishers led with, how their pages changed, and which stories persisted.</p>
+					<p>See what publishers led with, how their pages changed, and which items persisted.</p>
 				</div>
 			</header>
 			<HistoryNav current="sites" />
@@ -52,8 +65,8 @@ export function HistoryIndexPage() {
 								<dd>{site.captureCount}</dd>
 							</div>
 							<div>
-								<dt>Stories</dt>
-								<dd>{site.storyCount}</dd>
+								<dt>Content items</dt>
+								<dd>{site.contentCount}</dd>
 							</div>
 							<div className="history-site-row__updated">
 								<dt>Latest</dt>

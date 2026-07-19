@@ -9,7 +9,7 @@ export const FINANCIAL_TIMES_SITES = [
 			device: "desktop" as const,
 			extractor: "financialtimes-front-page" as const,
 			minimumElements: 20,
-			version: 1,
+			version: 2,
 		},
 	},
 	{

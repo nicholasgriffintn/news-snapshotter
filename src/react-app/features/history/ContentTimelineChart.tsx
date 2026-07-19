@@ -1,4 +1,4 @@
-import type { StoryObservation } from "../../core/types.ts";
+import type { ContentObservation } from "../../core/types.ts";
 import { timelinePoints } from "./story-timeline.ts";
 
 function TimelinePlot({
@@ -44,7 +44,7 @@ function TimelinePlot({
 	);
 }
 
-export function StoryTimelineChart({ observations }: { observations: StoryObservation[] }) {
+export function ContentTimelineChart({ observations }: { observations: ContentObservation[] }) {
 	return (
 		<div className="story-charts">
 			<TimelinePlot

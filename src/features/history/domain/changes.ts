@@ -1,4 +1,3 @@
-import { isAnalysedContentKind } from "../../../core/contracts.ts";
 import type { PageElement, PageExtraction } from "./extraction.ts";
 
 export const POSITION_NOISE = {
@@ -18,6 +17,7 @@ export type ChangeType =
 	| "summary-changed"
 	| "image-changed"
 	| "image-alt-changed"
+	| "kind-changed"
 	| "section-changed"
 	| "category-changed"
 	| "rank-changed"
@@ -42,15 +42,10 @@ export type ChangeEvent = {
 	magnitude?: number;
 	previousCaptureId: string;
 	schemaVersion: number;
-	storyId?: string;
 	type: ChangeType;
 };
 
 type PendingChange = Omit<ChangeEvent, "changeId">;
-
-function storyId(site: string, element: PageElement): string {
-	return `${site}:${element.canonicalUrl ?? element.elementKey}`;
-}
 
 async function sha256(value: string): Promise<string> {
 	const encoded = new TextEncoder().encode(value);
@@ -91,7 +86,6 @@ function elementChange(
 		...baseChange(previous, current, type, before, after),
 		elementKey: element.elementKey,
 		magnitude,
-		...(element.kind === "story" ? { storyId: storyId(current.capture.site, element) } : {}),
 	};
 }
 
@@ -158,6 +152,7 @@ function addMatchedElementChanges(
 		before.category,
 		after.category,
 	);
+	stringChange(changes, previous, current, after, "kind-changed", before.kind, after.kind);
 
 	if (before.position.pageOrder !== after.position.pageOrder) {
 		changes.push(
@@ -322,26 +317,8 @@ export async function diffAdjacentCaptures(
 			),
 		);
 	} else {
-		const previousContent = new Map(
-			previous.elements
-				.filter(({ kind }) => isAnalysedContentKind(kind))
-				.map((element) => [
-					element.kind === "story"
-						? storyId(previous.capture.site, element)
-						: element.elementKey,
-					element,
-				]),
-		);
-		const currentContent = new Map(
-			current.elements
-				.filter(({ kind }) => isAnalysedContentKind(kind))
-				.map((element) => [
-					element.kind === "story"
-						? storyId(current.capture.site, element)
-						: element.elementKey,
-					element,
-				]),
-		);
+		const previousContent = new Map(previous.elements.map((element) => [element.elementKey, element]));
+		const currentContent = new Map(current.elements.map((element) => [element.elementKey, element]));
 
 		for (const [id, before] of previousContent) {
 			const after = currentContent.get(id);
@@ -362,8 +339,8 @@ export async function diffAdjacentCaptures(
 	}
 
 	changes.sort((left, right) => {
-		return `${left.type}:${left.storyId ?? left.elementKey ?? ""}`.localeCompare(
-			`${right.type}:${right.storyId ?? right.elementKey ?? ""}`,
+		return `${left.type}:${left.elementKey ?? ""}`.localeCompare(
+			`${right.type}:${right.elementKey ?? ""}`,
 		);
 	});
 
@@ -372,7 +349,7 @@ export async function diffAdjacentCaptures(
 			const identity = [
 				change.previousCaptureId,
 				change.currentCaptureId,
-				change.storyId ?? change.elementKey ?? "page",
+				change.elementKey ?? "page",
 				change.type,
 			].join("\n");
 

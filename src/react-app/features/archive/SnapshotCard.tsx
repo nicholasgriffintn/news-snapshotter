@@ -48,7 +48,11 @@ export function SnapshotCard({
 				<a className="snapshot-card__history" href={`/history/${encodeURIComponent(group.name)}`}>
 					Explore page history <span aria-hidden="true">→</span>
 				</a>
-			) : null}
+			) : (
+				<span aria-hidden="true" className="snapshot-card__history snapshot-card__history--placeholder">
+					Explore page history
+				</span>
+			)}
 		</article>
 	);
 }

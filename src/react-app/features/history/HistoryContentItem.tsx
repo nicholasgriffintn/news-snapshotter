@@ -1,9 +1,5 @@
 import type { HistoryElement } from "../../core/types.ts";
-import { storyHistoryPath } from "./history-routes.ts";
-
-function storyId(site: string, element: HistoryElement): string {
-	return `${site}:${element.canonicalUrl ?? element.elementKey}`;
-}
+import { contentHistoryPath } from "./history-routes.ts";
 
 export function HistoryContentItem({ element, site }: { element: HistoryElement; site: string }) {
 	const copy = (
@@ -24,22 +20,9 @@ export function HistoryContentItem({ element, site }: { element: HistoryElement;
 				<small>{element.prominence ?? "standard"}</small>
 				<small className="history-content-kind">{element.kind}</small>
 			</div>
-			{element.kind === "story" ? (
-				<a className="history-content-copy" href={storyHistoryPath(site, storyId(site, element))}>
-					{copy}
-				</a>
-			) : element.canonicalUrl ? (
-				<a
-					className="history-content-copy"
-					href={element.canonicalUrl}
-					rel="noreferrer"
-					target="_blank"
-				>
-					{copy}
-				</a>
-			) : (
-				<div className="history-content-copy">{copy}</div>
-			)}
+			<a className="history-content-copy" href={contentHistoryPath(site, element.elementKey)}>
+				{copy}
+			</a>
 		</li>
 	);
 }

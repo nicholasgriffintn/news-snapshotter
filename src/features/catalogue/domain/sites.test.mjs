@@ -43,8 +43,8 @@ test("publisher homepages can define reader-facing names", () => {
 });
 
 test("BBC front pages use the reviewed analysis extractor", () => {
-	assert.equal(siteNamed("bbc-home").analysis?.version, 6);
-	assert.equal(siteNamed("bbc-news").analysis?.version, 6);
+	assert.equal(siteNamed("bbc-home").analysis?.version, 9);
+	assert.equal(siteNamed("bbc-news").analysis?.version, 9);
 });
 
 test("reviewed publisher front pages use their specific extractors", () => {

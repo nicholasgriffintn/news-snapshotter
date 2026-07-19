@@ -1,7 +1,9 @@
 import { decodeCursor, encodeCursor } from "../../../core/cursor.ts";
+import { InvalidInputError } from "../../../core/errors.ts";
 import {
 	getCapture,
-	getStory,
+	getContentHistory,
+	listAvailableHistorySites,
 	listCaptures,
 	listChanges,
 	listHistorySites,
@@ -28,6 +30,7 @@ const CHANGE_TYPES = new Set<string>([
 	"capture-gap",
 	"extractor-version-boundary",
 ]);
+const MAX_PATH_IDENTIFIER_LENGTH = 4_096;
 
 function jsonError(message: string, status: number): Response {
 	return Response.json({ message, status: "error" }, { status });
@@ -39,7 +42,7 @@ function validDate(value: string | null, name: string): string | undefined {
 	}
 
 	if (!/^\d{4}-\d{2}-\d{2}T/.test(value) || !Number.isFinite(Date.parse(value))) {
-		throw new Error(`${name} must be an ISO timestamp`);
+		throw new InvalidInputError(`${name} must be an ISO timestamp`);
 	}
 
 	return new Date(value).toISOString();
@@ -50,7 +53,7 @@ function limit(url: URL): number {
 	const parsed = value === null ? 50 : Number(value);
 
 	if (!Number.isInteger(parsed) || parsed < 1 || parsed > 100) {
-		throw new Error("limit must be between 1 and 100");
+		throw new InvalidInputError("limit must be between 1 and 100");
 	}
 
 	return parsed;
@@ -63,7 +66,7 @@ function captureListOptions(url: URL): HistoryListOptions {
 	if (cursorValue) {
 		const decoded = decodeCursor(cursorValue);
 		if (!decoded.capturedAt || !decoded.captureId) {
-			throw new Error("cursor is invalid");
+			throw new InvalidInputError("cursor is invalid");
 		}
 		cursor = { capturedAt: decoded.capturedAt, captureId: decoded.captureId };
 	}
@@ -81,7 +84,7 @@ function changeListOptions(url: URL): ChangeListOptions {
 	const type = url.searchParams.get("type");
 
 	if (type && !CHANGE_TYPES.has(type)) {
-		throw new Error("type is not a supported change type");
+		throw new InvalidInputError("type is not a supported change type");
 	}
 
 	let cursor: ChangeListOptions["cursor"];
@@ -89,7 +92,7 @@ function changeListOptions(url: URL): ChangeListOptions {
 	if (cursorValue) {
 		const decoded = decodeCursor(cursorValue);
 		if (!decoded.capturedAt || !decoded.changeId) {
-			throw new Error("cursor is invalid");
+			throw new InvalidInputError("cursor is invalid");
 		}
 		cursor = { capturedAt: decoded.capturedAt, changeId: decoded.changeId };
 	}
@@ -111,7 +114,7 @@ function publicFailureOptions(url: URL) {
 		const decoded = decodeCursor(cursorValue);
 		const failureId = Number(decoded.failureId);
 		if (!decoded.failedAt || !Number.isInteger(failureId)) {
-			throw new Error("cursor is invalid");
+			throw new InvalidInputError("cursor is invalid");
 		}
 		cursor = { failedAt: decoded.failedAt, failureId };
 	}
@@ -148,8 +151,11 @@ export async function handleHistoryRequest(
 	if (url.pathname === "/api/history/sites") {
 		return Response.json({ sites: await listHistorySites(database) });
 	}
+	if (url.pathname === "/api/history/sites/available") {
+		return Response.json({ sites: await listAvailableHistorySites(database) });
+	}
 
-	const match = /^\/api\/history\/([^/]+)\/(captures|changes|failures|stories)(?:\/([^/]+))?$/.exec(
+	const match = /^\/api\/history\/([^/]+)\/(captures|changes|content|failures)(?:\/([^/]+))?$/.exec(
 		url.pathname,
 	);
 
@@ -160,6 +166,12 @@ export async function handleHistoryRequest(
 	const site = decodeURIComponent(match[1]);
 	const resource = match[2];
 	const identifier = match[3] ? decodeURIComponent(match[3]) : undefined;
+	if (site.length === 0 || site.length > MAX_PATH_IDENTIFIER_LENGTH) {
+		throw new InvalidInputError("site identifier is invalid");
+	}
+	if (identifier !== undefined && identifier.length > MAX_PATH_IDENTIFIER_LENGTH) {
+		throw new InvalidInputError("resource identifier is invalid");
+	}
 
 	if (resource === "captures" && !identifier) {
 		const result = await listCaptures(database, site, captureListOptions(url));
@@ -174,17 +186,19 @@ export async function handleHistoryRequest(
 		return capture ? Response.json(publicCapture(capture)) : jsonError("Capture not found", 404);
 	}
 
-	if (resource === "stories" && identifier) {
-		const story = await getStory(database, site, identifier, captureListOptions(url));
-
-		if (!story) {
-			return jsonError("Story not found", 404);
+	if (resource === "content" && identifier) {
+		const element = await getContentHistory(
+			database,
+			site,
+			identifier,
+			captureListOptions(url),
+		);
+		if (!element) {
+			return jsonError("Content item not found", 404);
 		}
-
-		const { nextCursor, ...storyDetails } = story;
-
+		const { nextCursor, ...elementDetails } = element;
 		return Response.json({
-			...storyDetails,
+			...elementDetails,
 			cursor: nextCursor ? encodeCursor(nextCursor) : undefined,
 		});
 	}

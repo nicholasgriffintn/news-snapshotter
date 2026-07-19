@@ -1,28 +1,30 @@
 import { useEffect, useState } from "react";
 
 import type { HistorySearchResult } from "../../core/types.ts";
-import { storyHistoryPath } from "./history-routes.ts";
+import { contentHistoryPath } from "./history-routes.ts";
 
 export function HistorySearchPanel({
+	loading,
 	onQuery,
-	onToggleStory,
+	onToggleContent,
 	query,
 	results,
-	selectedStories,
+	selectedContent,
 	site,
 }: {
+	loading: boolean;
 	onQuery: (query: string) => void;
-	onToggleStory: (storyId: string) => void;
+	onToggleContent: (elementKey: string) => void;
 	query: string;
 	results: HistorySearchResult[];
-	selectedStories: Set<string>;
+	selectedContent: Set<string>;
 	site: string;
 }) {
 	const [draft, setDraft] = useState(query);
 	useEffect(() => setDraft(query), [query]);
 	const compareSearch = new URLSearchParams();
-	for (const storyId of selectedStories) {
-		compareSearch.append("story", storyId);
+	for (const elementKey of selectedContent) {
+		compareSearch.append("element", elementKey);
 	}
 
 	return (
@@ -31,9 +33,9 @@ export function HistorySearchPanel({
 				<div>
 					<h2>Search the archive</h2>
 				</div>
-				{selectedStories.size >= 2 ? (
+				{selectedContent.size >= 2 ? (
 					<a href={`/history/${encodeURIComponent(site)}/compare?${compareSearch}`}>
-						Compare {selectedStories.size} stories →
+						Compare {selectedContent.size} items →
 					</a>
 				) : null}
 			</header>
@@ -46,6 +48,7 @@ export function HistorySearchPanel({
 				<label>
 					<span>Headline, summary, category or image text</span>
 					<input
+						maxLength={200}
 						onChange={(event) => setDraft(event.target.value)}
 						placeholder="Election, climate, Downing Street…"
 						value={draft}
@@ -53,28 +56,35 @@ export function HistorySearchPanel({
 				</label>
 				<button type="submit">Search history</button>
 			</form>
-			{query && results.length === 0 ? (
+			{loading ? (
+				<p aria-live="polite" className="research-empty" role="status">
+					Searching the archive…
+				</p>
+			) : null}
+			{query && !loading && results.length === 0 ? (
 				<p className="research-empty">No matching observations.</p>
 			) : null}
-			<ul className="research-results">
-				{results.map((result) => (
-					<li key={`${result.captureId}:${result.storyId}`}>
-						<input
-							aria-label={`Select ${result.headline ?? "story"} for comparison`}
-							checked={selectedStories.has(result.storyId)}
-							onChange={() => onToggleStory(result.storyId)}
-							type="checkbox"
-						/>
-						<a href={storyHistoryPath(site, result.storyId)}>
-							<strong>{result.headline ?? "Untitled story"}</strong>
-							{result.summary ? <p>{result.summary}</p> : null}
-							<small>
-								{new Date(result.capturedAt).toLocaleString("en-GB")} ·{" "}
-								{result.category ?? "Front page"} · rank {result.rank}
-							</small>
-						</a>
-					</li>
-				))}
+			<ul aria-busy={loading} className="research-results">
+				{!loading
+					? results.map((result) => (
+							<li key={`${result.captureId}:${result.elementKey}`}>
+								<input
+									aria-label={`Select ${result.headline ?? "content item"} for comparison`}
+									checked={selectedContent.has(result.elementKey)}
+									onChange={() => onToggleContent(result.elementKey)}
+									type="checkbox"
+								/>
+								<a href={contentHistoryPath(site, result.elementKey)}>
+									<strong>{result.headline ?? `Untitled ${result.kind}`}</strong>
+									{result.summary ? <p>{result.summary}</p> : null}
+									<small>
+										{new Date(result.capturedAt).toLocaleString("en-GB")} · {result.kind} ·{" "}
+										{result.category ?? "Front page"} · rank {result.rank}
+									</small>
+								</a>
+							</li>
+						))
+					: null}
 			</ul>
 		</section>
 	);

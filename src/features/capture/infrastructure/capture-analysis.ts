@@ -1,6 +1,7 @@
 import type { Page } from "@cloudflare/puppeteer";
 
 import type { Device, SiteDefinition } from "../../../core/domain.ts";
+import { isWebUrl } from "../../../core/urls.ts";
 import { contentCategory } from "../../history/domain/content-classification.ts";
 import {
 	type CollectedElement,
@@ -37,7 +38,11 @@ function safeSegment(value: string): string {
 		.replace(/^-+|-+$/g, "");
 }
 
-export function canonicaliseUrl(value: string): string {
+export function canonicaliseUrl(value: string): string | undefined {
+	if (!isWebUrl(value)) {
+		return undefined;
+	}
+
 	const url = new URL(value);
 	url.hash = "";
 
@@ -52,6 +57,38 @@ export function canonicaliseUrl(value: string): string {
 	}
 
 	return url.toString();
+}
+
+function canonicaliseElementUrls(element: CollectedElement): CollectedElement {
+	const {
+		canonicalUrl: originalCanonicalUrl,
+		image: originalImage,
+		...elementWithoutUrls
+	} = element;
+	const canonicalUrl = originalCanonicalUrl
+		? canonicaliseUrl(originalCanonicalUrl)
+		: undefined;
+	const originalImageUrl = originalImage?.sourceUrl;
+	const imageUrl = originalImageUrl ? canonicaliseUrl(originalImageUrl) : undefined;
+	const image = originalImage
+		? {
+				...originalImage,
+				sourceUrl: imageUrl,
+			}
+		: undefined;
+	const keyUsedRejectedUrl =
+		element.elementKey === originalCanonicalUrl || element.elementKey === originalImageUrl;
+	const elementKey =
+		canonicalUrl ??
+		imageUrl ??
+		(keyUsedRejectedUrl ? `${element.kind}:${element.textFingerprint}` : element.elementKey);
+
+	return {
+		...elementWithoutUrls,
+		...(canonicalUrl ? { canonicalUrl } : {}),
+		...(image ? { image } : {}),
+		elementKey,
+	};
 }
 
 export function analysisKeys(site: SiteDefinition, device: Device, triggeredAt: string) {
@@ -171,14 +208,16 @@ export async function collectAndStoreAnalysis(input: AnalysisInput): Promise<Ana
 		const collected = await collectPageContent(page, extractor);
 		collected.warnings ??= [];
 		const canonicalElements = collected.elements.map((element) => {
-			const canonicalUrl = element.canonicalUrl ? canonicaliseUrl(element.canonicalUrl) : undefined;
-			const category = contentCategory(canonicalUrl, element.category ?? element.section);
+			const canonicalElement = canonicaliseElementUrls(element);
+			const category = contentCategory(
+				canonicalElement.canonicalUrl,
+				canonicalElement.category,
+				canonicalElement.section,
+			);
 
 			return {
-				...element,
-				...(canonicalUrl ? { canonicalUrl } : {}),
+				...canonicalElement,
 				category,
-				elementKey: canonicalUrl ?? element.elementKey,
 			};
 		});
 		const content = normaliseContentElements(canonicalElements);

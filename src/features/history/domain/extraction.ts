@@ -1,3 +1,6 @@
+import type { PageElementKind } from "../../../core/contracts.ts";
+import { isWebUrl } from "../../../core/urls.ts";
+
 export type ElementPosition = {
 	height: number;
 	left: number;
@@ -17,7 +20,7 @@ export type PageElement = {
 		cropKey?: string;
 		sourceUrl?: string;
 	};
-	kind: AnalysedContentKind | "heading" | "image" | "navigation" | "other";
+	kind: PageElementKind;
 	position: ElementPosition;
 	prominence?: "lead" | "major" | "standard" | "minor";
 	section?: string;
@@ -65,7 +68,7 @@ const ELEMENT_KINDS = new Set([
 	"other",
 ]);
 const PROMINENCE_VALUES = new Set(["lead", "major", "standard", "minor"]);
-const MAX_ELEMENTS = 200;
+const MAX_ELEMENTS = 1_000;
 const MAX_WARNINGS = 100;
 const MAX_TEXT_LENGTH = 20_000;
 const MAX_IDENTIFIER_LENGTH = 4_096;
@@ -158,18 +161,6 @@ function isIsoTimestamp(value: unknown): boolean {
 	);
 }
 
-function isWebUrl(value: unknown): boolean {
-	if (typeof value !== "string") {
-		return false;
-	}
-	try {
-		const url = new URL(value);
-		return url.protocol === "https:" || url.protocol === "http:";
-	} catch {
-		return false;
-	}
-}
-
 export function parsePageExtraction(value: unknown): PageExtraction {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
 		throw new Error("Extraction document must be an object");
@@ -236,4 +227,3 @@ export function parsePageExtraction(value: unknown): PageExtraction {
 
 	return value as PageExtraction;
 }
-import type { AnalysedContentKind } from "../../../core/contracts.ts";

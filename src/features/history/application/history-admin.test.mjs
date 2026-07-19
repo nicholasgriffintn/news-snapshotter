@@ -4,7 +4,7 @@ import test from "node:test";
 import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { handleHistoryAdminRequest } from "./history-admin.ts";
 import { historyExtraction } from "../testing/extraction-fixture.mjs";
-import { ingestExtraction } from "../infrastructure/history-repository.ts";
+import { ingestExtraction } from "../infrastructure/history-ingestion-repository.ts";
 
 function request(path, body) {
 	return new Request(`https://archive.example${path}`, {

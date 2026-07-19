@@ -1,5 +1,5 @@
 import type {
-	AnalysedContentKind,
+	PageElementKind,
 	CaptureFailureRecord,
 	CapturePriority,
 	CaptureProviderName,
@@ -32,7 +32,7 @@ export type HistorySite = {
 	lastCaptureAt: string;
 	site: string;
 	sourceUrl: string;
-	storyCount: number;
+	contentCount: number;
 };
 
 export type HistoryCaptureSummary = {
@@ -57,7 +57,7 @@ export type HistoryElement = {
 	elementKey: string;
 	headline?: string;
 	image?: { alt?: string; sourceUrl?: string };
-	kind: AnalysedContentKind | "heading" | "image" | "navigation" | "other";
+	kind: PageElementKind;
 	position: {
 		height: number;
 		left: number;
@@ -101,7 +101,6 @@ export type HistoryChange = {
 	elementKey?: string;
 	magnitude?: number;
 	previousCaptureId: string;
-	storyId?: string;
 	type: string;
 };
 
@@ -120,11 +119,12 @@ export type HistorySearchResult = {
 	headline?: string;
 	imageAlt?: string;
 	imageSourceUrl?: string;
+	kind: HistoryElement["kind"];
 	prominence?: string;
 	rank: number;
 	section?: string;
 	site: string;
-	storyId: string;
+	elementKey: string;
 	summary?: string;
 };
 
@@ -137,7 +137,8 @@ export type HistoryImageObservation = {
 	imageId: string;
 	publisherUrl: string;
 	sourceUrl: string;
-	storyId: string;
+	elementKey: string;
+	kind: HistoryElement["kind"];
 };
 
 export type HistoryTrendValue = {
@@ -154,7 +155,7 @@ export type HistoryTrends = {
 	timeWeighted: boolean;
 };
 
-export type StoryObservation = {
+export type ContentObservation = {
 	captureId: string;
 	capturedAt: string;
 	category?: string;
@@ -173,11 +174,12 @@ export type StoryObservation = {
 	width: number;
 };
 
-export type StoryHistory = {
+export type ElementHistory = {
 	canonicalUrl?: string;
 	cursor?: string;
-	observations: StoryObservation[];
-	storyId: string;
+	elementKey: string;
+	kind: HistoryElement["kind"];
+	observations: ContentObservation[];
 };
 
 export type SavedTimeline = {
@@ -193,7 +195,8 @@ export type SavedTimeline = {
 		position: number;
 		prominence?: string;
 		rank?: number;
-		storyId: string;
+		elementKey: string;
+		kind: HistoryElement["kind"];
 		top?: number;
 	}>;
 	site: string;

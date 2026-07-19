@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 
 import type { HistoryTrends } from "../../core/types.ts";
+import { isResearchPeriod, type ResearchPeriod } from "./domain/research-state.ts";
 
 function isTrendMode(value: string): value is HistoryTrends["mode"] {
 	return ["category", "main-headline-words", "all-headline-words"].includes(value);
@@ -11,16 +12,18 @@ function weightedStyle(name: "--bar" | "--weight", value: number): CSSProperties
 }
 
 export function HistoryTrendPanel({
+	loading,
 	mode,
 	onMode,
 	onPeriod,
 	period,
 	trends,
 }: {
+	loading: boolean;
 	mode: HistoryTrends["mode"];
 	onMode: (mode: HistoryTrends["mode"]) => void;
-	onPeriod: (period: string) => void;
-	period: string;
+	onPeriod: (period: ResearchPeriod) => void;
+	period: ResearchPeriod;
 	trends?: HistoryTrends;
 }) {
 	const latest = trends?.periods.at(-1);
@@ -50,7 +53,14 @@ export function HistoryTrendPanel({
 					</label>
 					<label>
 						<span>Period</span>
-						<select onChange={(event) => onPeriod(event.target.value)} value={period}>
+						<select
+							onChange={(event) => {
+								if (isResearchPeriod(event.target.value)) {
+									onPeriod(event.target.value);
+								}
+							}}
+							value={period}
+						>
 							<option value="24h">24 hours</option>
 							<option value="7d">7 days</option>
 							<option value="30d">30 days</option>
@@ -61,7 +71,11 @@ export function HistoryTrendPanel({
 				</div>
 			</header>
 
-			{latest ? (
+			{loading ? (
+				<p aria-live="polite" className="research-empty" role="status">
+					Calculating coverage…
+				</p>
+			) : latest ? (
 				mode === "category" ? (
 					<>
 						<div className="trend-bars">

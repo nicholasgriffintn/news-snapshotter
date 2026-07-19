@@ -8,6 +8,7 @@ const GROUP_BY_TYPE: Record<string, ChangeGroup> = {
 	"headline-changed": "content",
 	"image-alt-changed": "content",
 	"image-changed": "content",
+	"kind-changed": "content",
 	"section-changed": "content",
 	"summary-changed": "content",
 	disappeared: "disappeared",

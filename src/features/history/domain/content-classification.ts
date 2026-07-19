@@ -4,7 +4,24 @@ const PRODUCT_LABELS: Array<[string, string]> = [
 	["/commentisfree/", "Opinion"],
 	["/opinion/", "Opinion"],
 	["/comment/", "Opinion"],
+	["/australia-news/", "Australia"],
+	["/global-development/", "Global development"],
+	["/us-news/", "US"],
+	["/uk-news/", "UK"],
 	["/dc-md-va/", "Local"],
+	["/artanddesign/", "Art and design"],
+	["/environment/", "Environment"],
+	["/education/", "Education"],
+	["/society/", "Society"],
+	["/fashion/", "Fashion"],
+	["/books/", "Books"],
+	["/music/", "Music"],
+	["/film/", "Film"],
+	["/media/", "Media"],
+	["/stage/", "Stage"],
+	["/games/", "Games"],
+	["/cities/", "Cities"],
+	["/law/", "Law"],
 	["/lifeandstyle/", "Lifestyle"],
 	["/life-style/", "Lifestyle"],
 	["/tvshowbiz/", "Showbiz"],
@@ -38,19 +55,31 @@ const PRODUCT_LABELS: Array<[string, string]> = [
 	["/news/", "News"],
 ];
 
-export function contentCategory(canonicalUrl?: string, extracted?: string): string {
-	const label = extracted?.trim().replace(/\s+headlines?$/i, "");
-	if (label && label.length <= 80) {
-		return displayLabel(label);
+function categoryLabel(value?: string): string | undefined {
+	const label = value?.trim().replace(/\s+headlines?$/i, "");
+	return label && label.length <= 80 ? displayLabel(label) : undefined;
+}
+
+export function contentCategory(
+	canonicalUrl?: string,
+	extracted?: string,
+	section?: string,
+): string {
+	const extractedLabel = categoryLabel(extracted);
+	if (extractedLabel) {
+		return extractedLabel;
 	}
-	if (!canonicalUrl) {
-		return "Front page";
+	if (canonicalUrl) {
+		try {
+			const path = new URL(canonicalUrl).pathname.toLocaleLowerCase("en-GB");
+			const inferred = PRODUCT_LABELS.find(([fragment]) => path.includes(fragment))?.[1];
+			if (inferred) {
+				return inferred;
+			}
+		} catch {
+			// Fall through to the visible page section.
+		}
 	}
 
-	try {
-		const path = new URL(canonicalUrl).pathname.toLocaleLowerCase("en-GB");
-		return PRODUCT_LABELS.find(([fragment]) => path.includes(fragment))?.[1] ?? "Front page";
-	} catch {
-		return "Front page";
-	}
+	return categoryLabel(section) ?? "Front page";
 }

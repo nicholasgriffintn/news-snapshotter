@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { isAbortError } from "../../shared/errors.ts";
 import {
 	fetchHistoryCapture,
 	fetchHistoryCaptures,
@@ -50,7 +51,8 @@ export function useHistoryPage(site: string) {
 	const [capture, setCapture] = useState<HistoryCapture>();
 	const [changes, setChanges] = useState<HistoryChange[]>([]);
 	const [failures, setFailures] = useState<HistoryFailure[]>([]);
-	const [loading, setLoading] = useState(true);
+	const [loadingCaptures, setLoadingCaptures] = useState(true);
+	const [loadingCapture, setLoadingCapture] = useState(false);
 	const [loadingOlder, setLoadingOlder] = useState(false);
 	const [error, setError] = useState("");
 
@@ -63,9 +65,20 @@ export function useHistoryPage(site: string) {
 	}, []);
 
 	useEffect(() => {
-		setLoading(true);
-		Promise.all([fetchHistoryCaptures(site), fetchHistoryFailures(site)])
+		const controller = new AbortController();
+		setLoadingCaptures(true);
+		setError("");
+		setCaptures([]);
+		setCaptureCursor(undefined);
+		setFailures([]);
+		Promise.all([
+			fetchHistoryCaptures(site, undefined, { signal: controller.signal }),
+			fetchHistoryFailures(site, { signal: controller.signal }),
+		])
 			.then(([capturePage, failurePage]) => {
+				if (controller.signal.aborted) {
+					return;
+				}
 				setCaptures(capturePage.captures);
 				setCaptureCursor(capturePage.cursor);
 				setFailures(failurePage);
@@ -77,22 +90,53 @@ export function useHistoryPage(site: string) {
 					return next;
 				});
 			})
-			.catch((reason: Error) => setError(reason.message))
-			.finally(() => setLoading(false));
+			.catch((reason: unknown) => {
+				if (!isAbortError(reason)) {
+					setError(reason instanceof Error ? reason.message : "Could not load capture history");
+				}
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) {
+					setLoadingCaptures(false);
+				}
+			});
+		return () => controller.abort();
 	}, [site]);
 
 	useEffect(() => {
 		if (!selection.captureId) {
+			setCapture(undefined);
+			setChanges([]);
+			setLoadingCapture(false);
 			return;
 		}
-		setLoading(true);
-		fetchHistoryCapture(site, selection.captureId)
+		const controller = new AbortController();
+		setLoadingCapture(true);
+		setError("");
+		setCapture(undefined);
+		setChanges([]);
+		fetchHistoryCapture(site, selection.captureId, { signal: controller.signal })
 			.then(async (nextCapture) => {
+				const nextChanges = await fetchHistoryChanges(site, nextCapture.capture.capturedAt, {
+					signal: controller.signal,
+				});
+				if (controller.signal.aborted) {
+					return;
+				}
 				setCapture(nextCapture);
-				setChanges(await fetchHistoryChanges(site, nextCapture.capture.capturedAt));
+				setChanges(nextChanges);
 			})
-			.catch((reason: Error) => setError(reason.message))
-			.finally(() => setLoading(false));
+			.catch((reason: unknown) => {
+				if (!isAbortError(reason)) {
+					setError(reason instanceof Error ? reason.message : "Could not load capture");
+				}
+			})
+			.finally(() => {
+				if (!controller.signal.aborted) {
+					setLoadingCapture(false);
+				}
+			});
+		return () => controller.abort();
 	}, [selection.captureId, site]);
 
 	const selectedIndex = captures.findIndex(({ captureId }) => captureId === selection.captureId);
@@ -152,7 +196,7 @@ export function useHistoryPage(site: string) {
 		error,
 		failures,
 		loadOlder,
-		loading,
+		loading: loadingCaptures || loadingCapture,
 		loadingOlder,
 		newer,
 		older,
