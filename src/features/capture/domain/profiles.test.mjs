@@ -76,7 +76,10 @@ test("merges brand overrides without dropping default protection", () => {
 
 test("carries publisher cleaning rules into both device profiles", () => {
 	const bbc = resolveCaptureProfile(site({ brand: "bbc" }));
+	const channel4 = resolveCaptureProfile(site({ brand: "channel4" }));
 	const dailymail = resolveCaptureProfile(site({ brand: "dailymail" }));
+	const express = resolveCaptureProfile(site({ brand: "express" }));
+	const forbes = resolveCaptureProfile(site({ brand: "forbes" }));
 	const guardian = resolveCaptureProfile(site({ brand: "guardian" }));
 	const independent = resolveCaptureProfile(site({ brand: "independent" }));
 	const newsquest = resolveCaptureProfile(site({ brand: "newsquest" }));
@@ -105,6 +108,12 @@ test("carries publisher cleaning rules into both device profiles", () => {
 		bbc.deviceConfig.mobile.responseOverrides,
 		bbc.deviceConfig.desktop.responseOverrides,
 	);
+	for (const device of ["desktop", "mobile"]) {
+		assert.ok(channel4.deviceConfig[device].hideSelectors.includes("#cookie-consent-banner"));
+		assert.ok(express.deviceConfig[device].hideSelectors.includes("#qc-cmp2-container"));
+		assert.ok(forbes.deviceConfig[device].hideSelectors.includes("#ketch-banner"));
+		assert.ok(forbes.deviceConfig[device].hideSelectors.includes("#ketch-consent-overlay"));
+	}
 	assert.ok(
 		dailymail.deviceConfig.desktop.clickActions.some((action) => {
 			return action.frameUrlIncludes?.includes("cmp.dmgmediaprivacy.co.uk");

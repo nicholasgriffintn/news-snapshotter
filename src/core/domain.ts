@@ -40,16 +40,25 @@ export type SiteDefinition = {
 };
 
 export type ExtractorName =
+	| "apnews-front-page"
 	| "bbc-front-page"
 	| "bloomberg-front-page"
+	| "channel4-front-page"
 	| "cnn-front-page"
 	| "dailymail-front-page"
+	| "express-front-page"
 	| "financialtimes-front-page"
+	| "forbes-front-page"
+	| "foxnews-front-page"
 	| "generic-baseline"
 	| "guardian-front-page"
+	| "inews-front-page"
+	| "nbcnews-front-page"
 	| "nytimes-front-page"
+	| "standard-front-page"
 	| "telegraph-front-page"
 	| "times-front-page"
+	| "usatoday-front-page"
 	| "washingtonpost-front-page";
 
 export type SiteAnalysisConfig = {

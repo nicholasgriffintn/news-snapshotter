@@ -105,10 +105,16 @@ export function collectDocument(extractorDefinition: ExtractorDefinition): strin
 				return [];
 			}
 
-			const link = candidate.matches("a[href]")
-				? candidate
-				: (candidate.closest("a[href]") ?? card.querySelector("a[href]"));
-			const href = link?.href ?? link?.getAttribute("href") ?? undefined;
+			const link =
+				rule.extractCanonicalUrl === false
+					? null
+					: candidate.matches("a[href]")
+						? candidate
+						: (candidate.closest("a[href]") ?? card.querySelector("a[href]"));
+			const attributedUrl = rule.urlAttribute
+				? (candidate.getAttribute(rule.urlAttribute) ?? card.getAttribute(rule.urlAttribute))
+				: undefined;
+			const href = attributedUrl ?? link?.href ?? link?.getAttribute("href") ?? undefined;
 			const canonicalUrl = href ? resolveWebUrl(href) : undefined;
 			if (
 				canonicalUrl &&

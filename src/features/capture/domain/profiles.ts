@@ -412,6 +412,11 @@ const PROFILES: Record<string, CaptureProfile> = {
 			{ reason: "tollbit-token", text: "valid tollbit token" },
 		],
 	},
+	channel4: {
+		deviceConfig: forBothDevices({
+			hideSelectors: ["#cookie-consent-banner"],
+		}),
+	},
 	reach: {
 		deviceConfig: forBothDevices({
 			hideSelectors: [
@@ -540,6 +545,16 @@ const PROFILES: Record<string, CaptureProfile> = {
 				hideSelectors: [".slot-wrapper", ".o-banner"],
 			},
 		},
+	},
+	express: {
+		deviceConfig: forBothDevices({
+			hideSelectors: ["#qc-cmp2-container", ".qc-cmp-cleanslate"],
+		}),
+	},
+	forbes: {
+		deviceConfig: forBothDevices({
+			hideSelectors: ["#ketch-banner", "#ketch-consent-overlay"],
+		}),
 	},
 	independent: {
 		deviceConfig: {

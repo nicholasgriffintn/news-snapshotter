@@ -48,6 +48,15 @@ test("BBC front pages use the reviewed analysis extractor", () => {
 });
 
 test("reviewed publisher front pages use their specific extractors", () => {
+	assert.equal(siteNamed("apnews-com").analysis?.extractor, "apnews-front-page");
+	assert.equal(siteNamed("channel4-news").analysis?.extractor, "channel4-front-page");
+	assert.equal(siteNamed("express-news").analysis?.extractor, "express-front-page");
+	assert.equal(siteNamed("forbes-com").analysis?.extractor, "forbes-front-page");
+	assert.equal(siteNamed("foxnews-com").analysis?.extractor, "foxnews-front-page");
+	assert.equal(siteNamed("inews-uk").analysis?.extractor, "inews-front-page");
+	assert.equal(siteNamed("nbcnews-com").analysis?.extractor, "nbcnews-front-page");
+	assert.equal(siteNamed("standard-uk").analysis?.extractor, "standard-front-page");
+	assert.equal(siteNamed("usatoday-eu").analysis?.extractor, "usatoday-front-page");
 	assert.equal(siteNamed("times-com").analysis?.extractor, "times-front-page");
 	assert.equal(siteNamed("nytimes-us").analysis?.extractor, "nytimes-front-page");
 	assert.equal(siteNamed("dailymail-home").analysis?.extractor, "dailymail-front-page");
@@ -72,12 +81,20 @@ test("every configured analysis uses a registered extractor version", () => {
 });
 
 test("explicit edition and regional priorities are preserved", () => {
+	assert.equal(siteNamed("apnews-com").priority, 1);
+	assert.equal(siteNamed("express-news").priority, 2);
+	assert.equal(siteNamed("foxnews-com").priority, 1);
 	assert.equal(siteNamed("guardian-uk").priority, 1);
 	assert.equal(siteNamed("guardian-sport").priority, 2);
 	assert.equal(siteNamed("skysports-northern-ireland").priority, 4);
 });
 
 test("catalogue capture regions distinguish UK, US, and international editions", () => {
+	assert.equal(siteNamed("apnews-com").captureRegion, "us");
+	assert.equal(siteNamed("channel4-news").captureRegion, "uk");
+	assert.equal(siteNamed("forbes-com").captureRegion, "us");
+	assert.equal(siteNamed("nbcnews-com").captureRegion, "us");
+	assert.equal(siteNamed("usatoday-eu").captureRegion, "uk");
 	assert.equal(siteNamed("bbc-home").captureRegion, "uk");
 	assert.equal(siteNamed("bloomberg-us").captureRegion, "us");
 	assert.equal(siteNamed("bloomberg-uk").captureRegion, "uk");

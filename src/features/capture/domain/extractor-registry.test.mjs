@@ -50,7 +50,9 @@ test("extractor versions are explicit", () => {
 	assert.ok(
 		bbc.rules
 			.filter(({ kind }) => kind === "audio" || kind === "video")
-			.some(({ excludedUrlPathPrefixes }) => excludedUrlPathPrefixes?.includes("/iplayer/watchlist")),
+			.some(({ excludedUrlPathPrefixes }) =>
+				excludedUrlPathPrefixes?.includes("/iplayer/watchlist"),
+			),
 	);
 	assert.ok(
 		bbc.rules
@@ -120,8 +122,71 @@ test("extractor versions are explicit", () => {
 		}),
 	);
 	assert.ok(
-		bloomberg.rules.some(({ candidateSelector }) => /data-component='headline'/.test(candidateSelector)),
+		bloomberg.rules.some(({ candidateSelector }) =>
+			/data-component='headline'/.test(candidateSelector),
+		),
 	);
+	const apNews = extractorDefinition("apnews-front-page", 1);
+	const apNewsVideoRule = apNews.rules.find(({ kind }) => kind === "video");
+	assert.equal(apNewsVideoRule.urlAttribute, "url");
+	assert.match(apNewsVideoRule.cardSelector, /VideoPlaylistItemCard/);
+	const channel4StoryRule = extractorDefinition("channel4-front-page", 1).rules.find(
+		({ kind }) => kind === "story",
+	);
+	assert.match(channel4StoryRule.candidateSelector, /:not\(\.featured-video-button\)/);
+	assert.doesNotMatch(channel4StoryRule.cardSelector, /a\[href\]/);
+	const standard = extractorDefinition("standard-front-page", 1);
+	const standardVideoRule = standard.rules.find(({ kind }) => kind === "video");
+	const standardStoryRule = standard.rules.find(({ kind }) => kind === "story");
+	assert.match(standardVideoRule.candidateSelector, /:has\(\[aria-label='video'\]\)/);
+	assert.doesNotMatch(standardVideoRule.candidateSelector, /:has\(> p\)/);
+	assert.match(standardStoryRule.cardSelector, /:has\(img\)/);
+	const inews = extractorDefinition("inews-front-page", 1);
+	assert.equal(
+		inews.rules.find(({ kind }) => kind === "story").categorySelector,
+		"a[title^='Link to:'] .category-name",
+	);
+	assert.equal(inews.rules.find(({ kind }) => kind === "video").extractCanonicalUrl, false);
+	assert.equal(inews.rules.find(({ kind }) => kind === "video").categorySelector, ".category-name");
+	assert.ok(
+		extractorDefinition("foxnews-front-page", 1)
+			.rules.filter(({ kind }) => kind === "story" || kind === "video")
+			.every(({ sectionHeadingSelector }) => /section\.collection/.test(sectionHeadingSelector)),
+	);
+	assert.ok(
+		extractorDefinition("nbcnews-front-page", 1)
+			.rules.filter(({ kind }) => kind === "story" || kind === "video")
+			.every(({ sectionHeadingSelector }) => sectionHeadingSelector === undefined),
+	);
+	const newPublisherExtractors = [
+		"apnews-front-page",
+		"channel4-front-page",
+		"express-front-page",
+		"forbes-front-page",
+		"foxnews-front-page",
+		"inews-front-page",
+		"nbcnews-front-page",
+		"standard-front-page",
+		"usatoday-front-page",
+	];
+	for (const name of newPublisherExtractors) {
+		assert.ok(
+			extractorDefinition(name, 1).rules.some(({ kind }) => kind === "story"),
+			name,
+		);
+	}
+	for (const name of [
+		"apnews-front-page",
+		"channel4-front-page",
+		"foxnews-front-page",
+		"inews-front-page",
+		"nbcnews-front-page",
+	]) {
+		assert.ok(
+			extractorDefinition(name, 1).rules.some(({ kind }) => kind === "video"),
+			name,
+		);
+	}
 	const generic = extractorDefinition("generic-baseline", 4);
 	assert.equal(generic.rules[0].sectionSelector, undefined);
 	assert.doesNotMatch(generic.rules[0].candidateSelector, /^a\[href\]$/);
@@ -134,22 +199,31 @@ test("extractor versions are explicit", () => {
 test("every extractor includes semantic elements from the rest of the page", () => {
 	const extractors = [
 		["generic-baseline", 4],
+		["apnews-front-page", 1],
 		["bbc-front-page", 10],
 		["bloomberg-front-page", 3],
+		["channel4-front-page", 1],
 		["cnn-front-page", 4],
 		["dailymail-front-page", 4],
+		["express-front-page", 1],
 		["financialtimes-front-page", 2],
+		["forbes-front-page", 1],
+		["foxnews-front-page", 1],
 		["guardian-front-page", 8],
+		["inews-front-page", 1],
+		["nbcnews-front-page", 1],
 		["nytimes-front-page", 5],
+		["standard-front-page", 1],
 		["telegraph-front-page", 3],
 		["times-front-page", 5],
+		["usatoday-front-page", 1],
 		["washingtonpost-front-page", 4],
 	];
 
 	for (const [name, version] of extractors) {
 		const pageKinds = new Set(
-			extractorDefinition(name, version).rules
-				.filter(({ scope }) => scope === "page")
+			extractorDefinition(name, version)
+				.rules.filter(({ scope }) => scope === "page")
 				.map(({ kind }) => kind),
 		);
 

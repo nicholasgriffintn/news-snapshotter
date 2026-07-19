@@ -8,6 +8,7 @@ export type ExtractorContentRule = {
 	candidateSelector: string;
 	categoryAttribute?: string;
 	categorySelector?: string;
+	extractCanonicalUrl?: boolean;
 	excludedUrlPathPrefixes?: readonly string[];
 	fixedCategory?: string;
 	headlineAttribute?: string;
@@ -19,6 +20,7 @@ export type ExtractorContentRule = {
 	sectionHeadingSelector?: string;
 	sectionSelector?: string;
 	summarySelector?: string;
+	urlAttribute?: string;
 };
 
 export type ExtractorDefinition = {
@@ -43,7 +45,8 @@ const BBC_PROMO_RULE = {
 	summarySelector: "p, [data-testid*='summary']",
 } as const;
 
-const PAGE_HEADING_SELECTOR = "main h1, main h2, main h3, [role='main'] h1, [role='main'] h2, [role='main'] h3";
+const PAGE_HEADING_SELECTOR =
+	"main h1, main h2, main h3, [role='main'] h1, [role='main'] h2, [role='main'] h3";
 const PAGE_ELEMENT_RULES: readonly ExtractorContentRule[] = [
 	{
 		cardSelector: "h1, h2, h3",
@@ -55,8 +58,7 @@ const PAGE_ELEMENT_RULES: readonly ExtractorContentRule[] = [
 	},
 	{
 		cardSelector: "img",
-		candidateSelector:
-			"main img[alt]:not([alt='']), [role='main'] img[alt]:not([alt=''])",
+		candidateSelector: "main img[alt]:not([alt='']), [role='main'] img[alt]:not([alt=''])",
 		headlineAttribute: "alt",
 		headlineSelector: "img",
 		kind: "image",
@@ -77,6 +79,30 @@ const PAGE_ELEMENT_RULES: readonly ExtractorContentRule[] = [
 ];
 
 const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
+	"apnews-front-page": {
+		name: "apnews-front-page",
+		rules: [
+			{
+				cardSelector: "bsp-video-card.VideoPlaylistItemCard",
+				candidateSelector: "bsp-video-card.VideoPlaylistItemCard[url]",
+				headlineSelector: ".VideoPlaylistItemCard-title",
+				kind: "video",
+				sectionHeadingSelector: "main h2",
+				urlAttribute: "url",
+			},
+			{
+				cardSelector: ".PagePromo",
+				candidateSelector: ".PagePromo-title a.Link[href]",
+				categorySelector: ".PagePromo-category",
+				headlineSelector: ".PagePromo-title",
+				kind: "story",
+				sectionHeadingSelector: "main h2",
+				sectionSelector: "[data-gtm-region], section",
+				summarySelector: ".PagePromo-description",
+			},
+		],
+		version: 1,
+	},
 	"generic-baseline": {
 		name: "generic-baseline",
 		rules: [
@@ -140,8 +166,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		name: "bloomberg-front-page",
 		rules: [
 			{
-				cardSelector:
-					"[class*='Video_item__'], article, a[data-component='audio-video-card']",
+				cardSelector: "[class*='Video_item__'], article, a[data-component='audio-video-card']",
 				candidateSelector:
 					"main a[href*='/news/videos/']:has(:is([data-component='headline'], h1, h2, h3))",
 				categorySelector: "[data-component='optional-eyebrow']",
@@ -173,6 +198,28 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		],
 		version: 3,
 	},
+	"channel4-front-page": {
+		name: "channel4-front-page",
+		rules: [
+			{
+				cardSelector: "li, a.featured-video-button",
+				candidateSelector:
+					"a.featured-video-button[href]:has(h3.heading), li:has(.duration) a[href]:has(h3.heading)",
+				headlineSelector: "h3.heading",
+				kind: "video",
+				sectionHeadingSelector: "h2",
+			},
+			{
+				cardSelector: "article, li",
+				candidateSelector: "a[href]:has(h3.heading):not(.featured-video-button)",
+				headlineSelector: "h3.heading",
+				kind: "story",
+				sectionHeadingSelector: "h2",
+				summarySelector: "p",
+			},
+		],
+		version: 1,
+	},
 	"cnn-front-page": {
 		name: "cnn-front-page",
 		rules: [
@@ -203,6 +250,21 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		],
 		version: 4,
 	},
+	"express-front-page": {
+		name: "express-front-page",
+		rules: [
+			{
+				cardSelector: "[data-vr-contentbox]",
+				candidateSelector: "[data-vr-contentbox] a[data-hp-link][href]",
+				headlineAttribute: "data-article-headline",
+				headlineSelector: "[data-article-headline]",
+				kind: "story",
+				sectionHeadingSelector: "main h2",
+				summarySelector: "p",
+			},
+		],
+		version: 1,
+	},
 	"financialtimes-front-page": {
 		name: "financialtimes-front-page",
 		rules: [
@@ -222,6 +284,48 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		],
 		version: 2,
 	},
+	"forbes-front-page": {
+		name: "forbes-front-page",
+		rules: [
+			{
+				cardSelector:
+					"article, li, div:has(> a[data-testid='article-image-link']):has(a[data-testid='article-headline'])",
+				candidateSelector: "a[data-testid='article-headline'][href]",
+				categorySelector: "[data-testid='article-label']",
+				headlineSelector: "a[data-testid='article-headline']",
+				kind: "story",
+				sectionHeadingSelector: "h2",
+				summarySelector: "[data-testid='article-description']",
+			},
+		],
+		version: 1,
+	},
+	"foxnews-front-page": {
+		name: "foxnews-front-page",
+		rules: [
+			{
+				cardSelector: "article.article",
+				candidateSelector:
+					"article.article:is(.has-video, .has-video-overlay, .article-watch-live) :is(h1, h2, h3) a[href], article.article:is(.has-video, .has-video-overlay, .article-watch-live) a[href]:has(:is(h1, h2, h3))",
+				categorySelector: ".eyebrow, .kicker",
+				headlineSelector: "h1, h2, h3",
+				kind: "video",
+				sectionHeadingSelector: "section.collection > header.heading > h2.title",
+				summarySelector: ".dek, p",
+			},
+			{
+				cardSelector: "article.article",
+				candidateSelector:
+					"article.article :is(h1, h2, h3) a[href], article.article a[href]:has(:is(h1, h2, h3))",
+				categorySelector: ".eyebrow, .kicker",
+				headlineSelector: "h1, h2, h3",
+				kind: "story",
+				sectionHeadingSelector: "section.collection > header.heading > h2.title",
+				summarySelector: ".dek, p",
+			},
+		],
+		version: 1,
+	},
 	"guardian-front-page": {
 		name: "guardian-front-page",
 		rules: [
@@ -236,6 +340,61 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 			},
 		],
 		version: 8,
+	},
+	"inews-front-page": {
+		name: "inews-front-page",
+		rules: [
+			{
+				cardSelector: "button.inews__post-videocarousel",
+				candidateSelector:
+					"[data-type='VideoCarousel'] button.inews__post-videocarousel[data-embed-url]:has(h2)",
+				categorySelector: ".category-name",
+				extractCanonicalUrl: false,
+				headlineSelector: "h2",
+				kind: "video",
+				sectionHeadingSelector: "main h2",
+			},
+			{
+				cardSelector: "[data-post-id]",
+				candidateSelector: "[data-post-id] h2 a[href], [data-post-id] a[href]:has(h2)",
+				categorySelector: "a[title^='Link to:'] .category-name",
+				headlineSelector: "h2",
+				kind: "story",
+				sectionHeadingSelector: "main h2",
+				summarySelector: "p",
+			},
+		],
+		version: 1,
+	},
+	"nbcnews-front-page": {
+		name: "nbcnews-front-page",
+		rules: [
+			{
+				cardSelector: "[data-testid='card-container']",
+				candidateSelector:
+					"[data-testid='card-container'][data-contentid]:has([data-testid='card-duration']):has([data-testid='card-title'])",
+				headlineSelector: "[data-testid='card-title']",
+				kind: "video",
+			},
+			{
+				cardSelector: "[data-testid='baconCardWrapper'], [data-contentid]",
+				candidateSelector:
+					"[data-testid='baconCardWrapper']:has([data-testid='video']) a[data-testid='x-by-one__headline__link'][href], [data-contentid]:has([data-testid='video']) :is(h1, h2, h3) a[href]",
+				categorySelector: "[data-testid='unibrow-text']",
+				headlineSelector: "h1, h2, h3, [data-testid='card-title']",
+				kind: "video",
+			},
+			{
+				cardSelector: "[data-testid='baconCardWrapper'], [data-contentid]",
+				candidateSelector:
+					"a[data-testid='x-by-one__headline__link'][href], [data-contentid] :is(h1, h2, h3) a[href], [data-contentid] a[href]:has(:is(h1, h2, h3))",
+				categorySelector: "[data-testid='unibrow-text']",
+				headlineSelector: "h1, h2, h3",
+				kind: "story",
+				summarySelector: "p",
+			},
+		],
+		version: 1,
 	},
 	"nytimes-front-page": {
 		name: "nytimes-front-page",
@@ -253,6 +412,27 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 			},
 		],
 		version: 5,
+	},
+	"standard-front-page": {
+		name: "standard-front-page",
+		rules: [
+			{
+				cardSelector:
+					"div:has(a[data-testid='link-data-testid'][href] > p):has(a[data-testid='link-data-testid'][href] [aria-label='video'])",
+				candidateSelector: "a[data-testid='link-data-testid'][href]:has([aria-label='video'])",
+				headlineSelector: "p",
+				kind: "video",
+				sectionHeadingSelector: "h2",
+			},
+			{
+				cardSelector: "div:has(img):has(a[data-testid='link-data-testid'][href] > p)",
+				candidateSelector: "a[data-testid='link-data-testid'][href]:has(> p)",
+				headlineSelector: "p",
+				kind: "story",
+				sectionHeadingSelector: "h2",
+			},
+		],
+		version: 1,
 	},
 	"telegraph-front-page": {
 		name: "telegraph-front-page",
@@ -297,6 +477,28 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 			},
 		],
 		version: 5,
+	},
+	"usatoday-front-page": {
+		name: "usatoday-front-page",
+		rules: [
+			{
+				cardSelector: "a[data-module-name^='promo-story']",
+				candidateSelector: "a[data-module-name^='promo-story'][href*='/videos/']",
+				headlineSelector: ".p1-title-spacer",
+				kind: "video",
+				sectionHeadingSelector: "h2",
+			},
+			{
+				cardSelector: "a[data-module-name^='promo-story']",
+				candidateSelector: "a[data-module-name^='promo-story'][href]",
+				categorySelector: ".p1-label",
+				headlineSelector: ".p1-title-spacer",
+				kind: "story",
+				sectionHeadingSelector: "h2",
+				summarySelector: "p",
+			},
+		],
+		version: 1,
 	},
 	"washingtonpost-front-page": {
 		name: "washingtonpost-front-page",
