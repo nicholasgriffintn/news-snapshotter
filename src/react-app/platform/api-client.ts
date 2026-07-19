@@ -193,12 +193,25 @@ export async function fetchHistoryChanges(
 	capturedAt: string,
 	options?: RequestOptions,
 ): Promise<HistoryChange[]> {
-	const search = new URLSearchParams({ from: capturedAt, limit: "100", to: capturedAt });
-	const response = await fetch(
-		`/api/history/${encodeURIComponent(site)}/changes?${search}`,
-		options,
-	);
-	return (await readJson<{ changes: HistoryChange[] }>(response)).changes;
+	const changes: HistoryChange[] = [];
+	let cursor: string | undefined;
+	do {
+		const search = new URLSearchParams({ from: capturedAt, limit: "100", to: capturedAt });
+		if (cursor) {
+			search.set("cursor", cursor);
+		}
+		const response = await fetch(
+			`/api/history/${encodeURIComponent(site)}/changes?${search}`,
+			options,
+		);
+		const page = await readJson<{ changes: HistoryChange[]; cursor?: string }>(response);
+		changes.push(...page.changes);
+		if (page.cursor && page.cursor === cursor) {
+			throw new Error("History change pagination did not advance");
+		}
+		cursor = page.cursor;
+	} while (cursor);
+	return changes;
 }
 
 export async function fetchHistoryFailures(

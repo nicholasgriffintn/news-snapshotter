@@ -8,6 +8,7 @@ import {
 	fetchCatalogue,
 	fetchElementHistory,
 	fetchHistoryCapture,
+	fetchHistoryChanges,
 	fetchHistoryExtractionFailures,
 	fetchHistoryFailures,
 	fetchHistoryImages,
@@ -15,6 +16,40 @@ import {
 	fetchSnapshots,
 	searchHistory,
 } from "./api-client.ts";
+
+test("loads every change page for one capture timestamp", async () => {
+	const originalFetch = globalThis.fetch;
+	const requests = [];
+	const controller = new AbortController();
+	globalThis.fetch = async (input, init) => {
+		requests.push({ signal: init?.signal, url: String(input) });
+		return String(input).includes("cursor=next%2Fpage")
+			? Response.json({ changes: [{ changeId: "change-2" }] })
+			: Response.json({ changes: [{ changeId: "change-1" }], cursor: "next/page" });
+	};
+
+	try {
+		assert.deepEqual(
+			await fetchHistoryChanges("express-news", "2026-07-19T20:10:43.651Z", {
+				signal: controller.signal,
+			}),
+			[{ changeId: "change-1" }, { changeId: "change-2" }],
+		);
+	} finally {
+		globalThis.fetch = originalFetch;
+	}
+
+	assert.deepEqual(requests, [
+		{
+			signal: undefined,
+			url: "/api/history/express-news/changes?from=2026-07-19T20%3A10%3A43.651Z&limit=100&to=2026-07-19T20%3A10%3A43.651Z",
+		},
+		{
+			signal: undefined,
+			url: "/api/history/express-news/changes?from=2026-07-19T20%3A10%3A43.651Z&limit=100&to=2026-07-19T20%3A10%3A43.651Z&cursor=next%2Fpage",
+		},
+	]);
+});
 
 test("clears every capture-failure batch and site-scoped extraction failures", async () => {
 	const originalFetch = globalThis.fetch;
