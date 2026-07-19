@@ -11,25 +11,8 @@ import {
 	type HistoryListOptions,
 } from "../infrastructure/history-repository.ts";
 import { listExtractionFailures } from "../infrastructure/history-admin-repository.ts";
+import { isChangeType, type ChangeType } from "../domain/changes.ts";
 
-const CHANGE_TYPES = new Set<string>([
-	"appeared",
-	"disappeared",
-	"headline-changed",
-	"summary-changed",
-	"image-changed",
-	"image-alt-changed",
-	"section-changed",
-	"category-changed",
-	"rank-changed",
-	"promoted",
-	"demoted",
-	"position-changed",
-	"size-changed",
-	"page-structure-changed",
-	"capture-gap",
-	"extractor-version-boundary",
-]);
 const MAX_PATH_IDENTIFIER_LENGTH = 4_096;
 
 function jsonError(message: string, status: number): Response {
@@ -81,10 +64,14 @@ function captureListOptions(url: URL): HistoryListOptions {
 
 function changeListOptions(url: URL): ChangeListOptions {
 	const cursorValue = url.searchParams.get("cursor");
-	const type = url.searchParams.get("type");
+	const requestedType = url.searchParams.get("type");
+	let type: ChangeType | undefined;
 
-	if (type && !CHANGE_TYPES.has(type)) {
-		throw new InvalidInputError("type is not a supported change type");
+	if (requestedType) {
+		if (!isChangeType(requestedType)) {
+			throw new InvalidInputError("type is not a supported change type");
+		}
+		type = requestedType;
 	}
 
 	let cursor: ChangeListOptions["cursor"];
@@ -102,7 +89,7 @@ function changeListOptions(url: URL): ChangeListOptions {
 		from: validDate(url.searchParams.get("from"), "from"),
 		limit: limit(url),
 		to: validDate(url.searchParams.get("to"), "to"),
-		type: type ?? undefined,
+		type,
 	};
 }
 

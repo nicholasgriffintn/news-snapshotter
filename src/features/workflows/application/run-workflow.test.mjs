@@ -13,7 +13,7 @@ test("runs one durable step per site and device and aggregates results", async (
 	const stepNames = [];
 	const captures = [];
 	const step = {
-		do: async (name, callback) => {
+		do: async (name, _config, callback) => {
 			stepNames.push(name);
 			return callback();
 		},
@@ -55,7 +55,7 @@ test("runs one durable step per site and device and aggregates results", async (
 });
 
 test("returns an empty summary when no sites are selected", async () => {
-	const step = { do: async (_name, callback) => callback() };
+	const step = { do: async (_name, _config, callback) => callback() };
 	const result = await runSnapshotWorkflow({}, { triggeredAt, sites: [] }, step, async () => {
 		throw new Error("capture should not run");
 	});
@@ -70,10 +70,41 @@ test("returns an empty summary when no sites are selected", async () => {
 	});
 });
 
+test("bounds durable capture steps without retrying a timed-out browser operation", async () => {
+	const configs = [];
+	const step = {
+		do: async (_name, config, callback) => {
+			configs.push(config);
+			return callback();
+		},
+	};
+	const capture = async (_env, site, device) => ({
+		capturedAt: triggeredAt,
+		device,
+		key: `${site.name}-${device}.png`,
+		name: site.name,
+		status: "success",
+		triggeredAt,
+	});
+
+	await runSnapshotWorkflow({}, { triggeredAt, sites: [sites[0]] }, step, capture);
+
+	assert.deepEqual(configs, [
+		{
+			retries: { backoff: "constant", delay: "1 second", limit: 0 },
+			timeout: "3 minutes",
+		},
+		{
+			retries: { backoff: "constant", delay: "1 second", limit: 0 },
+			timeout: "3 minutes",
+		},
+	]);
+});
+
 test("delays a child runner before starting its first capture", async () => {
 	const events = [];
 	const step = {
-		do: async (_name, callback) => {
+		do: async (_name, _config, callback) => {
 			events.push("capture");
 			return callback();
 		},
@@ -102,7 +133,7 @@ test("delays a child runner before starting its first capture", async () => {
 test("spaces device captures when a publisher requires it", async () => {
 	const events = [];
 	const step = {
-		do: async (name, callback) => {
+		do: async (name, _config, callback) => {
 			events.push(name);
 			return callback();
 		},

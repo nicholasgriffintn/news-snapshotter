@@ -10,8 +10,22 @@ export type SnapshotWorkflowParams = {
 };
 
 type WorkflowStepLike = {
-	do<T>(name: string, callback: () => Promise<T>): Promise<T>;
+	do<T>(name: string, config: CaptureStepConfig, callback: () => Promise<T>): Promise<T>;
 	sleep?(name: string, duration: `${number} seconds`): Promise<void>;
+};
+
+type CaptureStepConfig = {
+	retries: {
+		backoff: "constant";
+		delay: "1 second";
+		limit: 0;
+	};
+	timeout: "3 minutes";
+};
+
+const CAPTURE_STEP_CONFIG: CaptureStepConfig = {
+	retries: { backoff: "constant", delay: "1 second", limit: 0 },
+	timeout: "3 minutes",
 };
 
 type CaptureDevice = (
@@ -49,9 +63,13 @@ export async function runSnapshotWorkflow(
 				const duration: `${number} seconds` = `${site.interDeviceDelaySeconds} seconds`;
 				await step.sleep(`wait between ${site.name} devices`, duration);
 			}
-			const result = await step.do(`screenshot-${site.name}-${device}`, () => {
-				return capture(env, site, device, triggeredAt);
-			});
+			const result = await step.do(
+				`screenshot-${site.name}-${device}`,
+				CAPTURE_STEP_CONFIG,
+				() => {
+					return capture(env, site, device, triggeredAt);
+				},
+			);
 			results.push(result);
 		}
 	}

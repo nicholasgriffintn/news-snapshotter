@@ -1,4 +1,5 @@
 import type { PageExtraction } from "../domain/extraction.ts";
+import type { ChangeType } from "../domain/changes.ts";
 import { loadCaptureExtraction } from "./history-capture-store.ts";
 
 export type CaptureCursor = {
@@ -18,7 +19,7 @@ export type ChangeListOptions = Omit<HistoryListOptions, "cursor"> & {
 		capturedAt: string;
 		changeId: string;
 	};
-	type?: string;
+	type?: ChangeType;
 };
 
 export async function listCaptures(

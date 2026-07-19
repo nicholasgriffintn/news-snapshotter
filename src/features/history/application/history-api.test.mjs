@@ -222,3 +222,33 @@ test("serves every content kind from the same endpoint", async () => {
 
 	sqlite.close();
 });
+
+test("filters adjacent changes by kind changes", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-a.json.gz",
+		historyExtraction("capture-a", "2026-07-17T09:00:00.000Z"),
+	);
+	await ingestExtraction(
+		database,
+		"capture-b.json.gz",
+		historyExtraction("capture-b", "2026-07-17T10:00:00.000Z", {
+			elements: [historyStory({ kind: "video" })],
+		}),
+	);
+
+	const response = await handleHistoryRequest(
+		request("/api/history/bbc-home/changes?type=kind-changed"),
+		database,
+	);
+	const body = await response.json();
+
+	assert.equal(response.status, 200);
+	assert.equal(body.changes.length, 1);
+	assert.equal(body.changes[0].type, "kind-changed");
+	assert.equal(body.changes[0].before, "story");
+	assert.equal(body.changes[0].after, "video");
+
+	sqlite.close();
+});

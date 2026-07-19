@@ -282,27 +282,43 @@ export async function getSavedTimeline(
 	}
 	const observations = await database
 		.prepare(
-			`SELECT
-				saved_timeline_elements.position,
-				saved_timeline_elements.element_key AS elementKey,
-				page_elements.kind,
-				page_elements.canonical_url AS canonicalUrl,
-				page_elements.capture_id AS captureId,
-				analysed_captures.captured_at AS capturedAt,
-				page_elements.headline,
-				page_elements.image_source_url AS imageSourceUrl,
-				page_elements.image_crop_key AS imageCropKey,
-				page_elements.rank,
-				page_elements.top,
-				page_elements.prominence
-			FROM saved_timeline_elements
-			JOIN page_elements
-				ON page_elements.element_key = saved_timeline_elements.element_key
-			JOIN indexed_desktop_captures AS analysed_captures
-				ON analysed_captures.capture_id = page_elements.capture_id
-				AND analysed_captures.site = ?
-			WHERE saved_timeline_elements.timeline_id = ?
-			ORDER BY saved_timeline_elements.position, analysed_captures.captured_at
+			`WITH ranked_observations AS (
+				SELECT
+					saved_timeline_elements.position,
+					saved_timeline_elements.element_key AS elementKey,
+					page_elements.kind,
+					page_elements.canonical_url AS canonicalUrl,
+					page_elements.capture_id AS captureId,
+					analysed_captures.captured_at AS capturedAt,
+					page_elements.headline,
+					page_elements.image_source_url AS imageSourceUrl,
+					page_elements.image_crop_key AS imageCropKey,
+					page_elements.rank,
+					page_elements.top,
+					page_elements.prominence,
+					ROW_NUMBER() OVER (
+						PARTITION BY saved_timeline_elements.element_key, page_elements.capture_id
+						ORDER BY
+							CASE page_elements.prominence
+								WHEN 'lead' THEN 4 WHEN 'major' THEN 3
+								WHEN 'standard' THEN 2 ELSE 1
+							END DESC,
+							page_elements.rank
+					) AS placementRank
+				FROM saved_timeline_elements
+				JOIN page_elements
+					ON page_elements.element_key = saved_timeline_elements.element_key
+				JOIN indexed_desktop_captures AS analysed_captures
+					ON analysed_captures.capture_id = page_elements.capture_id
+					AND analysed_captures.site = ?
+				WHERE saved_timeline_elements.timeline_id = ?
+			)
+			SELECT
+				position, elementKey, kind, canonicalUrl, captureId, capturedAt,
+				headline, imageSourceUrl, imageCropKey, rank, top, prominence
+			FROM ranked_observations
+			WHERE placementRank = 1
+			ORDER BY position, capturedAt
 			LIMIT 1001`,
 		)
 		.bind(String(timeline.site), String(timeline.timelineId))

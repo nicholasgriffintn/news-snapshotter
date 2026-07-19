@@ -146,3 +146,48 @@ test("creates and reads a shareable multi-content timeline", async () => {
 	assert.equal(new Set(timeline.observations.map(({ elementKey }) => elementKey)).size, 2);
 	sqlite.close();
 });
+
+test("saved timelines use one primary point for repeated page placements", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const repeatedKey = "https://www.bbc.co.uk/news/articles/story-one";
+	const secondKey = "https://www.bbc.co.uk/news/articles/story-two";
+	await ingestExtraction(
+		database,
+		"capture-repeated.json.gz",
+		historyExtraction("capture-repeated", "2026-07-17T09:00:00.000Z", {
+			elements: [
+				historyStory({
+					placementKey: `${repeatedKey}#section=news-headlines&occurrence=1`,
+					prominence: "lead",
+					section: "News headlines",
+					position: { ...historyStory().position, pageOrder: 1, top: 200 },
+				}),
+				historyStory({
+					placementKey: `${repeatedKey}#section=more-news&occurrence=1`,
+					prominence: "minor",
+					section: "More news",
+					position: { ...historyStory().position, pageOrder: 20, top: 4_000 },
+				}),
+				historyStory({
+					canonicalUrl: secondKey,
+					elementKey: secondKey,
+					placementKey: `${secondKey}#section=news-headlines&occurrence=1`,
+				}),
+			],
+		}),
+	);
+	const created = await createSavedTimeline(database, {
+		elementKeys: [repeatedKey, secondKey],
+		name: "Repeated placements",
+		site: "bbc-home",
+	});
+
+	const timeline = await getSavedTimeline(database, created.slug);
+
+	assert.equal(timeline.observations.length, 2);
+	const repeated = timeline.observations.find(({ elementKey }) => elementKey === repeatedKey);
+	assert.equal(repeated.prominence, "lead");
+	assert.equal(repeated.rank, 1);
+
+	sqlite.close();
+});

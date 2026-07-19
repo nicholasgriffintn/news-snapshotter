@@ -184,14 +184,20 @@ export function createHyperbrowserClient(
 
 async function cloudflareProvider(context: ProviderContext): Promise<CaptureBrowserSession> {
 	const browser = await puppeteer.launch(context.env.BROWSER);
-	const page = await browser.newPage();
 
-	return {
-		close: async () => {
-			await browser.close();
-		},
-		page,
-	};
+	try {
+		const page = await browser.newPage();
+
+		return {
+			close: async () => {
+				await browser.close();
+			},
+			page,
+		};
+	} catch (error) {
+		await browser.close().catch(() => undefined);
+		throw error;
+	}
 }
 
 async function stopHyperbrowserSession(

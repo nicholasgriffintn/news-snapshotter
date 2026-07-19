@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import puppeteer from "@cloudflare/puppeteer";
+
 import {
 	captureProviderManagesFingerprint,
 	connectToRemoteBrowser,
@@ -139,6 +141,24 @@ test("requires a configured Hyperbrowser secret", async () => {
 		openCaptureBrowser("hyperbrowser", providerContext()),
 		/Hyperbrowser provider is not configured/,
 	);
+});
+
+test("closes a Cloudflare browser when page creation fails", async (context) => {
+	let closed = false;
+	context.mock.method(puppeteer, "launch", async () => ({
+		close: async () => {
+			closed = true;
+		},
+		newPage: async () => {
+			throw new Error("page creation failed");
+		},
+	}));
+
+	await assert.rejects(
+		openCaptureBrowser("cloudflare", providerContext()),
+		/page creation failed/,
+	);
+	assert.equal(closed, true);
 });
 
 test("creates and stops a regional Hyperbrowser session", async () => {

@@ -1,6 +1,7 @@
 import type { Page } from "@cloudflare/puppeteer";
 
 import type { Device, SiteDefinition } from "../../../core/domain.ts";
+import { safeSegment } from "../../../core/storage-key.ts";
 import { isWebUrl } from "../../../core/urls.ts";
 import { contentCategory } from "../../history/domain/content-classification.ts";
 import {
@@ -30,13 +31,6 @@ type AnalysisInput = {
 	site: SiteDefinition;
 	triggeredAt: string;
 };
-
-function safeSegment(value: string): string {
-	return value
-		.toLowerCase()
-		.replace(/[^a-z0-9-]+/g, "-")
-		.replace(/^-+|-+$/g, "");
-}
 
 export function canonicaliseUrl(value: string): string | undefined {
 	if (!isWebUrl(value)) {

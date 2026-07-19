@@ -14,24 +14,31 @@ export const POSITION_NOISE = {
 const EXPECTED_CAPTURE_INTERVAL_MS = 60 * 60 * 1_000;
 const CAPTURE_GAP_THRESHOLD_MS = EXPECTED_CAPTURE_INTERVAL_MS * 1.5;
 
-export type ChangeType =
-	| "appeared"
-	| "disappeared"
-	| "headline-changed"
-	| "summary-changed"
-	| "image-changed"
-	| "image-alt-changed"
-	| "kind-changed"
-	| "section-changed"
-	| "category-changed"
-	| "rank-changed"
-	| "promoted"
-	| "demoted"
-	| "position-changed"
-	| "size-changed"
-	| "page-structure-changed"
-	| "capture-gap"
-	| "extractor-version-boundary";
+export const CHANGE_TYPES = [
+	"appeared",
+	"disappeared",
+	"headline-changed",
+	"summary-changed",
+	"image-changed",
+	"image-alt-changed",
+	"kind-changed",
+	"section-changed",
+	"category-changed",
+	"rank-changed",
+	"promoted",
+	"demoted",
+	"position-changed",
+	"size-changed",
+	"page-structure-changed",
+	"capture-gap",
+	"extractor-version-boundary",
+] as const;
+
+export type ChangeType = (typeof CHANGE_TYPES)[number];
+
+export function isChangeType(value: string): value is ChangeType {
+	return CHANGE_TYPES.some((type) => type === value);
+}
 
 export type ChangeValue = null | number | string | Record<string, number | string>;
 
