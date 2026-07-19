@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 import { displayName } from "../../shared/format.ts";
 import type { SnapshotFilter } from "./domain/snapshot-filter.ts";
 import { DateFilter } from "./DateFilter";
@@ -11,24 +13,32 @@ type SnapshotFiltersProps = {
 };
 
 export function SnapshotFilters({ brands, filters, onChange }: SnapshotFiltersProps) {
+	const searchId = useId();
+	const brandId = useId();
+	const categoryId = useId();
+
 	return (
 		<section aria-label="Screenshot filters" className="filters">
-			<label className="search-field filter-field">
-				<span className="sr-only">Search snapshots</span>
-				<svg aria-hidden="true" viewBox="0 0 24 24">
-					<circle cx="11" cy="11" r="7" />
-					<path d="m16 16 5 5" />
-				</svg>
-				<input
-					onChange={(event) => onChange({ ...filters, query: event.target.value })}
-					placeholder="Search snapshots"
-					type="search"
-					value={filters.query}
-				/>
-			</label>
-			<label className="filter-field">
-				<span>Brand</span>
+			<div className="search-field filter-field">
+				<label htmlFor={searchId}>Search</label>
+				<div className="search-field__control">
+					<svg aria-hidden="true" viewBox="0 0 24 24">
+						<circle cx="11" cy="11" r="7" />
+						<path d="m16 16 5 5" />
+					</svg>
+					<input
+						id={searchId}
+						onChange={(event) => onChange({ ...filters, query: event.target.value })}
+						placeholder="Search snapshots"
+						type="search"
+						value={filters.query}
+					/>
+				</div>
+			</div>
+			<div className="filter-field">
+				<label htmlFor={brandId}>Brand</label>
 				<select
+					id={brandId}
 					onChange={(event) => onChange({ ...filters, brand: event.target.value })}
 					value={filters.brand}
 				>
@@ -39,10 +49,11 @@ export function SnapshotFilters({ brands, filters, onChange }: SnapshotFiltersPr
 						</option>
 					))}
 				</select>
-			</label>
-			<label className="filter-field">
-				<span>Category</span>
+			</div>
+			<div className="filter-field">
+				<label htmlFor={categoryId}>Category</label>
 				<select
+					id={categoryId}
 					onChange={(event) => onChange({ ...filters, category: event.target.value })}
 					value={filters.category}
 				>
@@ -50,7 +61,7 @@ export function SnapshotFilters({ brands, filters, onChange }: SnapshotFiltersPr
 					<option value="news">News</option>
 					<option value="sport">Sport</option>
 				</select>
-			</label>
+			</div>
 			<DateFilter
 				day={filters.day}
 				onChange={(period, day = filters.day) => onChange({ ...filters, day, period })}

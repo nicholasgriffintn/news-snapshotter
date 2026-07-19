@@ -23,6 +23,13 @@ export async function storeCaptureArtefacts(input: {
 	const extension = config.screenshot?.type ?? "png";
 	const key = screenshotKey(site, triggeredAt, device, extension);
 
+	const screenshot = await takeFullScreenshot(page, config);
+	const thumbnailConfig = config.thumbnail ?? { type: "jpeg" as const, quality: 72 };
+	const thumbnail = await page.screenshot({
+		quality: thumbnailConfig.quality,
+		type: thumbnailConfig.type,
+	});
+
 	const allowAllAnalysis = false;
 	let analysis =
 		allowAllAnalysis || (site.analysis && site.analysis.device === device)
@@ -38,13 +45,6 @@ export async function storeCaptureArtefacts(input: {
 					triggeredAt,
 				})
 			: undefined;
-
-	const screenshot = await takeFullScreenshot(page, config);
-	const thumbnailConfig = config.thumbnail ?? { type: "jpeg" as const, quality: 72 };
-	const thumbnail = await page.screenshot({
-		quality: thumbnailConfig.quality,
-		type: thumbnailConfig.type,
-	});
 
 	const customMetadata = {
 		brand: site.brand,

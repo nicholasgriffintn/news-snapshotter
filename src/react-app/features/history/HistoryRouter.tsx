@@ -23,12 +23,16 @@ export function HistoryRouter({ site }: { site: string }) {
 	}
 	if (resource === "compare") {
 		const elementKeys = [...new Set(new URLSearchParams(window.location.search).getAll("element"))];
-		return <ContentComparisonPage elementKeys={elementKeys} site={site} />;
+		return (
+			<ContentComparisonPage elementKeys={elementKeys} preferredName={preferredName} site={site} />
+		);
 	}
 	if (resource === "content") {
 		const elementKey = contentKeyFromSearch(window.location.search);
 		if (elementKey) {
-			return <ElementHistoryPage elementKey={elementKey} preferredName={preferredName} site={site} />;
+			return (
+				<ElementHistoryPage elementKey={elementKey} preferredName={preferredName} site={site} />
+			);
 		}
 	}
 	if (resource === "timelines" && identifier) {

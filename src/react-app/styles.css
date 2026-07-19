@@ -236,16 +236,6 @@ textarea:focus-visible {
 	position: relative;
 }
 
-.date-filter__label {
-	display: block;
-	margin-bottom: 0.35rem;
-	color: var(--yellow);
-	font-size: 0.7rem;
-	font-weight: 900;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-}
-
 .date-filter__trigger {
 	display: flex;
 	align-items: center;
@@ -320,7 +310,7 @@ textarea:focus-visible {
 	text-transform: uppercase;
 }
 
-.filters label,
+.filter-field,
 .admin-panel form > label,
 .admin-key,
 .failure-log__filters label {
@@ -328,7 +318,7 @@ textarea:focus-visible {
 	gap: 0.35rem;
 }
 
-.filters label > span,
+.filter-field > label,
 .admin-panel form label > span,
 .admin-panel legend,
 .admin-key > span,
@@ -355,8 +345,11 @@ textarea:focus-visible {
 }
 
 .search-field {
-	position: relative;
 	align-self: end;
+}
+
+.search-field__control {
+	position: relative;
 }
 
 .search-field svg {
@@ -2500,7 +2493,7 @@ footer a {
 }
 
 .research-panel h2,
-.comparison-grid h2 {
+.comparison-card h2 {
 	margin: 0.15rem 0 0;
 	font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
 	font-size: clamp(2rem, 4vw, 3.6rem);
@@ -2853,15 +2846,13 @@ footer a {
 	font-size: 0.68rem;
 }
 
-.story-charts,
-.comparison-grid {
+.story-charts {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 1rem;
 }
 
-.story-charts figure,
-.comparison-grid article {
+.story-charts figure {
 	padding: 1rem;
 	margin: 0;
 	background: rgba(8, 10, 25, 0.72);
@@ -2910,6 +2901,35 @@ footer a {
 	font-weight: 900;
 	letter-spacing: 0.05em;
 	text-transform: uppercase;
+}
+
+.comparison-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.comparison-card {
+	display: grid;
+	align-content: start;
+	min-width: 0;
+}
+
+.comparison-card h2 {
+	max-width: 22ch;
+	font-size: clamp(1.8rem, 3vw, 3rem);
+	overflow-wrap: anywhere;
+	text-wrap: balance;
+}
+
+.comparison-card > .story-charts {
+	grid-template-columns: 1fr;
+	align-content: start;
+}
+
+.comparison-card__action {
+	justify-self: start;
+	margin-top: 1.25rem;
 }
 
 .story-observations li,
@@ -2988,6 +3008,21 @@ footer a {
 	}
 	to {
 		background-position: -200% 0;
+	}
+}
+
+@media (max-width: 1100px) {
+	.comparison-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.comparison-card > .story-charts {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.comparison-card h2 {
+		max-width: 28ch;
+		font-size: clamp(1.65rem, 3.5vw, 2.35rem);
 	}
 }
 
@@ -3307,9 +3342,24 @@ footer a {
 	}
 
 	.history-image-grid,
-	.story-charts,
-	.comparison-grid {
+	.story-charts {
 		grid-template-columns: 1fr;
+	}
+
+	.comparison-card h2 {
+		font-size: clamp(1.45rem, 6.5vw, 2rem);
+	}
+
+	.comparison-card > .story-charts {
+		grid-template-columns: 1fr;
+	}
+
+	.comparison-card .story-charts figure {
+		padding: 0.8rem;
+	}
+
+	.comparison-card .story-charts svg {
+		height: 10rem;
 	}
 
 	.story-observations li {

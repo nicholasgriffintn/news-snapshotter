@@ -88,14 +88,29 @@ test("extractor versions are explicit", () => {
 	const telegraph = extractorDefinition("telegraph-front-page", 3);
 	assert.match(telegraph.rules[0].cardSelector, /data-test/);
 	assert.equal(telegraph.rules[0].prominenceHint, "lead");
+	const washingtonPost = extractorDefinition("washingtonpost-front-page", 4);
+	const washingtonPostVideoRule = washingtonPost.rules.find(({ kind }) => kind === "video");
+	assert.ok(washingtonPostVideoRule);
+	assert.match(washingtonPostVideoRule.candidateSelector, /vertical-thumbnail/);
+	assert.ok(
+		washingtonPost.rules.indexOf(washingtonPostVideoRule) <
+			washingtonPost.rules.findIndex(({ kind }) => kind === "story"),
+	);
 	assert.match(
-		extractorDefinition("washingtonpost-front-page", 3).rules[0].cardSelector,
+		washingtonPost.rules.find(({ kind }) => kind === "story").cardSelector,
 		/homepage\/story/,
 	);
 	const financialTimes = extractorDefinition("financialtimes-front-page", 2);
 	assert.match(financialTimes.rules[0].candidateSelector, /heading-link/);
 	assert.match(financialTimes.rules[0].cardSelector, /story-group__article/);
-	const bloomberg = extractorDefinition("bloomberg-front-page", 2);
+	const bloomberg = extractorDefinition("bloomberg-front-page", 3);
+	const bloombergVideoRule = bloomberg.rules.find(({ kind }) => kind === "video");
+	assert.ok(bloombergVideoRule);
+	assert.match(bloombergVideoRule.candidateSelector, /\/news\/videos\//);
+	assert.ok(
+		bloomberg.rules.indexOf(bloombergVideoRule) <
+			bloomberg.rules.findIndex(({ kind }) => kind === "story"),
+	);
 	assert.ok(
 		bloomberg.rules.some(({ candidateSelector, prominenceHint }) => {
 			return /#lede/.test(candidateSelector) && prominenceHint === "lead";
@@ -117,7 +132,7 @@ test("every extractor includes semantic elements from the rest of the page", () 
 	const extractors = [
 		["generic-baseline", 4],
 		["bbc-front-page", 9],
-		["bloomberg-front-page", 2],
+		["bloomberg-front-page", 3],
 		["cnn-front-page", 4],
 		["dailymail-front-page", 4],
 		["financialtimes-front-page", 2],
@@ -125,7 +140,7 @@ test("every extractor includes semantic elements from the rest of the page", () 
 		["nytimes-front-page", 5],
 		["telegraph-front-page", 3],
 		["times-front-page", 5],
-		["washingtonpost-front-page", 3],
+		["washingtonpost-front-page", 4],
 	];
 
 	for (const [name, version] of extractors) {

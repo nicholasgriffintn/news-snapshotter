@@ -139,6 +139,17 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		name: "bloomberg-front-page",
 		rules: [
 			{
+				cardSelector:
+					"[class*='Video_item__'], article, a[data-component='audio-video-card']",
+				candidateSelector:
+					"main a[href*='/news/videos/']:has(:is([data-component='headline'], h1, h2, h3))",
+				categorySelector: "[data-component='optional-eyebrow']",
+				headlineSelector: ["[data-component='headline']", "h1, h2, h3"],
+				kind: "video",
+				sectionHeadingSelector: "main h2, main h3[data-component='title']",
+				summarySelector: "[data-component='summary']",
+			},
+			{
 				cardSelector: "[class^='LineupContent2Up_story__']:has(a[data-component='story-link'])",
 				candidateSelector:
 					"#lede > [class^='LineupContent2Up_story__']:first-child a[data-component='story-link'][href]",
@@ -159,7 +170,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: "[data-component='summary']",
 			},
 		],
-		version: 2,
+		version: 3,
 	},
 	"cnn-front-page": {
 		name: "cnn-front-page",
@@ -290,6 +301,15 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		name: "washingtonpost-front-page",
 		rules: [
 			{
+				cardSelector: "[data-testid='vertical-thumbnail']",
+				candidateSelector:
+					"[data-feature-name='vertical-video-carousel-(collection)'] [data-testid='vertical-thumbnail']",
+				headlineSelector: "p",
+				kind: "video",
+				sectionHeadingSelector:
+					"[data-chain-name='vertical video'] .chain-label-side-by-side .label span",
+			},
+			{
 				cardSelector: "[data-feature-id='homepage/story']",
 				candidateSelector: "a[data-pb-local-content-field='web_headline'][href]",
 				headlineSelector: "h1, h2, h3",
@@ -297,7 +317,7 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				summarySelector: ".font-size-blurb",
 			},
 		],
-		version: 3,
+		version: 4,
 	},
 };
 

@@ -9,7 +9,7 @@ export const WASHINGTON_POST_SITES = [
 			device: "desktop" as const,
 			extractor: "washingtonpost-front-page" as const,
 			minimumElements: 20,
-			version: 3,
+			version: 4,
 		},
 	},
 ].map((site) => {

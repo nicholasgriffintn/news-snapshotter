@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
 import type { CatalogueSite, HistorySite } from "../../core/types.ts";
 import { displayName } from "../../shared/format.ts";
@@ -23,6 +23,9 @@ export function HistorySiteDirectory({
 	sites: HistorySite[];
 }) {
 	const [filters, setFilters] = useState(EMPTY_FILTERS);
+	const searchId = useId();
+	const categoryId = useId();
+	const orderId = useId();
 	const items = useMemo(
 		() =>
 			sites.map((site) => {
@@ -53,22 +56,26 @@ export function HistorySiteDirectory({
 	return (
 		<>
 			<section aria-label="History site filters" className="filters history-site-filters">
-				<label className="search-field filter-field">
-					<span className="sr-only">Search site histories</span>
-					<svg aria-hidden="true" viewBox="0 0 24 24">
-						<circle cx="11" cy="11" r="7" />
-						<path d="m16 16 5 5" />
-					</svg>
-					<input
-						onChange={(event) => setFilters({ ...filters, query: event.target.value })}
-						placeholder="Search publishers"
-						type="search"
-						value={filters.query}
-					/>
-				</label>
-				<label className="filter-field">
-					<span>Section</span>
+				<div className="search-field filter-field">
+					<label htmlFor={searchId}>Search</label>
+					<div className="search-field__control">
+						<svg aria-hidden="true" viewBox="0 0 24 24">
+							<circle cx="11" cy="11" r="7" />
+							<path d="m16 16 5 5" />
+						</svg>
+						<input
+							id={searchId}
+							onChange={(event) => setFilters({ ...filters, query: event.target.value })}
+							placeholder="Search publishers"
+							type="search"
+							value={filters.query}
+						/>
+					</div>
+				</div>
+				<div className="filter-field">
+					<label htmlFor={categoryId}>Section</label>
 					<select
+						id={categoryId}
 						onChange={(event) => setFilters({ ...filters, category: event.target.value })}
 						value={filters.category}
 					>
@@ -77,10 +84,11 @@ export function HistorySiteDirectory({
 							<option key={category} value={category}>{displayName(category)}</option>
 						))}
 					</select>
-				</label>
-				<label className="filter-field">
-					<span>Order</span>
+				</div>
+				<div className="filter-field">
+					<label htmlFor={orderId}>Order</label>
 					<select
+						id={orderId}
 						onChange={(event) => {
 							if (isHistorySiteOrder(event.target.value)) {
 								setFilters({ ...filters, order: event.target.value });
@@ -92,7 +100,7 @@ export function HistorySiteDirectory({
 						<option value="name">Publisher name</option>
 						<option value="captures">Most captures</option>
 					</select>
-				</label>
+				</div>
 			</section>
 
 			<div className="gallery-status history-site-status">

@@ -317,10 +317,16 @@ test("unlocks the document layout before progressively scrolling a full-page cap
 		/html, body \{ height: auto !important; max-height: none !important; overflow-y: visible !important; \}/,
 	);
 	assert.match(appliedStyles[0], /body \* \{ content-visibility: visible !important; \}/);
+	assert.equal(appliedStyles.length, 2);
+	assert.equal(appliedStyles[1], appliedStyles[0]);
 });
 
 test("runs consent actions inside matching iframes", async (context) => {
 	const clicked = [];
+	const emptyConsentFrame = {
+		url: () => "https://privacy.example/consent-shell",
+		waitForSelector: async () => null,
+	};
 	const consentFrame = {
 		url: () => "https://privacy.example/consent",
 		waitForSelector: async (selector) => ({
@@ -328,7 +334,74 @@ test("runs consent actions inside matching iframes", async (context) => {
 		}),
 	};
 	const page = successfulPage({
-		frames: () => [consentFrame],
+		frames: () => [emptyConsentFrame, consentFrame],
+		waitForSelector: async () => null,
+	});
+	context.mock.method(puppeteer, "launch", async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { env } = environment();
+
+	const result = await captureDevice(
+		env,
+		{ ...site, brand: "financialtimes", name: "financial-times-home" },
+		"desktop",
+		triggeredAt,
+	);
+
+	assert.equal(result.status, "success");
+	assert.deepEqual(clicked, ['button[title="Reject"]']);
+});
+
+test("retries unresolved top-level consent actions after progressive rendering", async (context) => {
+	const clicked = [];
+	let legalTermsReads = 0;
+	const legalTermsSelector =
+		'div[role="dialog"][aria-modal="true"] > a[role="button"][href="#"]';
+	const page = successfulPage({
+		url: () => "https://edition.cnn.com/",
+		waitForSelector: async (selector) => {
+			if (selector !== legalTermsSelector) {
+				return null;
+			}
+			legalTermsReads += 1;
+			return legalTermsReads === 1
+				? null
+				: { click: async () => clicked.push(selector) };
+		},
+	});
+	context.mock.method(puppeteer, "launch", async () => ({
+		close: async () => undefined,
+		newPage: async () => page,
+	}));
+	const { env } = environment();
+
+	const result = await captureDevice(
+		env,
+		{ ...site, brand: "cnn", name: "cnn-com", url: "https://edition.cnn.com/" },
+		"desktop",
+		triggeredAt,
+	);
+
+	assert.equal(result.status, "success");
+	assert.deepEqual(clicked, [legalTermsSelector]);
+});
+
+test("retries framed consent actions after progressive rendering reveals the iframe", async (context) => {
+	const clicked = [];
+	let framesRead = 0;
+	const consentFrame = {
+		url: () => "https://privacy.example/consent",
+		waitForSelector: async (selector) => ({
+			click: async () => clicked.push(selector),
+		}),
+	};
+	const page = successfulPage({
+		frames: () => {
+			framesRead += 1;
+			return framesRead === 1 ? [] : [consentFrame];
+		},
 		waitForSelector: async () => null,
 	});
 	context.mock.method(puppeteer, "launch", async () => ({

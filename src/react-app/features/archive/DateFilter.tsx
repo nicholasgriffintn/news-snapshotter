@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { dateInputValue, type ArchivePeriod } from "./domain/archive-period.ts";
 
@@ -29,6 +29,9 @@ function selectedLabel(period: ArchivePeriod, day: string): string {
 export function DateFilter({ day, onChange, period }: DateFilterProps) {
 	const [open, setOpen] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
+	const triggerId = useId();
+	const popupId = useId();
+	const customDateId = useId();
 	const currentDay = dateInputValue(new Date());
 
 	useEffect(() => {
@@ -60,11 +63,12 @@ export function DateFilter({ day, onChange, period }: DateFilterProps) {
 
 	return (
 		<div className="date-filter filter-field" ref={containerRef}>
-			<span className="date-filter__label">Date</span>
+			<label htmlFor={triggerId}>Date</label>
 			<button
-				aria-controls="date-filter-popup"
+				aria-controls={popupId}
 				aria-expanded={open}
 				className="date-filter__trigger"
+				id={triggerId}
 				onClick={() => setOpen((current) => !current)}
 				type="button"
 			>
@@ -73,7 +77,7 @@ export function DateFilter({ day, onChange, period }: DateFilterProps) {
 			</button>
 
 			{open ? (
-				<div className="date-filter__popup" id="date-filter-popup">
+				<div className="date-filter__popup" id={popupId}>
 					{PERIOD_OPTIONS.map((option) => (
 						<button
 							aria-pressed={period === option.value}
@@ -94,9 +98,9 @@ export function DateFilter({ day, onChange, period }: DateFilterProps) {
 					</button>
 					{period === "day" ? (
 						<div className="date-filter__calendar">
-							<label htmlFor="custom-date">Choose a date</label>
+							<label htmlFor={customDateId}>Choose a date</label>
 							<input
-								id="custom-date"
+								id={customDateId}
 								max={currentDay}
 								onChange={(event) => onChange("day", event.target.value)}
 								type="date"

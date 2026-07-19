@@ -62,6 +62,11 @@ test("merges brand overrides without dropping default protection", () => {
 	assert.ok(profile.deviceConfig.desktop.blockSelectors.some(({ reason }) => reason === "captcha"));
 	assert.ok(profile.deviceConfig.desktop.hideSelectors.includes("#fortress-container-root"));
 	assert.ok(
+		profile.deviceConfig.desktop.hideSelectors.includes(
+			"[data-component='UserTopicStories'][data-story-count='0']",
+		),
+	);
+	assert.ok(
 		profile.deviceConfig.desktop.styles.includes(
 			"html.sp-message-open { overflow: auto !important; }",
 		),

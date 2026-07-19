@@ -42,36 +42,68 @@ type ClickContext = {
 	) => Promise<{ click: () => Promise<void> } | null>;
 };
 
-async function runClickAction(context: ClickContext, action: ClickAction): Promise<void> {
+async function runClickAction(
+	context: ClickContext,
+	action: ClickAction,
+	timeoutMs = action.timeoutMs ?? 3_000,
+): Promise<boolean> {
 	try {
 		const element = await context.waitForSelector(action.selector, {
-			timeout: action.timeoutMs ?? 3_000,
+			timeout: timeoutMs,
 			visible: true,
 		});
 		if (!element) {
-			return;
+			return false;
 		}
 		await element.click();
 		await new Promise((resolve) => setTimeout(resolve, action.waitAfterMs ?? 500));
+		return true;
 	} catch {
 		// Optional consent furniture changes often and must not fail an otherwise valid capture.
+		return false;
 	}
 }
 
-async function runClickActions(page: Page, actions: ClickAction[]): Promise<void> {
+async function runClickActions(
+	page: Page,
+	actions: ClickAction[],
+	maximumTimeoutMs = Number.POSITIVE_INFINITY,
+): Promise<ClickAction[]> {
+	const unresolvedActions: ClickAction[] = [];
+
 	for (const action of actions) {
+		const timeoutMs = Math.min(action.timeoutMs ?? 3_000, maximumTimeoutMs);
 		if (!action.frameUrlIncludes?.length) {
-			await runClickAction(page, action);
+			if (!(await runClickAction(page, action, timeoutMs))) {
+				unresolvedActions.push(action);
+			}
 			continue;
 		}
 
-		const frame = page.frames().find((candidate) => {
+		const frames = page.frames().filter((candidate) => {
 			const url = candidate.url();
 			return action.frameUrlIncludes?.some((part) => url.includes(part));
 		});
-		if (frame) {
-			await runClickAction(frame, action);
+		const frameTimeoutMs = Math.max(250, Math.floor(timeoutMs / Math.max(frames.length, 1)));
+		let resolved = false;
+		for (const frame of frames) {
+			if (await runClickAction(frame, action, frameTimeoutMs)) {
+				resolved = true;
+				break;
+			}
 		}
+		if (!resolved) {
+			unresolvedActions.push(action);
+		}
+	}
+
+	return unresolvedActions;
+}
+
+async function applyCleanupStyles(page: Page, styles: string): Promise<void> {
+	const cleanupStyles = await page.addStyleTag({ content: styles });
+	if (cleanupStyles) {
+		await cleanupStyles.evaluate((node) => node.setAttribute("data-pashi-cleanup", ""));
 	}
 }
 
@@ -303,7 +335,7 @@ export async function preparePageForCapture(input: {
 		throw new DetectedCaptureError("http-error", `Navigation returned HTTP ${response.status()}`);
 	}
 
-	await runClickActions(page, config.clickActions ?? []);
+	const unresolvedClickActions = await runClickActions(page, config.clickActions ?? []);
 
 	if (config.waitForSelector) {
 		await page.waitForSelector(config.waitForSelector.selector, {
@@ -325,10 +357,7 @@ export async function preparePageForCapture(input: {
 		.join("\n");
 
 	if (styles) {
-		const cleanupStyles = await page.addStyleTag({ content: styles });
-		if (cleanupStyles) {
-			await cleanupStyles.evaluate((node) => node.setAttribute("data-pashi-cleanup", ""));
-		}
+		await applyCleanupStyles(page, styles);
 	}
 
 	if (config.waitAfterLoadMs) {
@@ -348,6 +377,11 @@ export async function preparePageForCapture(input: {
 
 	if (site.completion) {
 		await waitForCompletion(page, site.completion);
+	}
+
+	await runClickActions(page, unresolvedClickActions, 500);
+	if (styles) {
+		await applyCleanupStyles(page, styles);
 	}
 
 	const loadedUrl = page.url();

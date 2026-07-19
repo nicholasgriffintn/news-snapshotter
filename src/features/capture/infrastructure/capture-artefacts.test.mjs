@@ -76,3 +76,76 @@ test("keeps a stored screenshot successful when indexing cannot be queued", asyn
 	assert.equal(screenshots.length, 2);
 	assert.equal(screenshots[0][2].customMetadata.displayName, "BBC");
 });
+
+test("captures images before analysis persistence can expose delayed page furniture", async () => {
+	let delayedBannerVisible = false;
+	const screenshots = [];
+	const page = {
+		evaluate: async () => {
+			return JSON.stringify({
+				elements: [
+					{
+						canonicalUrl: "https://www.bbc.co.uk/news/articles/story-one",
+						elementKey: "story-one",
+						headline: "A representative BBC headline",
+						kind: "story",
+						position: {
+							height: 100,
+							left: 0,
+							pageOrder: 1,
+							top: 0,
+							viewportDepth: 0,
+							width: 500,
+						},
+						selectorHint: "h1",
+						textFingerprint: "a representative bbc headline",
+					},
+				],
+				html: "<!doctype html><html><body>BBC</body></html>",
+				pageHeight: 1_000,
+				pageWidth: 1_000,
+			});
+		},
+		screenshot: async () =>
+			Buffer.from(delayedBannerVisible ? "cookie banner" : "clean page"),
+	};
+
+	await storeCaptureArtefacts({
+		config: {
+			screenshot: { fullPage: false, type: "png" },
+			viewport: { height: 1_000, width: 1_000 },
+		},
+		device: "desktop",
+		env: {
+			ARCHIVE_DATA: {
+				put: async () => {
+					delayedBannerVisible = true;
+				},
+			},
+			HISTORY_INDEX_QUEUE: { send: async () => undefined },
+			SCREENSHOTS: { put: async (...args) => screenshots.push(args) },
+		},
+		page,
+		profileName: "bbc",
+		site: {
+			analysis: {
+				device: "desktop",
+				extractor: "bbc-front-page",
+				minimumElements: 1,
+				version: 9,
+			},
+			brand: "bbc",
+			captureRegion: "uk",
+			category: "news",
+			name: "bbc-home",
+			priority: 1,
+			url: "https://www.bbc.co.uk/",
+		},
+		triggeredAt: "2026-07-17T09:00:00.000Z",
+	});
+
+	assert.deepEqual(
+		screenshots.map(([, contents]) => contents.toString()),
+		["clean page", "clean page"],
+	);
+});
