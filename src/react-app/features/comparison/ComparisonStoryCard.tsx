@@ -37,6 +37,7 @@ export function ComparisonStoryCard({
 
 	return (
 		<Card
+			actionsAtBottom
 			className={`history-site-card comparison-story-card${gap ? " comparison-story-card--gap" : ""}`}
 		>
 			<div className="ui-card-meta__copy">

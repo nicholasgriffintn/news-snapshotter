@@ -648,6 +648,11 @@
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.ui-card.ui-card--actions-bottom > .ui-card-actions:last-child {
+	grid-row: -2 / -1;
+	align-self: end;
+}
+
 .breadcrumbs,
 .breadcrumbs ol {
 	display: flex;

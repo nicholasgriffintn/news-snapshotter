@@ -1,11 +1,13 @@
 import type { HTMLAttributes, ReactNode } from "react";
 
 type CardProps = HTMLAttributes<HTMLElement> & {
+	actionsAtBottom?: boolean;
 	as?: "article" | "section";
 	children: ReactNode;
 };
 
 export function Card({
+	actionsAtBottom = false,
 	as: Element = "article",
 	children,
 	className,
@@ -14,7 +16,7 @@ export function Card({
 	return (
 		<Element
 			{...props}
-			className={["ui-card", className]
+			className={["ui-card", actionsAtBottom ? "ui-card--actions-bottom" : null, className]
 				.filter(Boolean)
 				.join(" ")}
 		>

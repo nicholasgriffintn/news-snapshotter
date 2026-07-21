@@ -7,6 +7,7 @@ export function ComparisonBriefingSkeleton() {
 		<div aria-busy="true" aria-hidden="true" className="history-site-grid comparison-story-grid">
 			{PLACEHOLDER_CARDS.map((card) => (
 				<Card
+					actionsAtBottom
 					className="history-site-card comparison-story-card comparison-story-card--skeleton"
 					key={card}
 				>
