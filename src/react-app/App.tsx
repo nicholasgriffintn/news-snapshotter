@@ -9,6 +9,7 @@ import { SiteHeader } from "./features/branding/SiteHeader";
 import { Disclosure, DisclosureModal } from "./features/legal/Disclosure";
 import { LegalPage } from "./features/legal/LegalPage";
 import { HistoryRouter } from "./features/history/HistoryRouter";
+import { ComparisonBetaBanner } from "./features/comparison/ComparisonBetaBanner.tsx";
 import { ComparisonRouter } from "./features/comparison/ComparisonRouter";
 import { Button } from "./shared/Button.tsx";
 import { PageHeader } from "./shared/PageHeaders.tsx";
@@ -24,6 +25,8 @@ export default function App() {
 		<main className="shell">
 			<PageMetadata historySite={historySite} page={page} />
 			<SiteHeader page={page} />
+
+			{page === "compare" ? <ComparisonBetaBanner /> : null}
 
 			{page === "archive" ? (
 				<PageHeader
