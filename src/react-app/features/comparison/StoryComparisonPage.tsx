@@ -110,6 +110,7 @@ export function StoryComparisonPage({
 				}
 				title={story.story.label}
 				breadcrumbs={[{ href: "/compare", label: "All comparisons" }, { label: "Story evidence" }]}
+				variant="detail"
 			/>
 
 			<StatusMessage compact tone="info">
