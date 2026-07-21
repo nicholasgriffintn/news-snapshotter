@@ -108,18 +108,18 @@ test("extractor versions are explicit", () => {
 	const financialTimes = extractorDefinition("financialtimes-front-page", 2);
 	assert.match(financialTimes.rules[0].candidateSelector, /heading-link/);
 	assert.match(financialTimes.rules[0].cardSelector, /story-group__article/);
-	const bloomberg = extractorDefinition("bloomberg-front-page", 3);
+	const bloomberg = extractorDefinition("bloomberg-front-page", 4);
 	const bloombergVideoRule = bloomberg.rules.find(({ kind }) => kind === "video");
+	const bloombergAudioRule = bloomberg.rules.find(({ kind }) => kind === "audio");
+	const bloombergStoryRule = bloomberg.rules.find(({ kind }) => kind === "story");
 	assert.ok(bloombergVideoRule);
+	assert.ok(bloombergAudioRule);
 	assert.match(bloombergVideoRule.candidateSelector, /\/news\/videos\//);
+	assert.match(bloombergAudioRule.candidateSelector, /\/news\/audio\//);
+	assert.doesNotMatch(bloombergStoryRule.candidateSelector, /^main/);
 	assert.ok(
 		bloomberg.rules.indexOf(bloombergVideoRule) <
 			bloomberg.rules.findIndex(({ kind }) => kind === "story"),
-	);
-	assert.ok(
-		bloomberg.rules.some(({ candidateSelector, prominenceHint }) => {
-			return /#lede/.test(candidateSelector) && prominenceHint === "lead";
-		}),
 	);
 	assert.ok(
 		bloomberg.rules.some(({ candidateSelector }) =>
@@ -148,6 +148,16 @@ test("extractor versions are explicit", () => {
 	);
 	assert.equal(inews.rules.find(({ kind }) => kind === "video").extractCanonicalUrl, false);
 	assert.equal(inews.rules.find(({ kind }) => kind === "video").categorySelector, ".category-name");
+	const independent = extractorDefinition("independent-front-page", 1);
+	assert.match(independent.rules[0].candidateSelector, /card-link/);
+	assert.match(independent.rules[0].candidateSelector, /:has\(h2\)/);
+	assert.equal(independent.rules[0].cardSelector, "article");
+	const metro = extractorDefinition("metro-front-page", 1);
+	assert.match(metro.rules[0].candidateSelector, /article-card__title/);
+	assert.equal(metro.rules[0].categorySelector, ".channel-glyph__label");
+	const skyNews = extractorDefinition("skynews-front-page", 1);
+	assert.match(skyNews.rules[0].cardSelector, /sdc-site-tile/);
+	assert.match(skyNews.rules[0].candidateSelector, /sdc-site-tile__headline/);
 	assert.ok(
 		extractorDefinition("foxnews-front-page", 1)
 			.rules.filter(({ kind }) => kind === "story" || kind === "video")
@@ -183,8 +193,11 @@ test("extractor versions are explicit", () => {
 		"express-front-page",
 		"forbes-front-page",
 		"foxnews-front-page",
+		"independent-front-page",
 		"inews-front-page",
+		"metro-front-page",
 		"nbcnews-front-page",
+		"skynews-front-page",
 		"standard-front-page",
 		"usatoday-front-page",
 		"yahoo-news-front-page",
@@ -213,6 +226,7 @@ test("extractor versions are explicit", () => {
 	assert.equal(generic.rules[0].sectionSelector, undefined);
 	assert.doesNotMatch(generic.rules[0].candidateSelector, /^a\[href\]$/);
 	assert.throws(() => extractorDefinition("bbc-front-page", 9), /not registered/);
+	assert.throws(() => extractorDefinition("bloomberg-front-page", 3), /not registered/);
 	assert.throws(() => extractorDefinition("guardian-front-page", 7), /not registered/);
 	assert.throws(() => extractorDefinition("nytimes-front-page", 4), /not registered/);
 	assert.throws(() => extractorDefinition("times-front-page", 4), /not registered/);
@@ -229,7 +243,7 @@ test("every extractor includes semantic elements from the rest of the page", () 
 		["generic-baseline", 4],
 		["apnews-front-page", 1],
 		["bbc-front-page", 10],
-		["bloomberg-front-page", 3],
+		["bloomberg-front-page", 4],
 		["channel4-front-page", 1],
 		["cnn-front-page", 4],
 		["dailymail-front-page", 4],
@@ -240,9 +254,12 @@ test("every extractor includes semantic elements from the rest of the page", () 
 		["google-news-front-page", 2],
 		["guardian-front-page", 8],
 		["hackernews-front-page", 3],
+		["independent-front-page", 1],
 		["inews-front-page", 1],
+		["metro-front-page", 1],
 		["nbcnews-front-page", 1],
 		["nytimes-front-page", 5],
+		["skynews-front-page", 1],
 		["standard-front-page", 1],
 		["telegraph-front-page", 3],
 		["times-front-page", 5],

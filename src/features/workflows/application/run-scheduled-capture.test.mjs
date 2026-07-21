@@ -78,7 +78,7 @@ test("dispatches priority one sites from the hourly schedule", async (context) =
 	]);
 	assert.equal(
 		sqlite.prepare("SELECT expected_site_count FROM comparison_windows").get().expected_site_count,
-		6,
+		12,
 	);
 	sqlite.close();
 });

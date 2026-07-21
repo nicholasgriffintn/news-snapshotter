@@ -8,11 +8,24 @@ import {
 	comparisonSites,
 } from "./configuration.ts";
 
-test("the UK national cohort contains six structured desktop news sites", () => {
+test("the UK national cohort contains twelve structured desktop news sites", () => {
 	assert.doesNotThrow(() => assertComparisonConfiguration(SITES, COMPARISON_COHORTS));
 	assert.deepEqual(
 		comparisonSites(SITES, "uk-national-hourly").map(({ name }) => name),
-		["bbc-news", "times-com", "dailymail-home", "guardian-uk", "telegraph-uk", "inews-uk"],
+		[
+			"bbc-news",
+			"times-com",
+			"sky-com",
+			"dailymail-home",
+			"guardian-uk",
+			"metro",
+			"financialtimes-uk",
+			"telegraph-uk",
+			"bloomberg-uk",
+			"independent",
+			"inews-uk",
+			"standard-uk",
+		],
 	);
 });
 

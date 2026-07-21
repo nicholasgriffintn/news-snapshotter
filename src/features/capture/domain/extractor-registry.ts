@@ -166,37 +166,38 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		name: "bloomberg-front-page",
 		rules: [
 			{
-				cardSelector: "[class*='Video_item__'], article, a[data-component='audio-video-card']",
-				candidateSelector:
-					"main a[href*='/news/videos/']:has(:is([data-component='headline'], h1, h2, h3))",
+				cardSelector: "div:has(> a[href]:has([data-component='headline']))",
+				candidateSelector: "a[href*='/news/videos/']:has([data-component='headline'])",
 				categorySelector: "[data-component='optional-eyebrow']",
-				headlineSelector: ["[data-component='headline']", "h1, h2, h3"],
+				headlineSelector: "[data-component='headline']",
 				kind: "video",
-				sectionHeadingSelector: "main h2, main h3[data-component='title']",
+				sectionHeadingSelector:
+					"[data-component='module-header'] [data-component='title'], [data-component='title']",
 				summarySelector: "[data-component='summary']",
 			},
 			{
-				cardSelector: "[class^='LineupContent2Up_story__']:has(a[data-component='story-link'])",
+				cardSelector: "div:has(> a[href]:has([data-component='headline']))",
+				candidateSelector: "a[href*='/news/audio/']:has([data-component='headline'])",
+				categorySelector: "[data-component='optional-eyebrow']",
+				headlineSelector: "[data-component='headline']",
+				kind: "audio",
+				sectionHeadingSelector:
+					"[data-component='module-header'] [data-component='title'], [data-component='title']",
+				summarySelector: "[data-component='summary']",
+			},
+			{
+				cardSelector: "div:has(> a[href]:has([data-component='headline']))",
 				candidateSelector:
-					"#lede > [class^='LineupContent2Up_story__']:first-child a[data-component='story-link'][href]",
+					"a[href]:not([href*='/news/videos/']):not([href*='/news/audio/']):has([data-component='headline'])",
 				categorySelector: "[data-component='optional-eyebrow']",
 				headlineSelector: "[data-component='headline']",
 				kind: "story",
-				prominenceHint: "lead",
-				summarySelector: "[data-component='summary']",
-			},
-			{
-				cardSelector:
-					"[class*='_story__']:has(a[data-component='story-link']), article, li, a[href]:has([data-component='headline'])",
-				candidateSelector: "main a[href]:has([data-component='headline'])",
-				categorySelector: "[data-component='optional-eyebrow']",
-				headlineSelector: "[data-component='headline']",
-				kind: "story",
-				sectionHeadingSelector: "main h2",
+				sectionHeadingSelector:
+					"[data-component='module-header'] [data-component='title'], [data-component='title']",
 				summarySelector: "[data-component='summary']",
 			},
 		],
-		version: 3,
+		version: 4,
 	},
 	"channel4-front-page": {
 		name: "channel4-front-page",
@@ -383,6 +384,20 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 		],
 		version: 3,
 	},
+	"independent-front-page": {
+		name: "independent-front-page",
+		rules: [
+			{
+				cardSelector: "article",
+				candidateSelector: "article a.card-link[href]:has(h2)",
+				categorySelector: "footer a[href], .slot-primary > a[href], .slot-primary > p",
+				headlineSelector: "h2",
+				kind: "story",
+				sectionHeadingSelector: "h1",
+			},
+		],
+		version: 1,
+	},
 	"inews-front-page": {
 		name: "inews-front-page",
 		rules: [
@@ -404,6 +419,21 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 				kind: "story",
 				sectionHeadingSelector: "main h2",
 				summarySelector: "p",
+			},
+		],
+		version: 1,
+	},
+	"metro-front-page": {
+		name: "metro-front-page",
+		rules: [
+			{
+				cardSelector: ".article-card",
+				candidateSelector: ".article-card__title a[href]",
+				categorySelector: ".channel-glyph__label",
+				headlineSelector: ".article-card__title",
+				kind: "story",
+				sectionHeadingSelector:
+					".post-grid__label, .content-group_title, .spotlight_title, .portrait-video-carousel_title",
 			},
 		],
 		version: 1,
@@ -454,6 +484,23 @@ const EXTRACTORS: Record<ExtractorName, ExtractorDefinition> = {
 			},
 		],
 		version: 5,
+	},
+	"skynews-front-page": {
+		name: "skynews-front-page",
+		rules: [
+			{
+				cardSelector: ".ui-story, .sdc-site-tiles__item",
+				candidateSelector:
+					".ui-story a.ui-story-headline[href], .sdc-site-tiles__item .sdc-site-tile__headline a[href]",
+				categorySelector:
+					".ui-story-label [data-role='label'], .sdc-site-tile__label, .sdc-site-tile__tag",
+				headlineSelector: [".ui-story-headline", ".sdc-site-tile__headline"],
+				kind: "story",
+				sectionHeadingSelector: ".ui-section-header-title, .sdc-site-component-header__title, h2",
+				summarySelector: ".ui-story-summary, .sdc-site-tile__description",
+			},
+		],
+		version: 1,
 	},
 	"standard-front-page": {
 		name: "standard-front-page",

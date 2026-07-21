@@ -55,10 +55,13 @@ test("reviewed publisher front pages use their specific extractors", () => {
 	assert.equal(siteNamed("foxnews-com").analysis?.extractor, "foxnews-front-page");
 	assert.equal(siteNamed("google-news-uk").analysis?.extractor, "google-news-front-page");
 	assert.equal(siteNamed("hackernews").analysis?.extractor, "hackernews-front-page");
+	assert.equal(siteNamed("independent").analysis?.extractor, "independent-front-page");
 	assert.equal(siteNamed("inews-uk").analysis?.extractor, "inews-front-page");
+	assert.equal(siteNamed("metro").analysis?.extractor, "metro-front-page");
 	assert.equal(siteNamed("nbcnews-com").analysis?.extractor, "nbcnews-front-page");
 	assert.equal(siteNamed("reuters-com").analysis, undefined);
 	assert.equal(siteNamed("standard-uk").analysis?.extractor, "standard-front-page");
+	assert.equal(siteNamed("sky-com").analysis?.extractor, "skynews-front-page");
 	assert.equal(siteNamed("usatoday-eu").analysis?.extractor, "usatoday-front-page");
 	assert.equal(siteNamed("yahoo-news-uk").analysis?.extractor, "yahoo-news-front-page");
 	assert.equal(siteNamed("times-com").analysis?.extractor, "times-front-page");

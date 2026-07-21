@@ -124,7 +124,7 @@ test("serves configured comparison cohorts publicly with short caching", async (
 
 	assert.equal(response.status, 200);
 	assert.equal(body.cohorts[0].id, "uk-national-hourly");
-	assert.equal(body.cohorts[0].sites.length, 6);
+	assert.equal(body.cohorts[0].sites.length, 12);
 	assert.ok(body.cohorts[0].sites.every(({ perspective }) => perspective === "unrated"));
 	assert.equal(response.headers.get("cache-control"), "public, max-age=60");
 });
