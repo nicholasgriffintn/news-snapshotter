@@ -36,10 +36,7 @@ test("shows editorial content by default and keeps page structure available", ()
 		["story", "video", "image"],
 	);
 
-	const withNavigation = toggledContentKinds(
-		new Set(DEFAULT_HISTORY_CONTENT_KINDS),
-		"navigation",
-	);
+	const withNavigation = toggledContentKinds(new Set(DEFAULT_HISTORY_CONTENT_KINDS), "navigation");
 	assert.equal(withNavigation.has("navigation"), true);
 	assert.equal(toggledContentKinds(withNavigation, "navigation").has("navigation"), false);
 });

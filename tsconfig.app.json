@@ -14,5 +14,5 @@
 		"target": "ES2024",
 		"types": ["vite/client"]
 	},
-	"include": ["src/core/contracts.ts", "src/react-app"]
+	"include": ["src/core/contracts.ts", "src/core/json.ts", "src/react-app"]
 }

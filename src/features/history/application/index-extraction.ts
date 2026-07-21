@@ -1,10 +1,13 @@
 import { errorMessage } from "../../../core/errors.ts";
+import { SITES } from "../../catalogue/domain/sites.ts";
+import type { AnalysisMessage } from "../../comparison/domain/pipeline.ts";
 import { parsePageExtraction } from "../domain/extraction.ts";
 import { ingestExtraction } from "../infrastructure/history-ingestion-repository.ts";
 
 export type HistoryIndexMessage =
 	| {
 			captureId?: string;
+			enqueueComparison?: boolean;
 			extractionKey: string;
 			kind: "extraction";
 			site?: string;
@@ -15,6 +18,7 @@ export type HistoryIndexMessage =
 	  };
 
 type HistoryIndexEnv = {
+	ANALYSIS_QUEUE?: Queue<AnalysisMessage>;
 	ARCHIVE_DATA: R2Bucket;
 	HISTORY_DB: D1Database;
 };
@@ -209,6 +213,21 @@ export async function indexExtractionArtefact(
 			decompressedBytes: rawDocument.decompressedBytes,
 		});
 		await clearResolvedIndexingFailure(env.HISTORY_DB, message.extractionKey);
+		const site = SITES.find(({ name }) => name === document.capture.site);
+		if (site?.comparison?.enabled && message.enqueueComparison && env.ANALYSIS_QUEUE) {
+			try {
+				await env.ANALYSIS_QUEUE.send({
+					captureId: document.capture.captureId,
+					contentHash: document.contentHash,
+					kind: "analyse-capture",
+				});
+			} catch (error) {
+				console.error("Could not enqueue comparison analysis", {
+					captureId: document.capture.captureId,
+					error: errorMessage(error),
+				});
+			}
+		}
 		return result;
 	} catch (error) {
 		try {
@@ -220,24 +239,5 @@ export async function indexExtractionArtefact(
 			});
 		}
 		throw error;
-	}
-}
-
-export async function handleHistoryIndexQueue(
-	batch: MessageBatch<HistoryIndexMessage>,
-	env: HistoryIndexEnv,
-): Promise<void> {
-	for (const message of batch.messages) {
-		try {
-			await indexExtractionArtefact(env, message.body);
-			message.ack();
-		} catch (error) {
-			console.error("History extraction indexing failed", {
-				artefactKey:
-					message.body.kind === "extraction" ? message.body.extractionKey : message.body.failureKey,
-				error: errorMessage(error),
-			});
-			message.retry();
-		}
 	}
 }

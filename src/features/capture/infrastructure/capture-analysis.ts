@@ -2,6 +2,7 @@ import type { Page } from "@cloudflare/puppeteer";
 
 import type { Device, SiteDefinition } from "../../../core/domain.ts";
 import { safeSegment } from "../../../core/storage-key.ts";
+import { sha256 } from "../../../core/hash.ts";
 import { isWebUrl } from "../../../core/urls.ts";
 import { contentCategory } from "../../history/domain/content-classification.ts";
 import {
@@ -59,9 +60,7 @@ function canonicaliseElementUrls(element: CollectedElement): CollectedElement {
 		image: originalImage,
 		...elementWithoutUrls
 	} = element;
-	const canonicalUrl = originalCanonicalUrl
-		? canonicaliseUrl(originalCanonicalUrl)
-		: undefined;
+	const canonicalUrl = originalCanonicalUrl ? canonicaliseUrl(originalCanonicalUrl) : undefined;
 	const originalImageUrl = originalImage?.sourceUrl;
 	const imageUrl = originalImageUrl ? canonicaliseUrl(originalImageUrl) : undefined;
 	const image = originalImage
@@ -100,13 +99,6 @@ export function analysisKeys(site: SiteDefinition, device: Device, triggeredAt: 
 		failureKey: `${prefix}/${timestamp}.analysis-failure.json`,
 		htmlKey: `${prefix}/${timestamp}.rendered.html.gz`,
 	};
-}
-
-async function sha256(value: string): Promise<string> {
-	const encoded = new TextEncoder().encode(value);
-	const digest = await crypto.subtle.digest("SHA-256", encoded);
-
-	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 async function gzip(value: string): Promise<ArrayBuffer> {

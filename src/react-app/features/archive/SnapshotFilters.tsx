@@ -1,6 +1,5 @@
-import { useId } from "react";
-
 import { displayName } from "../../shared/format.ts";
+import { FilterPanel, SearchField, SelectField } from "../../shared/Filters.tsx";
 import type { SnapshotFilter } from "./domain/snapshot-filter.ts";
 import { DateFilter } from "./DateFilter";
 
@@ -13,60 +12,37 @@ type SnapshotFiltersProps = {
 };
 
 export function SnapshotFilters({ brands, filters, onChange }: SnapshotFiltersProps) {
-	const searchId = useId();
-	const brandId = useId();
-	const categoryId = useId();
-
 	return (
-		<section aria-label="Screenshot filters" className="filters">
-			<div className="search-field filter-field">
-				<label htmlFor={searchId}>Search</label>
-				<div className="search-field__control">
-					<svg aria-hidden="true" viewBox="0 0 24 24">
-						<circle cx="11" cy="11" r="7" />
-						<path d="m16 16 5 5" />
-					</svg>
-					<input
-						id={searchId}
-						onChange={(event) => onChange({ ...filters, query: event.target.value })}
-						placeholder="Search snapshots"
-						type="search"
-						value={filters.query}
-					/>
-				</div>
-			</div>
-			<div className="filter-field">
-				<label htmlFor={brandId}>Brand</label>
-				<select
-					id={brandId}
-					onChange={(event) => onChange({ ...filters, brand: event.target.value })}
-					value={filters.brand}
-				>
-					<option value="">All brands</option>
-					{brands.map((brand) => (
-						<option key={brand} value={brand}>
-							{displayName(brand)}
-						</option>
-					))}
-				</select>
-			</div>
-			<div className="filter-field">
-				<label htmlFor={categoryId}>Category</label>
-				<select
-					id={categoryId}
-					onChange={(event) => onChange({ ...filters, category: event.target.value })}
-					value={filters.category}
-				>
-					<option value="">All categories</option>
-					<option value="news">News</option>
-					<option value="sport">Sport</option>
-				</select>
-			</div>
+		<FilterPanel ariaLabel="Screenshot filters">
+			<SearchField
+				onChange={(query) => onChange({ ...filters, query })}
+				placeholder="Search snapshots"
+				value={filters.query}
+			/>
+			<SelectField
+				label="Brand"
+				onChange={(brand) => onChange({ ...filters, brand })}
+				options={[
+					{ label: "All brands", value: "" },
+					...brands.map((brand) => ({ label: displayName(brand), value: brand })),
+				]}
+				value={filters.brand}
+			/>
+			<SelectField
+				label="Category"
+				onChange={(category) => onChange({ ...filters, category })}
+				options={[
+					{ label: "All categories", value: "" },
+					{ label: "News", value: "news" },
+					{ label: "Sport", value: "sport" },
+				]}
+				value={filters.category}
+			/>
 			<DateFilter
 				day={filters.day}
 				onChange={(period, day = filters.day) => onChange({ ...filters, day, period })}
 				period={filters.period}
 			/>
-		</section>
+		</FilterPanel>
 	);
 }

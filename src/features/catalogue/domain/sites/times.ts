@@ -5,6 +5,13 @@ export const TIMES_SITES = [
 		url: "https://www.thetimes.com/",
 		priority: 1 as const,
 		category: "news" as const,
+		comparison: {
+			cohorts: ["uk-national-hourly"],
+			enabled: true,
+			jurisdiction: "GB",
+			language: "en",
+			maxHomepageItems: 40,
+		},
 		analysis: {
 			device: "desktop" as const,
 			extractor: "times-front-page" as const,

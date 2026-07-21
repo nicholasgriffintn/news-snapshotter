@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { Button } from "../../shared/Button.tsx";
+import { Dialog, DialogCloseButton } from "../../shared/Dialog.tsx";
 
 type DisclosureContentProps = {
 	onContact: () => void;
@@ -8,7 +9,6 @@ type DisclosureContentProps = {
 function DisclosureContent({ onContact, titleId }: DisclosureContentProps) {
 	return (
 		<>
-			<p className="eyebrow">About this site</p>
 			<h2 id={titleId}>Independent. Historical. Unaffiliated.</h2>
 			<p>
 				This website is an independent historical archive and is not affiliated with or endorsed by
@@ -26,9 +26,9 @@ function DisclosureContent({ onContact, titleId }: DisclosureContentProps) {
 			<p>
 				If you are a rights holder and have questions or concerns about material appearing on this
 				site, please{" "}
-				<button className="text-button" onClick={onContact} type="button">
+				<Button onClick={onContact} variant="text">
 					contact us
-				</button>{" "}
+				</Button>{" "}
 				and we will review your request promptly.
 			</p>
 		</>
@@ -49,43 +49,21 @@ type DisclosureModalProps = {
 };
 
 export function DisclosureModal({ onClose, onContact }: DisclosureModalProps) {
-	useEffect(() => {
-		function closeOnEscape(event: KeyboardEvent) {
-			if (event.key === "Escape") {
-				onClose();
-			}
-		}
-
-		document.body.classList.add("modal-open");
-		window.addEventListener("keydown", closeOnEscape);
-
-		return () => {
-			document.body.classList.remove("modal-open");
-			window.removeEventListener("keydown", closeOnEscape);
-		};
-	}, [onClose]);
-
 	return (
-		<div
-			aria-labelledby="disclosure-modal-title"
-			aria-modal="true"
-			className="modal disclosure-modal"
-			onMouseDown={(event) => event.target === event.currentTarget && onClose()}
-			role="dialog"
+		<Dialog
+			className="disclosure-modal"
+			labelledBy="disclosure-modal-title"
+			onClose={onClose}
+			panelClassName="disclosure-modal__panel"
 		>
-			<div className="disclosure-modal__panel">
-				<button
-					aria-label="Close archive disclosure"
-					className="modal__close disclosure-modal__close"
-					onClick={onClose}
-					type="button"
-				>
-					×
-				</button>
-				<div className="disclosure-modal__content">
-					<DisclosureContent onContact={onContact} titleId="disclosure-modal-title" />
-				</div>
+			<DialogCloseButton
+				className="disclosure-modal__close"
+				label="Close archive disclosure"
+				onClose={onClose}
+			/>
+			<div className="disclosure-modal__content">
+				<DisclosureContent onContact={onContact} titleId="disclosure-modal-title" />
 			</div>
-		</div>
+		</Dialog>
 	);
 }

@@ -1,9 +1,16 @@
 import type { HistoryImageObservation } from "../../core/types.ts";
+import { Button } from "../../shared/Button.tsx";
+import { Card } from "../../shared/Card.tsx";
+import { Field } from "../../shared/Field.tsx";
 import { historyScreenshotUrl } from "../../platform/api-client.ts";
 import { dateTimeLabel, displayName } from "../../shared/format.ts";
+import { NoDataState } from "../../shared/NoDataState.tsx";
+import { SectionHeader } from "../../shared/PageHeaders.tsx";
+import { StatusMessage } from "../../shared/StatusMessage.tsx";
 import { contentHistoryPath } from "./history-routes.ts";
 
 export function HistoryImageTimeline({
+	error,
 	images,
 	hasMore,
 	loading,
@@ -13,6 +20,7 @@ export function HistoryImageTimeline({
 	onMonth,
 	site,
 }: {
+	error?: string;
 	hasMore: boolean;
 	images: HistoryImageObservation[];
 	loading: boolean;
@@ -23,20 +31,21 @@ export function HistoryImageTimeline({
 	site: string;
 }) {
 	return (
-		<section className="research-panel research-panel--images">
-			<header>
-				<div>
-					<p className="research-panel__kicker">Review visual choices</p>
-					<h2>Image archive</h2>
-					<p className="research-panel__description">
-						Browse one representative use of each unique image observed during the selected month.
-					</p>
-				</div>
-				<label>
-					<span>Month</span>
-					<input onChange={(event) => onMonth(event.target.value)} type="month" value={month} />
-				</label>
-			</header>
+		<Card as="section" className="research-panel research-panel--images">
+			<SectionHeader
+				aside={
+					<Field label="Month">
+						<input
+							max={new Date().toISOString().slice(0, 7)}
+							onChange={(event) => onMonth(event.target.value)}
+							type="month"
+							value={month}
+						/>
+					</Field>
+				}
+				description="Browse one representative use of each unique image observed during the selected month."
+				title="Image archive"
+			/>
 			{!loading && images.length > 0 ? (
 				<div className="research-results__status">
 					<strong>
@@ -46,10 +55,15 @@ export function HistoryImageTimeline({
 					<span>Open an image to see the history of its associated content.</span>
 				</div>
 			) : null}
+			{error ? (
+				<StatusMessage compact role="alert" tone="error">
+					{error}
+				</StatusMessage>
+			) : null}
 			{loading ? (
-				<p aria-live="polite" className="research-empty" role="status">
+				<StatusMessage compact role="status">
 					Loading monthly imagery…
-				</p>
+				</StatusMessage>
 			) : null}
 			<div aria-busy={loading} className="history-image-grid">
 				{!loading
@@ -59,7 +73,7 @@ export function HistoryImageTimeline({
 								key={`${image.captureId}:${image.imageId}`}
 							>
 								<img
-									alt={image.alt ?? "Publisher content image"}
+									alt={image.alt?.trim() || "Publisher content image"}
 									loading="lazy"
 									src={image.cropKey ? historyScreenshotUrl(image.cropKey) : image.sourceUrl}
 								/>
@@ -75,14 +89,18 @@ export function HistoryImageTimeline({
 			{hasMore ? (
 				<div className="research-pagination">
 					<span>More images are available for this month</span>
-					<button disabled={loadingMore} onClick={onLoadMore} type="button">
+					<Button disabled={loadingMore} onClick={onLoadMore} variant="secondary">
 						{loadingMore ? "Loading more…" : "Load more images"}
-					</button>
+					</Button>
 				</div>
 			) : null}
-			{!loading && images.length === 0 ? (
-				<p className="research-empty">No content images were observed in this month.</p>
+			{!loading && !error && images.length === 0 ? (
+				<NoDataState
+					compact
+					description="Choose another month to look for captured publisher imagery."
+					title="No content images observed"
+				/>
 			) : null}
-		</section>
+		</Card>
 	);
 }

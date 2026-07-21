@@ -1,4 +1,7 @@
 import { displayName, timeLabel } from "../../shared/format.ts";
+import { Badge } from "../../shared/Badge.tsx";
+import { ButtonLink } from "../../shared/Button.tsx";
+import { Card } from "../../shared/Card.tsx";
 import { preferredVariant } from "./domain/snapshot-groups.ts";
 import type { SnapshotGroup } from "../../core/types.ts";
 import { DeviceIcon } from "./DeviceIcon";
@@ -17,7 +20,7 @@ export function SnapshotCard({
 	const title = displayName(group.name, group.displayName);
 
 	return (
-		<article className="snapshot-card">
+		<Card className="snapshot-card">
 			<button className="snapshot-card__open" onClick={onSelect} type="button">
 				<div className="snapshot-card__image">
 					<img
@@ -35,24 +38,28 @@ export function SnapshotCard({
 							</span>
 						))}
 					</div>
-					<span className={`category category--${group.category}`}>{group.category}</span>
+					<Badge className={`category category--${group.category}`} tone="accent">
+						{group.category}
+					</Badge>
 				</div>
 				<div className="snapshot-card__copy">
-					<span className="snapshot-card__brand">{displayName(group.brand)}</span>
-					<h3>{title}</h3>
-					<span className="snapshot-card__url">{group.url}</span>
-					<time dateTime={group.capturedAt}>{timeLabel(group.capturedAt)}</time>
+					<h3 className="ui-card-title">{title}</h3>
+					<span className="ui-card-description--meta">
+						{group.url} - {displayName(group.brand)} - <time dateTime={group.capturedAt}>{timeLabel(group.capturedAt)}</time>
+					</span>
 				</div>
 			</button>
-			{analysed ? (
-				<a className="snapshot-card__history" href={`/history/${encodeURIComponent(group.name)}`}>
-					Explore page history <span aria-hidden="true">→</span>
-				</a>
-			) : (
-				<span aria-hidden="true" className="snapshot-card__history snapshot-card__history--placeholder">
-					Explore page history
-				</span>
-			)}
-		</article>
+			<div className="ui-card-actions">
+				{analysed ? (
+					<ButtonLink
+						href={`/history/${encodeURIComponent(group.name)}`}
+						layout="card"
+						variant="secondary"
+					>
+						Explore page history <span aria-hidden="true">→</span>
+					</ButtonLink>
+				) : null}
+			</div>
+		</Card>
 	);
 }

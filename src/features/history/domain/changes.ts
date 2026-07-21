@@ -1,8 +1,5 @@
-import {
-	pageElementPlacementKey,
-	type PageElement,
-	type PageExtraction,
-} from "./extraction.ts";
+import { pageElementPlacementKey, type PageElement, type PageExtraction } from "./extraction.ts";
+import { sha256 } from "../../../core/hash.ts";
 
 export const POSITION_NOISE = {
 	minimumNormalisedDistance: 0.005,
@@ -58,13 +55,6 @@ export type ChangeEvent = {
 };
 
 type PendingChange = Omit<ChangeEvent, "changeId">;
-
-async function sha256(value: string): Promise<string> {
-	const encoded = new TextEncoder().encode(value);
-	const digest = await crypto.subtle.digest("SHA-256", encoded);
-
-	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
 
 function baseChange(
 	previous: PageExtraction,

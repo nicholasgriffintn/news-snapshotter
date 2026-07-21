@@ -7,19 +7,11 @@ import {
 	contentKindCounts,
 	contentWithKinds,
 	DEFAULT_HISTORY_CONTENT_KINDS,
+	HISTORY_CONTENT_KIND_LABELS,
 	HISTORY_CONTENT_KINDS,
 	toggledContentKinds,
 } from "./domain/content-kind-filter.ts";
 
-const KIND_LABELS: Readonly<Record<PageElementKind, string>> = {
-	audio: "Audio",
-	heading: "Headings",
-	image: "Images",
-	navigation: "Navigation",
-	other: "Other",
-	story: "Stories",
-	video: "Videos",
-};
 
 export function HistoryCaptureView({
 	capture,
@@ -102,7 +94,7 @@ export function HistoryCaptureView({
 							onClick={() => toggleKind(kind)}
 							type="button"
 						>
-							<span>{KIND_LABELS[kind]}</span>
+							<span>{HISTORY_CONTENT_KIND_LABELS[kind]}</span>
 							<strong>{counts[kind]}</strong>
 						</button>
 					))}

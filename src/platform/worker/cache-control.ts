@@ -7,6 +7,8 @@ const STATIC_DATA_PATHS = new Set([
 
 const PUBLIC_DATA_BROWSER_POLICY = "public, max-age=60";
 const PUBLIC_DATA_EDGE_POLICY = "max-age=300, stale-while-revalidate=3600";
+const IMMUTABLE_BROWSER_POLICY = "public, max-age=31536000, immutable";
+const IMMUTABLE_EDGE_POLICY = "max-age=31536000, immutable";
 const STATIC_DATA_BROWSER_POLICY = "public, max-age=3600";
 const STATIC_DATA_EDGE_POLICY = "max-age=86400, stale-while-revalidate=604800";
 
@@ -16,6 +18,12 @@ function responseWithHeaders(response: Response, headers: Headers): Response {
 		status: response.status,
 		statusText: response.statusText,
 	});
+}
+
+function isHistoricalComparisonRevision(url: URL): boolean {
+	return (
+		/^\/api\/comparison\/stories\/[^/]+$/.test(url.pathname) && url.searchParams.has("revision")
+	);
 }
 
 export function applyApiCachePolicy(
@@ -33,12 +41,17 @@ export function applyApiCachePolicy(
 		return response;
 	}
 
-	const pathname = new URL(request.url).pathname;
-	const browserPolicy = PUBLIC_DATA_PATHS.has(pathname)
-		? PUBLIC_DATA_BROWSER_POLICY
-		: STATIC_DATA_PATHS.has(pathname)
-			? STATIC_DATA_BROWSER_POLICY
-			: undefined;
+	const url = new URL(request.url);
+	const pathname = url.pathname;
+	const comparisonData = pathname.startsWith("/api/comparison/");
+	const historicalRevision = isHistoricalComparisonRevision(url);
+	const browserPolicy = historicalRevision
+		? IMMUTABLE_BROWSER_POLICY
+		: PUBLIC_DATA_PATHS.has(pathname) || comparisonData
+			? PUBLIC_DATA_BROWSER_POLICY
+			: STATIC_DATA_PATHS.has(pathname)
+				? STATIC_DATA_BROWSER_POLICY
+				: undefined;
 	if (!browserPolicy) {
 		return response;
 	}
@@ -47,7 +60,11 @@ export function applyApiCachePolicy(
 	headers.set("cache-control", browserPolicy);
 	headers.set(
 		"cloudflare-cdn-cache-control",
-		PUBLIC_DATA_PATHS.has(pathname) ? PUBLIC_DATA_EDGE_POLICY : STATIC_DATA_EDGE_POLICY,
+		historicalRevision
+			? IMMUTABLE_EDGE_POLICY
+			: PUBLIC_DATA_PATHS.has(pathname) || comparisonData
+				? PUBLIC_DATA_EDGE_POLICY
+				: STATIC_DATA_EDGE_POLICY,
 	);
 	return responseWithHeaders(response, headers);
 }

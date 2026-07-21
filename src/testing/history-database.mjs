@@ -15,6 +15,8 @@ const MIGRATIONS = [
 	"0009_remove_story_storage.sql",
 	"0010_indexed_desktop_captures.sql",
 	"0011_page_element_placements.sql",
+	"0012_correct_failure_devices.sql",
+	"0013_news_comparison.sql",
 ];
 
 export async function createHistoryTestDatabase() {

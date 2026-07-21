@@ -9,6 +9,9 @@ import { SiteHeader } from "./features/branding/SiteHeader";
 import { Disclosure, DisclosureModal } from "./features/legal/Disclosure";
 import { LegalPage } from "./features/legal/LegalPage";
 import { HistoryRouter } from "./features/history/HistoryRouter";
+import { ComparisonRouter } from "./features/comparison/ComparisonRouter";
+import { Button } from "./shared/Button.tsx";
+import { PageHeader } from "./shared/PageHeaders.tsx";
 
 export default function App() {
 	const [contactOpen, setContactOpen] = useState(false);
@@ -23,26 +26,26 @@ export default function App() {
 			<SiteHeader page={page} />
 
 			{page === "archive" ? (
-				<section className="hero">
-					<div>
-						<h1>
-							Today’s news.
-							<br />
-							<em>Captured.</em>
-						</h1>
-					</div>
-					<div className="hero__intro">
-						<p>Browse full-page records of the content, layouts and moments shaping the day.</p>
-						<button
-							className="hero__disclosure-action"
+				<PageHeader
+					aside={
+						<Button
+							className="page-header__disclosure-action"
 							onClick={() => setDisclosureOpen(true)}
-							type="button"
+							variant="tertiary"
 						>
 							About this site
 							<span aria-hidden="true">↗</span>
-						</button>
-					</div>
-				</section>
+						</Button>
+					}
+					description="Browse full-page records of the content, layouts and moments shaping the day."
+					title={
+						<>
+							Today’s news.
+							<br />
+							<em>Captured.</em>
+						</>
+					}
+				/>
 			) : null}
 
 			{page === "admin" ? <AdminPage /> : null}
@@ -55,6 +58,7 @@ export default function App() {
 			) : null}
 
 			{page === "history" ? <HistoryRouter site={historySite} /> : null}
+			{page === "compare" ? <ComparisonRouter /> : null}
 
 			{page === "privacy" ? (
 				<LegalPage kind="privacy" onContact={() => setContactOpen(true)} />
@@ -65,9 +69,9 @@ export default function App() {
 			<nav aria-label="Legal and contact" className="legal-nav">
 				<a href="/terms">Terms</a>
 				<a href="/privacy">Privacy</a>
-				<button onClick={() => setContactOpen(true)} type="button">
+				<Button onClick={() => setContactOpen(true)} variant="plain">
 					Contact
-				</button>
+				</Button>
 			</nav>
 
 			<footer>

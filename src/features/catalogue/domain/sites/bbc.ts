@@ -18,6 +18,13 @@ const BBC_NEWS_SITES = [
 		name: "bbc-news",
 		url: `${BBC_BASE_URL}/news`,
 		priority: 1 as const,
+		comparison: {
+			cohorts: ["uk-national-hourly"],
+			enabled: true,
+			jurisdiction: "GB",
+			language: "en",
+			maxHomepageItems: 40,
+		},
 		requestBody: {
 			addStyleTag: ".ssrcss-darju4-ConsentBanner { display: none; }",
 		},

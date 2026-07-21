@@ -1,5 +1,8 @@
 import type { ElementHistory } from "../../core/types.ts";
+import { ButtonLink } from "../../shared/Button.tsx";
+import { Card } from "../../shared/Card.tsx";
 import { displayName } from "../../shared/format.ts";
+import { SectionHeader } from "../../shared/PageHeaders.tsx";
 import { ContentTimelineChart } from "./ContentTimelineChart.tsx";
 import { contentHistoryPath } from "./history-routes.ts";
 
@@ -8,24 +11,24 @@ export function ContentComparisonCard({ item, site }: { item: ElementHistory; si
 	const title = latest?.headline ?? item.elementKey;
 
 	return (
-		<article className="research-panel comparison-card">
-			<header>
-				<div>
-					<p className="research-panel__kicker">Content trajectory</p>
-					<h2>{title}</h2>
+		<Card className="research-panel comparison-card">
+			<SectionHeader
+				aside={
 					<div className="research-result__meta">
 						<span>{displayName(item.kind)}</span>
 						<span>{item.observations.length} observations</span>
 					</div>
-				</div>
-			</header>
+				}
+				title={title}
+			/>
 			<ContentTimelineChart observations={item.observations} />
-			<a
-				className="research-panel__action comparison-card__action"
+			<ButtonLink
+				className="comparison-card__action"
 				href={contentHistoryPath(site, item.elementKey)}
+				variant="secondary"
 			>
 				Full content history →
-			</a>
-		</article>
+			</ButtonLink>
+		</Card>
 	);
 }

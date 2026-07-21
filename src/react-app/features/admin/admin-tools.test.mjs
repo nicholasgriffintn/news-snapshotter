@@ -31,3 +31,9 @@ test("opens a linked admin tool with its site filter", () => {
 test("describes extraction failures as part of the failure log", () => {
 	assert.match(ADMIN_TOOL_DETAILS.failures.description, /capture and extraction/i);
 });
+
+test("includes comparison processing and review in the existing admin directory", () => {
+	assert.match(ADMIN_TOOL_DETAILS.comparison.description, /processing/i);
+	assert.match(ADMIN_TOOL_DETAILS.comparison.description, /reports/i);
+	assert.match(ADMIN_TOOL_DETAILS.comparison.description, /backfill/i);
+});

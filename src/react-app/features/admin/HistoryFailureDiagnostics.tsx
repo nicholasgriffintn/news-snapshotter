@@ -5,6 +5,7 @@ import {
 	fetchHistoryExtractionFailures,
 	type HistoryExtractionFailure,
 } from "../../platform/api-client.ts";
+import { Button } from "../../shared/Button.tsx";
 import { dateTimeLabel, displayName } from "../../shared/format.ts";
 
 export function HistoryFailureDiagnostics({
@@ -103,14 +104,13 @@ export function HistoryFailureDiagnostics({
 					<h3>Extraction failures</h3>
 					<p>Review the private error before recapturing or backfilling a site.</p>
 				</div>
-				<button
-					className="admin-secondary-button admin-secondary-button--danger"
+				<Button
 					disabled={!apiKey || loading || clearing}
 					onClick={() => void clearFailures()}
-					type="button"
+					variant="danger"
 				>
 					{clearing ? "Clearing…" : site.trim() ? "Clear this site" : "Clear all"}
-				</button>
+				</Button>
 			</header>
 			<form
 				className="history-failure-diagnostics__filter"
@@ -127,13 +127,9 @@ export function HistoryFailureDiagnostics({
 						value={site}
 					/>
 				</label>
-				<button
-					className="admin-secondary-button"
-					disabled={!apiKey || loading || clearing}
-					type="submit"
-				>
+				<Button disabled={!apiKey || loading || clearing} type="submit" variant="secondary">
 					Review failures
-				</button>
+				</Button>
 			</form>
 			<p aria-live="polite" className="admin-status">
 				{!apiKey ? "Enter the API key above to view private diagnostics." : status}
@@ -156,14 +152,9 @@ export function HistoryFailureDiagnostics({
 				</ul>
 			) : null}
 			{cursor ? (
-				<button
-					className="admin-secondary-button"
-					disabled={loading}
-					onClick={() => void loadFailures(true)}
-					type="button"
-				>
+				<Button disabled={loading} onClick={() => void loadFailures(true)} variant="secondary">
 					{loading ? "Loading…" : "Load older failures"}
-				</button>
+				</Button>
 			) : null}
 		</section>
 	);

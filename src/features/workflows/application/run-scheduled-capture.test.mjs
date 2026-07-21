@@ -1,13 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { handleScheduledCapture } from "./run-scheduled-capture.ts";
 
 test("dispatches priority one sites from the hourly schedule", async (context) => {
 	const creations = [];
+	const analysisMessages = [];
 	const logs = [];
 	const scheduledTime = Date.UTC(2026, 6, 17, 9);
+	const { database, sqlite } = await createHistoryTestDatabase();
 	const env = {
+		ANALYSIS_QUEUE: {
+			send: async (body, options) => analysisMessages.push({ body, options }),
+		},
+		HISTORY_DB: database,
 		NEWS_SNAPSHOTTER: {
 			create: async (options) => {
 				creations.push(options);
@@ -58,4 +65,20 @@ test("dispatches priority one sites from the hourly schedule", async (context) =
 			triggeredAt: "2026-07-17T09:00:00.000Z",
 		},
 	]);
+	assert.deepEqual(analysisMessages, [
+		{
+			body: {
+				cohortId: "uk-national-hourly",
+				deadlineAt: "2026-07-17T09:45:00.000Z",
+				kind: "finalise-window",
+				windowId: "uk-national-hourly:2026-07-17T09:00:00.000Z",
+			},
+			options: { delaySeconds: 900 },
+		},
+	]);
+	assert.equal(
+		sqlite.prepare("SELECT expected_site_count FROM comparison_windows").get().expected_site_count,
+		6,
+	);
+	sqlite.close();
 });

@@ -35,10 +35,8 @@ export function HistoryChangePanel({ changes }: { changes: HistoryChange[] }) {
 											{events.map((change) => (
 												<li key={change.changeId}>
 													<strong>{changeLabel(change.type)}</strong>
-											{change.elementKey ? (
-												<small>
-													{change.elementKey.split(":").at(-1)}
-														</small>
+													{change.elementKey ? (
+														<small>{change.elementKey.split(":").at(-1)}</small>
 													) : null}
 													{change.before !== null || change.after !== null ? (
 														<p>

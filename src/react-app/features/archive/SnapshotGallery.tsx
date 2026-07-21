@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchAvailableHistorySites, fetchSnapshots } from "../../platform/api-client.ts";
+import { Button } from "../../shared/Button.tsx";
+import { CollectionControls, CollectionSummary } from "../../shared/CollectionSummary.tsx";
 import { captureWindowKey, groupLabel } from "../../shared/format.ts";
+import { NoDataState } from "../../shared/NoDataState.tsx";
+import { StatusMessage } from "../../shared/StatusMessage.tsx";
 import type { Snapshot, SnapshotGroup } from "../../core/types.ts";
 import {
 	DEFAULT_ARCHIVE_PERIOD,
@@ -80,19 +84,33 @@ export function SnapshotGallery() {
 	}, [snapshots]);
 	const groupedSnapshots = groupSnapshotVariants(filtered);
 	const groups = Map.groupBy(groupedSnapshots, ({ capturedAt }) => captureWindowKey(capturedAt));
+	const filtersActive = Boolean(
+		filters.brand ||
+		filters.category ||
+		filters.query ||
+		filters.period !== DEFAULT_ARCHIVE_PERIOD.period ||
+		(filters.period === "day" && filters.day),
+	);
 
 	return (
 		<>
-			<SnapshotFilters brands={brands} filters={filters} onChange={setFilters} />
-			<div className="gallery-status">
-				<span>
-					<strong>{periodDescription(filters)}</strong>
-					{groupedSnapshots.length} pages · {filtered.length} variants
-				</span>
-				<button onClick={() => setFilters(EMPTY_FILTERS)} type="button">
-					Clear filters
-				</button>
-			</div>
+			<CollectionControls
+				summary={
+					<CollectionSummary
+						action={
+							filtersActive ? (
+								<Button onClick={() => setFilters(EMPTY_FILTERS)} variant="quiet">
+									Clear filters
+								</Button>
+							) : null
+						}
+						details={`${groupedSnapshots.length} pages · ${filtered.length} variants`}
+						label={periodDescription(filters)}
+					/>
+				}
+			>
+				<SnapshotFilters brands={brands} filters={filters} onChange={setFilters} />
+			</CollectionControls>
 
 			{loading ? (
 				<>
@@ -103,10 +121,30 @@ export function SnapshotGallery() {
 				</>
 			) : null}
 			{error ? (
-				<div className="empty-state empty-state--error">Could not load snapshots. {error}</div>
+				<StatusMessage role="alert" tone="error">
+					Could not load snapshots. {error}
+				</StatusMessage>
 			) : null}
 			{!loading && !error && groupedSnapshots.length === 0 ? (
-				<div className="empty-state">No snapshots match those filters.</div>
+				<NoDataState
+					action={
+						<Button
+							onClick={() =>
+								setFilters(
+									filtersActive ? EMPTY_FILTERS : { ...EMPTY_FILTERS, period: "last-24-hours" },
+								)
+							}
+						>
+							{filtersActive ? "Clear filters" : "Show the last 24 hours"}
+						</Button>
+					}
+					description={
+						filtersActive
+							? "Try removing a search term or widening the selected date range."
+							: "No captures have landed in the last three hours. Try a wider window."
+					}
+					title="No snapshots found"
+				/>
 			) : null}
 
 			{[...groups].map(([capturedAt, items], groupIndex) => (

@@ -47,6 +47,19 @@ export function resolvePageMetadata(
 		};
 	}
 
+	if (page === "compare") {
+		const storyDetail = pathname.startsWith("/compare/stories/");
+		return {
+			canonicalPath: storyDetail ? pathname : "/compare",
+			description:
+				"Compare captured UK news homepages through evidence-linked story clusters, headline overlap and editorial prominence.",
+			indexable: !storyDetail,
+			title: storyDetail
+				? "Story Comparison | News Snapshotter"
+				: "Compare UK News Homepages | News Snapshotter",
+		};
+	}
+
 	if (page === "terms") {
 		return {
 			canonicalPath: "/terms",

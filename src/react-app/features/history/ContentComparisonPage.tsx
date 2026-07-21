@@ -2,14 +2,17 @@ import { useEffect, useState } from "react";
 
 import { isAbortError } from "../../shared/errors.ts";
 import type { ElementHistory } from "../../core/types.ts";
+import { ButtonLink } from "../../shared/Button.tsx";
 import { fetchElementHistory } from "../../platform/api-client.ts";
-import { displayName } from "../../shared/format.ts";
+
+import { NoDataState } from "../../shared/NoDataState.tsx";
+import { PageHeader } from "../../shared/PageHeaders.tsx";
+import { StatusMessage } from "../../shared/StatusMessage.tsx";
 import { ContentComparisonCard } from "./ContentComparisonCard.tsx";
 import { HistoryNav } from "./HistoryNav.tsx";
 
 export function ContentComparisonPage({
 	elementKeys,
-	preferredName,
 	site,
 }: {
 	elementKeys: string[];
@@ -53,34 +56,35 @@ export function ContentComparisonPage({
 		return () => controller.abort();
 	}, [site, elementKeySignature]);
 
-	const siteName = displayName(site, preferredName);
-
 	return (
-		<div className="history-page comparison-page">
-			<header className="history-heading history-heading--comparison">
-				<div>
-					<p className="eyebrow">{siteName} research</p>
-					<h1>Content trajectories</h1>
-				</div>
-				<div className="history-heading__intro">
-					<p>
-						See how selected content moved in prominence and position across the publisher page.
-					</p>
-					<a className="history-text-link" href={`/history/${encodeURIComponent(site)}/research`}>
+		<div className="page-stack">
+			<PageHeader
+				aside={
+					<a className="ui-text-link" href={`/history/${encodeURIComponent(site)}/research`}>
 						← Change selection
 					</a>
-				</div>
-			</header>
+				}
+				description="See how selected content moved in prominence and position across the publisher page."
+				title="Content trajectories"
+			/>
 			<HistoryNav current="research" site={site} />
 			{elementKeys.length < 2 ? (
-				<div className="empty-state">Select at least two items to compare.</div>
+				<NoDataState
+					action={
+						<ButtonLink href={`/history/${encodeURIComponent(site)}/research`}>
+							Choose content
+						</ButtonLink>
+					}
+					description="Return to research and select at least two captured content items."
+					title="Nothing selected for comparison"
+				/>
 			) : null}
-			{error ? <div className="empty-state empty-state--error">{error}</div> : null}
-			{loading ? (
-				<div aria-live="polite" className="empty-state" role="status">
-					Loading comparison…
-				</div>
+			{error ? (
+				<StatusMessage role="alert" tone="error">
+					{error}
+				</StatusMessage>
 			) : null}
+			{loading ? <StatusMessage role="status">Loading comparison…</StatusMessage> : null}
 			<div className="comparison-grid">
 				{items.map((item) => (
 					<ContentComparisonCard item={item} key={item.elementKey} site={site} />

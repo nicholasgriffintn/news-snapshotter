@@ -1,3 +1,5 @@
+import { Button } from "../../shared/Button.tsx";
+
 type LegalPageProps = {
 	kind: "privacy" | "terms";
 	onContact: () => void;
@@ -32,9 +34,9 @@ export function LegalPage({ kind, onContact }: LegalPageProps) {
 					<p>
 						To ask about information submitted through the contact form, request correction or
 						deletion, or raise another privacy concern,{" "}
-						<button className="text-button" onClick={onContact} type="button">
+						<Button onClick={onContact} variant="text">
 							contact us
-						</button>
+						</Button>
 						.
 					</p>
 				</section>
@@ -83,9 +85,9 @@ export function LegalPage({ kind, onContact }: LegalPageProps) {
 				<p>
 					If you believe material in the archive affects your rights, please identify the captured
 					URL and explain your concern using the{" "}
-					<button className="text-button" onClick={onContact} type="button">
+					<Button onClick={onContact} variant="text">
 						contact form
-					</button>
+					</Button>
 					. We review all requests promptly and, where appropriate, may remove or restrict access to
 					archived material.
 				</p>

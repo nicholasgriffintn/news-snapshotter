@@ -1,0 +1,392 @@
+/* Shared responsive layout overrides. */
+@media (max-width: 1100px) {
+	.comparison-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.comparison-card > .story-charts {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.comparison-card h2 {
+		max-width: 28ch;
+		font-size: clamp(1.65rem, 3.5vw, 2.35rem);
+	}
+}
+
+@media (max-width: 900px) {
+	.filters {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.search-field {
+		grid-column: 1 / -1;
+	}
+
+	.snapshot-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.history-evidence {
+		grid-template-columns: 1fr;
+	}
+
+	.history-scrubber {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	.history-scrubber__clock {
+		padding-bottom: 1rem;
+		border-bottom: 1px solid rgba(255, 247, 215, 0.14);
+	}
+
+	.history-evidence__screenshot {
+		border-right: 0;
+		border-bottom: 2px solid var(--cyan);
+	}
+
+	.history-story-rail {
+		max-height: 34rem;
+	}
+
+	.history-change-groups {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.history-site-filters {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.history-site-filters .search-field {
+		grid-column: 1 / -1;
+	}
+
+	.history-site-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.history-image-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.admin-console-header,
+	.admin-console-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.admin-console-header__intro > p:last-child {
+		max-width: 42rem;
+	}
+
+	.admin-access {
+		max-width: 42rem;
+	}
+
+	.admin-navigation {
+		position: static;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.admin-navigation__label {
+		grid-column: 1 / -1;
+	}
+
+	.extractor-list-controls {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.extractor-list li > div {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 640px) {
+	.shell {
+		width: min(calc(100% - 1.2rem), 1440px);
+	}
+
+	.masthead {
+		align-items: stretch;
+		flex-direction: column;
+		gap: 0.7rem;
+		min-height: 0;
+		padding: 0.8rem 0 0;
+	}
+
+	.brand-lockup {
+		justify-content: flex-start;
+		width: 100%;
+	}
+
+	.site-brand {
+		gap: 0.6rem;
+	}
+
+	.site-brand__icon {
+		width: 3.5rem;
+		height: 3.5rem;
+	}
+
+	.site-brand__environment {
+		width: 0.85rem;
+
+		height: 0.85rem;
+	}
+
+	.site-brand__name {
+		font-size: 1.15rem;
+	}
+
+	.pashi-family {
+		display: none;
+	}
+
+	.masthead .main-nav {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 2px;
+		width: 100%;
+		border-top: 1px solid rgba(255, 247, 215, 0.14);
+	}
+
+	.masthead .main-nav a {
+		min-width: 0;
+		padding: 0.55rem 0.6rem;
+		font-size: 0.67rem;
+		text-align: center;
+	}
+
+	.admin-console-header__intro h1 {
+		font-size: clamp(3.5rem, 17vw, 5.5rem);
+	}
+
+	.admin-access__heading {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.admin-navigation,
+	.history-operations {
+		grid-template-columns: 1fr;
+	}
+
+	.admin-navigation__label,
+	.history-operation--wide {
+		grid-column: auto;
+	}
+
+	.history-failure-diagnostics__filter {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.history-failure-diagnostics__list li {
+		grid-template-columns: 1fr;
+	}
+
+	.admin-workspace__body {
+		padding: 1rem;
+	}
+
+	.history-admin-totals,
+	.extractor-preview-summary {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.filters,
+	.snapshot-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.search-field {
+		grid-column: auto;
+	}
+
+	.collection-summary,
+	.collection-summary__copy {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 0.6rem;
+	}
+
+	.capture-group__heading {
+		align-items: flex-end;
+	}
+
+	.capture-group__heading h2 {
+		font-size: 2rem;
+	}
+
+	.modal {
+		padding: 0.5rem;
+	}
+
+	.modal__panel {
+		max-height: calc(100vh - 1rem);
+		box-shadow: 5px 5px 0 var(--pink);
+	}
+
+	.contact-modal__row {
+		grid-template-columns: 1fr;
+	}
+
+	.bot-check__captures {
+		grid-template-columns: 1fr;
+	}
+
+	.failure-log__filters,
+	.admin-key-form,
+	.extractor-list-controls {
+		grid-template-columns: 1fr;
+	}
+
+	.admin-key-form small {
+		grid-column: auto;
+	}
+
+	.extractor-list li {
+		grid-template-columns: 1fr auto;
+	}
+
+	.extractor-list li > div {
+		grid-column: 1 / -1;
+	}
+
+	.admin-tool__header--action,
+	.failure-item__heading,
+	.failure-item__meta {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.history-scrubber {
+		padding: 1rem;
+		box-shadow: 5px 5px 0 var(--pink);
+	}
+
+	.history-scrubber__heading {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.history-scrubber__controls {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.65rem;
+	}
+
+	.history-scrubber__controls > button {
+		width: 100%;
+	}
+
+	.history-scrubber__track {
+		grid-row: 1;
+		grid-column: 1 / -1;
+		margin-bottom: 0.35rem;
+	}
+
+	.history-scrubber__load {
+		width: 100%;
+		justify-self: stretch;
+	}
+
+	.history-nav {
+		overflow-x: auto;
+	}
+
+	.history-shot-scroll {
+		height: 60vh;
+		min-height: 28rem;
+	}
+
+	.history-change-groups {
+		grid-template-columns: 1fr;
+	}
+
+	.history-changes > header,
+	.history-capture-meta {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.history-site-filters,
+	.history-site-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.history-site-filters .search-field {
+		grid-column: auto;
+	}
+
+	.research-panel > .section-header,
+	.research-panel form,
+	.research-controls {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.research-search {
+		grid-template-columns: 1fr;
+	}
+
+	.research-search .ui-button {
+		width: 100%;
+	}
+
+	.research-panel > .section-header > div:first-child,
+	.research-controls,
+	.research-panel--images .section-header label {
+		width: 100%;
+	}
+
+	.research-results__status,
+	.research-pagination,
+	.research-figure-heading {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.trend-bars > div {
+		grid-template-columns: minmax(7rem, 0.6fr) 1fr;
+	}
+
+	.trend-bars > div > strong {
+		grid-column: 2;
+	}
+
+	.research-results li {
+		grid-template-columns: 1fr;
+	}
+
+	.history-image-grid,
+	.story-charts {
+		grid-template-columns: 1fr;
+	}
+
+	.comparison-card h2 {
+		font-size: clamp(1.45rem, 6.5vw, 2rem);
+	}
+
+	.comparison-card > .story-charts {
+		grid-template-columns: 1fr;
+	}
+
+	.comparison-card .story-charts figure {
+		padding: 0.8rem;
+	}
+
+	.comparison-card .story-charts svg {
+		height: 10rem;
+	}
+
+	.story-observations li {
+		grid-template-columns: 1fr;
+		gap: 0.8rem;
+	}
+
+	.story-history__pagination {
+		align-items: stretch;
+		flex-direction: column;
+	}
+}

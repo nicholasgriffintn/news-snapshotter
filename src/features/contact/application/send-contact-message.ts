@@ -1,5 +1,6 @@
 import type { Env } from "../../../platform/cloudflare/env.ts";
 import { InvalidInputError } from "../../../core/errors.ts";
+import { readBoundedJson } from "../../../core/request.ts";
 
 const EMAIL_PATTERN = /^[^\s@\r\n]+@[^\s@\r\n]+\.[^\s@\r\n]+$/;
 const CONTACT_REASONS = ["general", "privacy", "rights-holder"] as const;
@@ -79,7 +80,7 @@ function parseContactRequest(value: unknown): ContactRequest {
 }
 
 export async function sendContactMessage(request: Request, env: Env): Promise<Response> {
-	const contact = parseContactRequest(await request.json());
+	const contact = parseContactRequest(await readBoundedJson(request, 8_192));
 	const elapsed = Date.now() - contact.startedAt;
 
 	if (contact.website || elapsed < 3_000 || elapsed > 24 * 60 * 60 * 1_000) {
@@ -87,7 +88,8 @@ export async function sendContactMessage(request: Request, env: Env): Promise<Re
 	}
 
 	const connectingIp = request.headers.get("cf-connecting-ip")?.trim().toLowerCase();
-	const rateLimitKey = connectingIp && connectingIp.length <= 64 ? `ip:${connectingIp}` : "ip:unknown";
+	const rateLimitKey =
+		connectingIp && connectingIp.length <= 64 ? `ip:${connectingIp}` : "ip:unknown";
 	const rateLimit = await env.CONTACT_RATE_LIMIT.limit({ key: rateLimitKey });
 
 	if (!rateLimit.success) {

@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { Button } from "../../shared/Button.tsx";
+
 type AdminAccessPanelProps = {
 	apiKey: string;
 	onChange: (apiKey: string) => void;
@@ -36,9 +38,9 @@ export function AdminAccessPanel({ apiKey, onChange }: AdminAccessPanelProps) {
 						value={draft}
 					/>
 				</label>
-				<button className="admin-secondary-button" type="submit">
+				<Button type="submit" variant="secondary">
 					{apiKey ? "Update key" : "Unlock tools"}
-				</button>
+				</Button>
 				<small>The key stays in memory and is required for every admin action.</small>
 			</form>
 		</aside>

@@ -78,13 +78,11 @@ test("reindex scans bounded R2 pages and queues only desktop history artefacts",
 		batches.flat().map(({ body: message }) => message),
 		[
 			{
-				extractionKey:
-					"brand=bbc/site=bbc-home/device=desktop/a.extraction.v1.json.gz",
+				extractionKey: "brand=bbc/site=bbc-home/device=desktop/a.extraction.v1.json.gz",
 				kind: "extraction",
 			},
 			{
-				failureKey:
-					"brand=bbc/site=bbc-home/device=desktop/b.analysis-failure.json",
+				failureKey: "brand=bbc/site=bbc-home/device=desktop/b.analysis-failure.json",
 				kind: "failure",
 			},
 		],

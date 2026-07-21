@@ -17,6 +17,7 @@ export type {
 
 export type SiteDefinition = {
 	analysis?: SiteAnalysisConfig;
+	comparison?: SiteComparisonConfig;
 	displayName?: string;
 	interDeviceDelaySeconds?: number;
 	name: string;
@@ -37,6 +38,14 @@ export type SiteDefinition = {
 		addStyleTag?: string;
 	};
 	visibility?: "admin" | "public";
+};
+
+export type SiteComparisonConfig = {
+	cohorts: string[];
+	enabled: boolean;
+	jurisdiction: string;
+	language: string;
+	maxHomepageItems: number;
 };
 
 export type ExtractorName =

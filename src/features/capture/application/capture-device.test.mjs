@@ -177,6 +177,7 @@ test("stores desktop analysis independently from screenshot artefacts", async (c
 	assert.deepEqual(messages, [
 		{
 			captureId: `bbc-home:desktop:${triggeredAt}`,
+			enqueueComparison: true,
 			extractionKey: result.analysis.extractionKey,
 			kind: "extraction",
 			site: "bbc-home",
@@ -290,9 +291,7 @@ test("acknowledges CNN legal terms before capturing the page", async (context) =
 	);
 
 	assert.equal(result.status, "success");
-	assert.deepEqual(clicked, [
-		'div[role="dialog"][aria-modal="true"] > a[role="button"][href="#"]',
-	]);
+	assert.deepEqual(clicked, ['div[role="dialog"][aria-modal="true"] > a[role="button"][href="#"]']);
 });
 
 test("unlocks the document layout before progressively scrolling a full-page capture", async (context) => {
@@ -357,8 +356,7 @@ test("runs consent actions inside matching iframes", async (context) => {
 test("retries unresolved top-level consent actions after progressive rendering", async (context) => {
 	const clicked = [];
 	let legalTermsReads = 0;
-	const legalTermsSelector =
-		'div[role="dialog"][aria-modal="true"] > a[role="button"][href="#"]';
+	const legalTermsSelector = 'div[role="dialog"][aria-modal="true"] > a[role="button"][href="#"]';
 	const page = successfulPage({
 		url: () => "https://edition.cnn.com/",
 		waitForSelector: async (selector) => {
@@ -366,9 +364,7 @@ test("retries unresolved top-level consent actions after progressive rendering",
 				return null;
 			}
 			legalTermsReads += 1;
-			return legalTermsReads === 1
-				? null
-				: { click: async () => clicked.push(selector) };
+			return legalTermsReads === 1 ? null : { click: async () => clicked.push(selector) };
 		},
 	});
 	context.mock.method(puppeteer, "launch", async () => ({

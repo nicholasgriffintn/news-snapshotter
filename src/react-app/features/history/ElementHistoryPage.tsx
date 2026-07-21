@@ -1,11 +1,11 @@
-import { displayName } from "../../shared/format.ts";
+import { PageHeader } from "../../shared/PageHeaders.tsx";
+import { StatusMessage } from "../../shared/StatusMessage.tsx";
 import { ContentTimelineChart } from "./ContentTimelineChart.tsx";
 import { HistoryNav } from "./HistoryNav.tsx";
 import { useElementHistory } from "./useElementHistory.ts";
 
 export function ElementHistoryPage({
 	elementKey,
-	preferredName,
 	site,
 }: {
 	elementKey: string;
@@ -20,25 +20,22 @@ export function ElementHistoryPage({
 	const latest = history?.observations.at(-1);
 	const title = latest?.headline ?? "Content timeline";
 	return (
-		<div className="history-page story-history-page">
-			<header className="history-heading history-heading--story">
-				<div>
-					<p className="eyebrow">
-						{displayName(site, preferredName)} {history?.kind ?? "content"} history
-					</p>
-					<h1 className={title.length > 90 ? "story-title story-title--long" : "story-title"}>
-						{title}
-					</h1>
-				</div>
-			</header>
+		<div className="page-stack story-history-page">
+			<PageHeader title={title} variant="detail" />
 			<HistoryNav current="research" site={site} />
-			{error ? <div className="empty-state empty-state--error">{error}</div> : null}
-			{loading && !history ? <div className="empty-state">Loading content history…</div> : null}
+			{error ? (
+				<StatusMessage role="alert" tone="error">
+					{error}
+				</StatusMessage>
+			) : null}
+			{loading && !history ? (
+				<StatusMessage role="status">Loading content history…</StatusMessage>
+			) : null}
 			{history ? (
 				<>
 					{history.canonicalUrl ? (
 						<a
-							className="history-text-link"
+							className="ui-text-link"
 							href={history.canonicalUrl}
 							rel="noreferrer"
 							target="_blank"

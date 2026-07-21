@@ -18,13 +18,10 @@ test("restores a valid shareable research state", () => {
 });
 
 test("replaces invalid research filters with usable defaults", () => {
-	assert.deepEqual(
-		researchStateFromSearch("?mode=unknown&period=forever&month=2026-99", now),
-		{
-			mode: "category",
-			month: "2026-07",
-			period: "30d",
-			query: "",
-		},
-	);
+	assert.deepEqual(researchStateFromSearch("?mode=unknown&period=forever&month=2026-99", now), {
+		mode: "category",
+		month: "2026-07",
+		period: "30d",
+		query: "",
+	});
 });

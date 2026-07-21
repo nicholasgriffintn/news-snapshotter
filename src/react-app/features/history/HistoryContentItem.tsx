@@ -1,4 +1,5 @@
 import type { HistoryElement } from "../../core/types.ts";
+import { Badge } from "../../shared/Badge.tsx";
 import { contentHistoryPath } from "./history-routes.ts";
 
 export function HistoryContentItem({ element, site }: { element: HistoryElement; site: string }) {
@@ -7,8 +8,8 @@ export function HistoryContentItem({ element, site }: { element: HistoryElement;
 			<strong>{element.headline ?? `Untitled ${element.kind}`}</strong>
 			{element.summary ? <p>{element.summary}</p> : null}
 			<div className="history-story-tags">
-				<small>{element.category ?? element.section ?? "Front page"}</small>
-				<small>{element.position.viewportDepth.toFixed(1)} pages down</small>
+				<Badge as="small">{element.category ?? element.section ?? "Front page"}</Badge>
+				<Badge as="small">{element.position.viewportDepth.toFixed(1)} pages down</Badge>
 			</div>
 		</>
 	);

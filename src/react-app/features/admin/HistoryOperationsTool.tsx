@@ -7,6 +7,7 @@ import {
 	materialiseHistoryAggregates,
 	type HistoryAdminStatus,
 } from "../../platform/api-client.ts";
+import { Button } from "../../shared/Button.tsx";
 
 export function HistoryOperationsTool({
 	apiKey,
@@ -159,14 +160,9 @@ export function HistoryOperationsTool({
 						/>{" "}
 						Reset current index first
 					</label>
-					<button
-						className="impact-button"
-						disabled={!apiKey || running}
-						onClick={() => void indexArchive()}
-						type="button"
-					>
+					<Button disabled={!apiKey || running} onClick={() => void indexArchive()}>
 						{running ? "Indexing…" : "Run on deployed archive"}
-					</button>
+					</Button>
 				</div>
 				<p aria-live="polite" className="admin-status">
 					{!apiKey ? "Enter the API key above to manage history." : indexStatus}
@@ -198,14 +194,9 @@ export function HistoryOperationsTool({
 							value={timelineContent}
 						/>
 					</label>
-					<button
-						className="impact-button"
-						disabled={!apiKey}
-						onClick={() => void saveTimeline()}
-						type="button"
-					>
+					<Button disabled={!apiKey} onClick={() => void saveTimeline()}>
 						Save public timeline
-					</button>
+					</Button>
 				</div>
 				<p aria-live="polite" className="admin-status">
 					{timelineStatus}
@@ -233,14 +224,12 @@ export function HistoryOperationsTool({
 							value={aggregateMonth}
 						/>
 					</label>
-					<button
-						className="impact-button"
+					<Button
 						disabled={!apiKey || !aggregateSite.trim()}
 						onClick={() => void buildAggregates()}
-						type="button"
 					>
 						Materialise month
-					</button>
+					</Button>
 				</div>
 				<p aria-live="polite" className="admin-status">
 					{aggregateStatus}

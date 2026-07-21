@@ -51,9 +51,7 @@ test("orders histories without mutating the source list", () => {
 		["skysports-com", "bbc-home"],
 	);
 	assert.deepEqual(
-		filterHistorySites(sites, { category: "", order: "name", query: "" }).map(
-			({ site }) => site,
-		),
+		filterHistorySites(sites, { category: "", order: "name", query: "" }).map(({ site }) => site),
 		["bbc-home", "skysports-com"],
 	);
 	assert.equal(sites[0].site, "bbc-home");

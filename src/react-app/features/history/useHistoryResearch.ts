@@ -89,9 +89,9 @@ export function useHistoryResearch(site: string) {
 		changeMonth,
 		changePeriod,
 		changeQuery,
-		error: [search.error, trendError, imageHistory.error].filter(Boolean).join(" · ") || undefined,
 		hasMoreImages: imageHistory.hasMore,
 		hasMoreResults: search.hasMore,
+		imageError: imageHistory.error,
 		images: imageHistory.images,
 		loadMoreImages: imageHistory.loadMore,
 		loadMoreResults: search.loadMore,
@@ -104,9 +104,11 @@ export function useHistoryResearch(site: string) {
 		period,
 		query,
 		results: search.results,
+		searchError: search.error,
 		searching: search.loading,
 		selectedContent,
 		toggleContent,
+		trendError,
 		trends,
 	};
 }

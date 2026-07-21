@@ -37,6 +37,10 @@ import { TIMES_SITES } from "./sites/times.ts";
 import { USA_TODAY_SITES } from "./sites/usa-today.ts";
 import { WASHINGTON_POST_SITES } from "./sites/washington-post.ts";
 import { YAHOO_NEWS_SITES } from "./sites/yahoo-news.ts";
+import {
+	COMPARISON_COHORTS,
+	assertComparisonConfiguration,
+} from "../../comparison/domain/configuration.ts";
 
 export const SITES = [
 	...withBrand("apnews", AP_NEWS_SITES),
@@ -78,3 +82,5 @@ export const SITES = [
 	...withIndividualBrands(OTHER_SITES, "local"),
 	...withBrand("yahoo-news", YAHOO_NEWS_SITES),
 ];
+
+assertComparisonConfiguration(SITES, COMPARISON_COHORTS);

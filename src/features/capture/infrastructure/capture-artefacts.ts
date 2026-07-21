@@ -71,6 +71,7 @@ export async function storeCaptureArtefacts(input: {
 		analysis?.status === "stored" && analysis.extractionKey
 			? {
 					captureId: `${site.name}:${device}:${triggeredAt}`,
+					enqueueComparison: true,
 					extractionKey: analysis.extractionKey,
 					kind: "extraction" as const,
 					site: site.name,

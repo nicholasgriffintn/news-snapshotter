@@ -1,19 +1,22 @@
-import { dateTimeLabel, displayName } from "../../shared/format.ts";
+import { dateTimeLabel } from "../../shared/format.ts";
+import { ButtonLink } from "../../shared/Button.tsx";
+import { Card } from "../../shared/Card.tsx";
 import type { HistorySiteListItem } from "./domain/history-site-filter.ts";
 
 export function HistorySiteCard({ site }: { site: HistorySiteListItem }) {
 	const historyPath = `/history/${encodeURIComponent(site.site)}`;
 
 	return (
-		<article className="history-site-card">
-			<header>
-				<span>{site.category ? displayName(site.category) : "Publisher"}</span>
-				<time dateTime={site.lastCaptureAt}>Updated {dateTimeLabel(site.lastCaptureAt)}</time>
-			</header>
-			<h2>
-				<a href={historyPath}>{site.displayName}</a>
-			</h2>
-			<dl>
+		<Card className="history-site-card">
+			<div className="ui-card-meta__copy">
+				<h2 className="ui-card-title">
+					<a href={historyPath}>{site.displayName}</a>
+				</h2>
+				<span className="ui-card-description--meta">
+					<time dateTime={site.lastCaptureAt}>Updated {dateTimeLabel(site.lastCaptureAt)}</time>
+				</span>
+			</div>
+			<dl className="ui-card-stats">
 				<div>
 					<dt>Captures</dt>
 					<dd>{site.captureCount.toLocaleString("en-GB")}</dd>
@@ -23,10 +26,17 @@ export function HistorySiteCard({ site }: { site: HistorySiteListItem }) {
 					<dd>{site.contentCount.toLocaleString("en-GB")}</dd>
 				</div>
 			</dl>
-			<nav aria-label={`${site.displayName} history views`}>
-				<a href={historyPath}>View captures <span aria-hidden="true">→</span></a>
-				<a href={`${historyPath}/research`}>Open research <span aria-hidden="true">→</span></a>
+			<nav
+				aria-label={`${site.displayName} history views`}
+				className="ui-card-actions ui-card-actions--split"
+			>
+				<ButtonLink href={historyPath} layout="card" variant="secondary">
+					View captures <span aria-hidden="true">→</span>
+				</ButtonLink>
+				<ButtonLink href={`${historyPath}/research`} layout="card">
+					Open research <span aria-hidden="true">→</span>
+				</ButtonLink>
 			</nav>
-		</article>
+		</Card>
 	);
 }

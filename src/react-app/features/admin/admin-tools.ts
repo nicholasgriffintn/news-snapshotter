@@ -1,4 +1,10 @@
-export type AdminToolId = "capture" | "diagnostics" | "failures" | "history" | "extractors";
+export type AdminToolId =
+	| "capture"
+	| "comparison"
+	| "diagnostics"
+	| "failures"
+	| "history"
+	| "extractors";
 
 type AdminToolDetails = {
 	description: string;
@@ -11,6 +17,10 @@ export const ADMIN_TOOL_DETAILS: Record<AdminToolId, AdminToolDetails> = {
 	capture: {
 		description: "Start a capture batch by priority, publisher or individual site.",
 		label: "Run captures",
+	},
+	comparison: {
+		description: "Review processing, handle submitted reports and backfill comparison analysis.",
+		label: "Comparison operations",
 	},
 	diagnostics: {
 		description: "Test capture profiles against bot detection before a live run.",
@@ -32,6 +42,7 @@ export const ADMIN_TOOL_DETAILS: Record<AdminToolId, AdminToolDetails> = {
 
 export const ADMIN_TOOL_GROUPS: Array<{ label: string; tools: AdminToolId[] }> = [
 	{ label: "Capture", tools: ["capture"] },
+	{ label: "Comparison", tools: ["comparison"] },
 	{ label: "Diagnostics", tools: ["diagnostics", "failures"] },
 	{ label: "Data tools", tools: ["history", "extractors"] },
 ];

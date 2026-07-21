@@ -508,3 +508,121 @@ export async function downloadExtractorFixture(apiKey: string, key: string): Pro
 	anchor.click();
 	URL.revokeObjectURL(objectUrl);
 }
+
+export type ComparisonAnalysisRun = {
+	attemptCount: number;
+	captureId?: string;
+	completedAt?: string;
+	createdAt: string;
+	errorCode?: string;
+	errorMessage?: string;
+	kind: string;
+	model: string;
+	runId: string;
+	site?: string;
+	status: string;
+	storyId?: string;
+	windowId?: string;
+};
+
+export type ComparisonFeedback = {
+	evidenceId?: string;
+	feedbackId: string;
+	label: string;
+	note?: string;
+	reason: string;
+	resolution?: string;
+	reviewStatus: string;
+	revisionId: string;
+	storyId: string;
+	submittedAt: string;
+};
+
+type ComparisonRunRecord = Record<string, number | string | null>;
+
+function optionalRecordString(record: ComparisonRunRecord, key: string): string | undefined {
+	const value = record[key];
+	return typeof value === "string" && value ? value : undefined;
+}
+
+export async function fetchComparisonRuns(
+	apiKey: string,
+	status?: string,
+): Promise<ComparisonAnalysisRun[]> {
+	const search = new URLSearchParams({ limit: "100" });
+	if (status) {
+		search.set("status", status);
+	}
+	const response = await fetch(`/api/admin/comparison/runs?${search}`, {
+		headers: { authorization: `Bearer ${apiKey}` },
+	});
+	const records = (await readJson<{ runs: ComparisonRunRecord[] }>(response)).runs;
+
+	return records.map((record) => ({
+		attemptCount: Number(record.attempt_count ?? 0),
+		captureId: optionalRecordString(record, "capture_id"),
+		completedAt: optionalRecordString(record, "completed_at"),
+		createdAt: String(record.created_at),
+		errorCode: optionalRecordString(record, "error_code"),
+		errorMessage: optionalRecordString(record, "error_message"),
+		kind: String(record.kind),
+		model: String(record.model),
+		runId: String(record.run_id),
+		site: optionalRecordString(record, "site"),
+		status: String(record.status),
+		storyId: optionalRecordString(record, "story_id"),
+		windowId: optionalRecordString(record, "window_id"),
+	}));
+}
+
+export async function fetchComparisonFeedback(
+	apiKey: string,
+	status: "dismissed" | "pending" | "resolved",
+): Promise<ComparisonFeedback[]> {
+	const search = new URLSearchParams({ limit: "100", status });
+	const response = await fetch(`/api/admin/comparison/feedback?${search}`, {
+		headers: { authorization: `Bearer ${apiKey}` },
+	});
+	const records = (await readJson<{ feedback: ComparisonRunRecord[] }>(response)).feedback;
+
+	return records.map((record) => ({
+		evidenceId: optionalRecordString(record, "evidence_id"),
+		feedbackId: String(record.feedback_id),
+		label: String(record.normalised_label),
+		note: optionalRecordString(record, "note"),
+		reason: String(record.reason),
+		resolution: optionalRecordString(record, "resolution"),
+		reviewStatus: String(record.review_status),
+		revisionId: String(record.revision_id),
+		storyId: String(record.story_id),
+		submittedAt: String(record.submitted_at),
+	}));
+}
+
+export async function requeueComparisonCaptures(
+	apiKey: string,
+	captureIds: string[],
+): Promise<void> {
+	const response = await fetch("/api/admin/comparison/requeue", {
+		body: JSON.stringify({ captureIds }),
+		headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+		method: "POST",
+	});
+	await readJson(response);
+}
+
+export async function resolveComparisonFeedback(
+	apiKey: string,
+	feedbackId: string,
+	input: { resolution: string; status: "dismissed" | "resolved" },
+): Promise<void> {
+	const response = await fetch(
+		`/api/admin/comparison/feedback/${encodeURIComponent(feedbackId)}/resolve`,
+		{
+			body: JSON.stringify(input),
+			headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+			method: "POST",
+		},
+	);
+	await readJson(response);
+}

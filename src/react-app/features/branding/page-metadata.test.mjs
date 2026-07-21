@@ -24,11 +24,7 @@ test("gives stable publisher overviews unique indexable metadata", () => {
 });
 
 test("keeps variable research URLs out of the index and canonicalises them to the publisher", () => {
-	const metadata = resolvePageMetadata(
-		"history",
-		"bbc-home",
-		"/history/bbc-home/compare",
-	);
+	const metadata = resolvePageMetadata("history", "bbc-home", "/history/bbc-home/compare");
 
 	assert.equal(metadata.canonicalPath, "/history/bbc-home");
 	assert.equal(metadata.indexable, false);
@@ -38,4 +34,14 @@ test("keeps utility and legal routes out of the search index", () => {
 	for (const page of ["admin", "privacy", "terms"]) {
 		assert.equal(resolvePageMetadata(page, "", `/${page}`).indexable, false);
 	}
+});
+
+test("indexes the comparison briefing but not individual generated comparisons", () => {
+	const briefing = resolvePageMetadata("compare", "", "/compare");
+	const story = resolvePageMetadata("compare", "", "/compare/stories/story-1");
+
+	assert.equal(briefing.indexable, true);
+	assert.equal(briefing.canonicalPath, "/compare");
+	assert.equal(story.indexable, false);
+	assert.equal(story.canonicalPath, "/compare/stories/story-1");
 });

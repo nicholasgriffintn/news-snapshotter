@@ -1,5 +1,9 @@
 import { displayName } from "../../shared/format.ts";
+import { NoDataState } from "../../shared/NoDataState.tsx";
+import { PageHeader } from "../../shared/PageHeaders.tsx";
+import { StatusMessage } from "../../shared/StatusMessage.tsx";
 import { HistoryCaptureView } from "./HistoryCaptureView";
+import { HistoryCaptureSkeleton } from "./HistoryCaptureSkeleton.tsx";
 import { HistoryChangePanel } from "./HistoryChangePanel";
 import { HistoryFailureNotice } from "./HistoryFailureNotice.tsx";
 import { HistoryNav } from "./HistoryNav.tsx";
@@ -9,25 +13,23 @@ import { useHistoryPage } from "./useHistoryPage.ts";
 export function HistoryPage({ preferredName, site }: { preferredName?: string; site: string }) {
 	const history = useHistoryPage(site);
 	return (
-		<div className="history-page">
-			<header className="history-heading history-heading--archive">
-				<div>
-					<h1>{displayName(site, preferredName)} history</h1>
-				</div>
-				<div className="history-heading__intro">
-					<p>Review each captured front page alongside its extracted content and layout.</p>
-					{history.capture ? (
+		<div className="page-stack">
+			<PageHeader
+				aside={
+					history.capture ? (
 						<a
-							className="history-text-link"
+							className="ui-text-link"
 							href={history.capture.capture.sourceUrl}
 							rel="noreferrer"
 							target="_blank"
 						>
 							Visit original publisher ↗
 						</a>
-					) : null}
-				</div>
-			</header>
+					) : null
+				}
+				description="Review each captured front page alongside its extracted content and layout."
+				title={`${displayName(site, preferredName)} history`}
+			/>
 			<HistoryNav current="captures" site={site} />
 
 			<HistoryScrubber
@@ -48,15 +50,23 @@ export function HistoryPage({ preferredName, site }: { preferredName?: string; s
 			) : null}
 
 			{history.loading && !history.capture ? (
-				<div className="empty-state">Loading structured history…</div>
+				<>
+					<p aria-live="polite" className="sr-only">
+						Loading structured history…
+					</p>
+					<HistoryCaptureSkeleton />
+				</>
 			) : null}
 			{history.error ? (
-				<div className="empty-state empty-state--error">
+				<StatusMessage role="alert" tone="error">
 					Could not load history. {history.error}
-				</div>
+				</StatusMessage>
 			) : null}
 			{!history.loading && !history.error && history.captures.length === 0 ? (
-				<div className="empty-state">No analysed captures are available for this site.</div>
+				<NoDataState
+					description="Once a capture has been analysed, its page structure and changes will appear here."
+					title="No analysed captures available"
+				/>
 			) : null}
 
 			{history.capture ? (

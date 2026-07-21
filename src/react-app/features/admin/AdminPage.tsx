@@ -4,6 +4,7 @@ import { AdminAccessPanel } from "./AdminAccessPanel.tsx";
 import { AdminNavigation } from "./AdminNavigation.tsx";
 import { BotCheckTool } from "./BotCheckTool";
 import { CaptureTool } from "./CaptureTool";
+import { ComparisonOperationsTool } from "./ComparisonOperationsTool.tsx";
 import { ADMIN_TOOL_DETAILS, adminStateFromSearch, type AdminToolId } from "./admin-tools.ts";
 import { FailureLog } from "./FailureLog";
 import { ExtractorPreviewTool } from "./ExtractorPreviewTool.tsx";
@@ -79,6 +80,7 @@ export function AdminPage() {
 						{activeTool === "extractors" ? (
 							<ExtractorPreviewTool apiKey={apiKey} initialSite={initialState.site} />
 						) : null}
+						{activeTool === "comparison" ? <ComparisonOperationsTool apiKey={apiKey} /> : null}
 					</div>
 				</section>
 			</div>

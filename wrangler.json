@@ -20,6 +20,10 @@
 	"dev": {
 		"port": 8787
 	},
+	"vars": {
+		"COMPARISON_CANARY_MODEL": "",
+		"COMPARISON_CANARY_PERCENT": "0"
+	},
 	"triggers": {
 		"crons": ["0 * * * *"]
 	},
@@ -32,6 +36,16 @@
 	"browser": {
 		"binding": "BROWSER"
 	},
+	"ai": {
+		"binding": "AI"
+	},
+	"vectorize": [
+		{
+			"binding": "STORY_VECTORS",
+			"index_name": "news-story-embeddings-v1",
+			"remote": true
+		}
+	],
 	"workflows": [
 		{
 			"name": "news-snapshotter",
@@ -51,6 +65,14 @@
 			"namespace_id": "78241",
 			"simple": {
 				"limit": 3,
+				"period": 60
+			}
+		},
+		{
+			"name": "COMPARISON_FEEDBACK_RATE_LIMIT",
+			"namespace_id": "78242",
+			"simple": {
+				"limit": 5,
 				"period": 60
 			}
 		}
@@ -91,6 +113,10 @@
 			{
 				"queue": "news-snapshotter-history-index",
 				"binding": "HISTORY_INDEX_QUEUE"
+			},
+			{
+				"queue": "news-snapshotter-analysis",
+				"binding": "ANALYSIS_QUEUE"
 			}
 		],
 		"consumers": [
@@ -100,6 +126,14 @@
 				"max_batch_timeout": 5,
 				"max_retries": 5,
 				"dead_letter_queue": "news-snapshotter-history-index-dlq",
+				"max_concurrency": 1
+			},
+			{
+				"queue": "news-snapshotter-analysis",
+				"max_batch_size": 1,
+				"max_batch_timeout": 5,
+				"max_retries": 5,
+				"dead_letter_queue": "news-snapshotter-analysis-dlq",
 				"max_concurrency": 1
 			}
 		]

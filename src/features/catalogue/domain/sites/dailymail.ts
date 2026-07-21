@@ -5,6 +5,13 @@ export const DAILYMAIL_SITES = [
 		url: "https://www.dailymail.com/home/index.html",
 		category: "news" as const,
 		priority: 1 as const,
+		comparison: {
+			cohorts: ["uk-national-hourly"],
+			enabled: true,
+			jurisdiction: "GB",
+			language: "en",
+			maxHomepageItems: 40,
+		},
 		analysis: {
 			device: "desktop" as const,
 			extractor: "dailymail-front-page" as const,

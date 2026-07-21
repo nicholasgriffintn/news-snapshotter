@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { startSnapshotWorkflow } from "../../platform/api-client.ts";
+import { Button } from "../../shared/Button.tsx";
 import { displayName } from "../../shared/format.ts";
 import type { CapturePriority, CaptureProviderName, CatalogueSite } from "../../core/types.ts";
 
@@ -166,9 +167,9 @@ export function CaptureTool({ apiKey, catalogue, providers }: CaptureToolProps) 
 				</select>
 			</label>
 
-			<button className="impact-button" disabled={!apiKey || submitting} type="submit">
+			<Button disabled={!apiKey || submitting} type="submit">
 				{submitting ? "Starting…" : "Start capture"}
-			</button>
+			</Button>
 			<p aria-live="polite" className="admin-status">
 				{!apiKey && !status ? "Enter the API key above to enable capture actions." : status}
 			</p>

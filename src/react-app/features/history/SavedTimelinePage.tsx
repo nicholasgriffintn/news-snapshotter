@@ -4,6 +4,8 @@ import { isAbortError } from "../../shared/errors.ts";
 import type { SavedTimeline } from "../../core/types.ts";
 import { fetchSavedTimeline } from "../../platform/api-client.ts";
 import { historyScreenshotUrl } from "../../platform/api-client.ts";
+import { PageHeader } from "../../shared/PageHeaders.tsx";
+import { StatusMessage } from "../../shared/StatusMessage.tsx";
 import { HistoryNav } from "./HistoryNav.tsx";
 
 export function SavedTimelinePage({ site, slug }: { site: string; slug: string }) {
@@ -29,17 +31,19 @@ export function SavedTimelinePage({ site, slug }: { site: string; slug: string }
 	}, [slug]);
 
 	return (
-		<div className="history-page saved-timeline-page">
-			<header className="history-heading">
-				<div>
-					<h1>{timeline?.name ?? "Timeline"}</h1>
-				</div>
-			</header>
+		<div className="page-stack saved-timeline-page">
+			<PageHeader title={timeline?.name ?? "Timeline"} />
 			<HistoryNav current="research" site={site} />
-			{error ? <div className="empty-state empty-state--error">{error}</div> : null}
-			{!timeline && !error ? <div className="empty-state">Loading timeline…</div> : null}
+			{error ? (
+				<StatusMessage role="alert" tone="error">
+					{error}
+				</StatusMessage>
+			) : null}
+			{!timeline && !error ? <StatusMessage role="status">Loading timeline…</StatusMessage> : null}
 			{timeline?.truncated ? (
-				<div className="history-alert">This view is capped at the first 1,000 observations.</div>
+				<StatusMessage tone="info">
+					This view is capped at the first 1,000 observations.
+				</StatusMessage>
 			) : null}
 			<ol className="saved-timeline">
 				{timeline?.observations.map((observation, index) => (

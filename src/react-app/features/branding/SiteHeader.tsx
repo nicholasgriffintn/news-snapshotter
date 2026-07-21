@@ -59,6 +59,13 @@ export function SiteHeader({ page }: SiteHeaderProps) {
 				>
 					History
 				</a>
+				<a
+					className={page === "compare" ? "active" : ""}
+					href="/compare"
+					aria-current={page === "compare" ? "page" : undefined}
+				>
+					Compare
+				</a>
 			</nav>
 		</header>
 	);

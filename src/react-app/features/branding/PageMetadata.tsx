@@ -16,10 +16,9 @@ export function PageMetadata({ historySite, page }: PageMetadataProps) {
 		const canonicalUrl = new URL(metadata.canonicalPath, SITE_ORIGIN).href;
 
 		document.title = metadata.title;
-		document.querySelector<HTMLMetaElement>("#page-description")?.setAttribute(
-			"content",
-			metadata.description,
-		);
+		document
+			.querySelector<HTMLMetaElement>("#page-description")
+			?.setAttribute("content", metadata.description);
 		document
 			.querySelector<HTMLMetaElement>("#page-robots")
 			?.setAttribute(

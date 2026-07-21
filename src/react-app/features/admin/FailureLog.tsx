@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { clearCaptureFailures, fetchCaptureFailures } from "../../platform/api-client.ts";
+import { Button } from "../../shared/Button.tsx";
+import { Card } from "../../shared/Card.tsx";
 import { dateTimeLabel, displayName } from "../../shared/format.ts";
 import type { CaptureFailure } from "../../core/types.ts";
 
@@ -88,22 +90,20 @@ export function FailureLog({ apiKey, initialSite = "" }: { apiKey: string; initi
 			<header className="admin-tool__header admin-tool__header--action">
 				<h3>Recent capture failures</h3>
 				<div className="admin-tool__actions">
-					<button
-						className="admin-secondary-button"
+					<Button
 						disabled={!apiKey || loading || clearing}
 						onClick={() => void load()}
-						type="button"
+						variant="secondary"
 					>
 						Refresh
-					</button>
-					<button
-						className="admin-secondary-button admin-secondary-button--danger"
+					</Button>
+					<Button
 						disabled={!apiKey || loading || clearing}
 						onClick={() => void clearFailures()}
-						type="button"
+						variant="danger"
 					>
 						{clearing ? "Clearing…" : "Clear all"}
-					</button>
+					</Button>
 				</div>
 			</header>
 
@@ -137,7 +137,7 @@ export function FailureLog({ apiKey, initialSite = "" }: { apiKey: string; initi
 			{visibleFailures.length > 0 ? (
 				<div className="failure-list">
 					{visibleFailures.map((failure) => (
-						<article
+						<Card
 							className="failure-item"
 							key={`${failure.capturedAt}-${failure.name}-${failure.device}`}
 						>
@@ -157,20 +157,19 @@ export function FailureLog({ apiKey, initialSite = "" }: { apiKey: string; initi
 									Open publisher ↗
 								</a>
 							</div>
-						</article>
+						</Card>
 					))}
 				</div>
 			) : null}
 
 			{hasMore ? (
-				<button
-					className="admin-secondary-button"
+				<Button
 					disabled={loading || !cursor}
 					onClick={() => void load(cursor, true)}
-					type="button"
+					variant="secondary"
 				>
 					Load more
-				</button>
+				</Button>
 			) : null}
 		</section>
 	);

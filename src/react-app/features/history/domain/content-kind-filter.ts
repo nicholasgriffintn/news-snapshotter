@@ -10,6 +10,16 @@ export const HISTORY_CONTENT_KINDS: readonly PageElementKind[] = [
 	"other",
 ];
 
+export const HISTORY_CONTENT_KIND_LABELS: Readonly<Record<PageElementKind, string>> = {
+	audio: "Audio",
+	heading: "Headings",
+	image: "Images",
+	navigation: "Navigation",
+	other: "Other",
+	story: "Stories",
+	video: "Videos",
+};
+
 export const DEFAULT_HISTORY_CONTENT_KINDS: readonly PageElementKind[] = [
 	"story",
 	"video",

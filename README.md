@@ -140,6 +140,14 @@ adding their bindings to `wrangler.json`:
 pnpm wrangler d1 create news-snapshotter-history
 pnpm wrangler queues create news-snapshotter-history-index
 pnpm wrangler queues create news-snapshotter-history-index-dlq
+pnpm wrangler queues create news-snapshotter-analysis
+pnpm wrangler queues create news-snapshotter-analysis-dlq
+pnpm wrangler vectorize create news-story-embeddings-v1 --dimensions=768 --metric=cosine
+pnpm wrangler vectorize create-metadata-index news-story-embeddings-v1 --propertyName=cohort --type=string
+pnpm wrangler vectorize create-metadata-index news-story-embeddings-v1 --propertyName=embeddingVersion --type=number
+pnpm wrangler vectorize create-metadata-index news-story-embeddings-v1 --propertyName=language --type=string
+pnpm wrangler vectorize create-metadata-index news-story-embeddings-v1 --propertyName=capturedEpoch --type=number
+pnpm wrangler vectorize create-metadata-index news-story-embeddings-v1 --propertyName=site --type=string
 ```
 
 Add the returned D1 UUID as `HISTORY_DB`, bind the producer as `HISTORY_INDEX_QUEUE`, and attach

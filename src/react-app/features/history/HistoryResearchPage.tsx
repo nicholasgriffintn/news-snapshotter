@@ -1,4 +1,6 @@
+import { PublisherComparisonPanel } from "./PublisherComparisonPanel.tsx";
 import { displayName } from "../../shared/format.ts";
+import { PageHeader } from "../../shared/PageHeaders.tsx";
 import { HistoryImageTimeline } from "./HistoryImageTimeline.tsx";
 import { HistoryNav } from "./HistoryNav.tsx";
 import { HistorySearchPanel } from "./HistorySearchPanel.tsx";
@@ -16,18 +18,14 @@ export function HistoryResearchPage({
 	const siteName = displayName(site, preferredName);
 
 	return (
-		<div className="history-page research-page">
-			<header className="history-heading history-heading--research">
-				<div>
-					<h1>{siteName} research</h1>
-				</div>
-				<div className="history-heading__intro">
-					<p>Find coverage, see what occupied the page, and review the imagery used over time.</p>
-				</div>
-			</header>
+		<div className="page-stack research-page">
+			<PageHeader
+				description="Find coverage, see what occupied the page, and review the imagery used over time."
+				title={`${siteName} research`}
+			/>
 			<HistoryNav current="research" site={site} />
-			{research.error ? <div className="history-alert">{research.error}</div> : null}
 			<HistorySearchPanel
+				error={research.searchError}
 				hasMore={research.hasMoreResults}
 				loading={research.searching}
 				loadingMore={research.loadingMoreResults}
@@ -41,6 +39,7 @@ export function HistoryResearchPage({
 				site={site}
 			/>
 			<HistoryTrendPanel
+				error={research.trendError}
 				loading={research.loadingTrends}
 				mode={research.mode}
 				onMode={research.changeMode}
@@ -48,7 +47,9 @@ export function HistoryResearchPage({
 				period={research.period}
 				trends={research.trends}
 			/>
+			<PublisherComparisonPanel site={site} />
 			<HistoryImageTimeline
+				error={research.imageError}
 				hasMore={research.hasMoreImages}
 				images={research.images}
 				loading={research.loadingImages}

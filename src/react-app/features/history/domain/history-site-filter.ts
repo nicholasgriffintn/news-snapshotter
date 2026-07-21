@@ -35,7 +35,9 @@ export function filterHistorySites(
 
 	return filtered.sort((left, right) => {
 		if (filters.order === "captures") {
-			return right.captureCount - left.captureCount || left.displayName.localeCompare(right.displayName);
+			return (
+				right.captureCount - left.captureCount || left.displayName.localeCompare(right.displayName)
+			);
 		}
 		if (filters.order === "name") {
 			return left.displayName.localeCompare(right.displayName);

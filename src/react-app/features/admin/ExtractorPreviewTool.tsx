@@ -7,6 +7,7 @@ import {
 	type ExtractionSummary,
 	type ExtractorPreview,
 } from "../../platform/api-client.ts";
+import { Button } from "../../shared/Button.tsx";
 import { displayName } from "../../shared/format.ts";
 
 export function ExtractorPreviewTool({
@@ -127,9 +128,9 @@ export function ExtractorPreviewTool({
 						<option value={100}>100</option>
 					</select>
 				</label>
-				<button className="impact-button" disabled={!apiKey} type="submit">
+				<Button disabled={!apiKey} type="submit">
 					Refresh list
-				</button>
+				</Button>
 			</form>
 			<p aria-live="polite" className="admin-status">
 				{!apiKey ? "Enter the API key above to list private extractions." : listStatus}
@@ -153,13 +154,12 @@ export function ExtractorPreviewTool({
 							<span>
 								<strong>{extraction.matchedElements}</strong> elements
 							</span>
-							<button
-								className="admin-secondary-button"
+							<Button
 								onClick={() => void loadPreview(extraction.extractionKey)}
-								type="button"
+								variant="secondary"
 							>
 								{loadingKey === extraction.extractionKey ? "Loading…" : "Preview"}
-							</button>
+							</Button>
 						</li>
 					))}
 				</ul>
@@ -183,13 +183,12 @@ export function ExtractorPreviewTool({
 							<strong>v{preview.capture.extractor.version}</strong> {preview.capture.extractor.name}
 						</span>
 					</div>
-					<button
-						className="admin-secondary-button"
+					<Button
 						onClick={() => void downloadExtractorFixture(apiKey, preview.extractionKey)}
-						type="button"
+						variant="secondary"
 					>
 						Download reviewed fixture JSON
-					</button>
+					</Button>
 					{preview.warnings.length > 0 ? (
 						<ul className="extractor-warnings">
 							{preview.warnings.map((warning) => (

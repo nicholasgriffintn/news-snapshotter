@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { startBotCheck, type BotCheckResult } from "../../platform/api-client.ts";
+import { Button } from "../../shared/Button.tsx";
 import { displayName } from "../../shared/format.ts";
 import { groupSnapshotVariants } from "../archive/domain/snapshot-groups.ts";
 import type { Snapshot, SnapshotGroup } from "../../core/types.ts";
@@ -94,13 +95,9 @@ export function BotCheckTool({ apiKey, profiles }: { apiKey: string; profiles: s
 					</select>
 				</label>
 
-				<button
-					className="impact-button"
-					disabled={!apiKey || profiles.length === 0 || submitting}
-					type="submit"
-				>
+				<Button disabled={!apiKey || profiles.length === 0 || submitting} type="submit">
 					{submitting ? "Capturing…" : "Run bot check"}
-				</button>
+				</Button>
 
 				<p aria-live="polite" className="admin-status">
 					{!apiKey && !status ? "Enter the API key above to run this tool." : status}

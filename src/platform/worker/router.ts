@@ -13,7 +13,7 @@ import { CAPTURE_PROVIDER_NAMES } from "../../features/capture/adapters/provider
 import { sendContactMessage } from "../../features/contact/application/send-contact-message.ts";
 import type { Env } from "../cloudflare/env.ts";
 import { isAuthorised } from "./auth.ts";
-import { errorMessage, InvalidInputError } from "../../core/errors.ts";
+import { errorMessage, InvalidInputError, PayloadTooLargeError } from "../../core/errors.ts";
 import { thumbnailKey } from "../../core/storage-key.ts";
 import {
 	listScreenshots,
@@ -32,6 +32,8 @@ import { handleHistoryRequest } from "../../features/history/application/history
 import { handleHistoryAdminRequest } from "../../features/history/application/history-admin.ts";
 import { handleHistoryResearchRequest } from "../../features/history/application/history-research-api.ts";
 import { applyApiCachePolicy } from "./cache-control.ts";
+import { handleComparisonRequest } from "../../features/comparison/application/comparison-api.ts";
+import { handleComparisonAdminRequest } from "../../features/comparison/application/comparison-admin.ts";
 
 const SITE_DISPLAY_NAMES = new Map<string, string>();
 for (const site of SITES) {
@@ -146,6 +148,17 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 		return jsonError("Not found", 404);
 	}
 
+	if (url.pathname.startsWith("/api/comparison/")) {
+		if (!env.HISTORY_DB) {
+			return jsonError("Comparison storage is not configured", 503);
+		}
+		const comparisonResponse = await handleComparisonRequest(request, env);
+		if (comparisonResponse) {
+			return comparisonResponse;
+		}
+		return jsonError("Not found", 404);
+	}
+
 	if (request.method === "POST" && url.pathname === "/api/contact") {
 		return sendContactMessage(request, env);
 	}
@@ -178,6 +191,13 @@ async function routeRequest(request: Request, env: Env): Promise<Response> {
 		}
 	}
 
+	if (url.pathname.startsWith("/api/admin/comparison/")) {
+		const comparisonAdminResponse = await handleComparisonAdminRequest(request, env);
+		if (comparisonAdminResponse) {
+			return comparisonAdminResponse;
+		}
+	}
+
 	if (request.method === "GET" && url.pathname.startsWith("/api/workflows/")) {
 		const workflowId = url.pathname.slice("/api/workflows/".length);
 		if (!workflowId) {
@@ -202,6 +222,8 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 	} catch (error) {
 		if (error instanceof InvalidInputError) {
 			response = jsonError(error.message, 400);
+		} else if (error instanceof PayloadTooLargeError) {
+			response = jsonError(error.message, 413);
 		} else if (error instanceof SyntaxError) {
 			response = jsonError("Request body must be valid JSON", 400);
 		} else if (error instanceof URIError) {

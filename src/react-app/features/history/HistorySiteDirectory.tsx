@@ -1,13 +1,18 @@
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { CatalogueSite, HistorySite } from "../../core/types.ts";
+import { Button } from "../../shared/Button.tsx";
+import { CollectionControls, CollectionSummary } from "../../shared/CollectionSummary.tsx";
+import { FilterPanel, SearchField, SelectField } from "../../shared/Filters.tsx";
 import { displayName } from "../../shared/format.ts";
+import { NoDataState } from "../../shared/NoDataState.tsx";
 import {
 	filterHistorySites,
 	isHistorySiteOrder,
 	type HistorySiteFilters,
 } from "./domain/history-site-filter.ts";
 import { HistorySiteCard } from "./HistorySiteCard.tsx";
+import { HistorySiteSkeleton } from "./HistorySiteSkeleton.tsx";
 
 const EMPTY_FILTERS: HistorySiteFilters = {
 	category: "",
@@ -17,15 +22,14 @@ const EMPTY_FILTERS: HistorySiteFilters = {
 
 export function HistorySiteDirectory({
 	catalogue,
+	loading,
 	sites,
 }: {
 	catalogue: ReadonlyMap<string, CatalogueSite>;
+	loading: boolean;
 	sites: HistorySite[];
 }) {
 	const [filters, setFilters] = useState(EMPTY_FILTERS);
-	const searchId = useId();
-	const categoryId = useId();
-	const orderId = useId();
 	const items = useMemo(
 		() =>
 			sites.map((site) => {
@@ -39,84 +43,94 @@ export function HistorySiteDirectory({
 		[catalogue, sites],
 	);
 	const categories = useMemo(
-		() => [
-			...new Set(
-				items
-					.map(({ category }) => category)
-					.filter(
-						(category): category is NonNullable<CatalogueSite["category"]> => Boolean(category),
-					),
-			),
-		].sort(),
+		() =>
+			[
+				...new Set(
+					items
+						.map(({ category }) => category)
+						.filter((category): category is NonNullable<CatalogueSite["category"]> =>
+							Boolean(category),
+						),
+				),
+			].sort(),
 		[items],
 	);
 	const filtered = useMemo(() => filterHistorySites(items, filters), [filters, items]);
 	const filtersActive = Boolean(filters.category || filters.query || filters.order !== "latest");
+	const clearFilters = () => setFilters(EMPTY_FILTERS);
 
 	return (
 		<>
-			<section aria-label="History site filters" className="filters history-site-filters">
-				<div className="search-field filter-field">
-					<label htmlFor={searchId}>Search</label>
-					<div className="search-field__control">
-						<svg aria-hidden="true" viewBox="0 0 24 24">
-							<circle cx="11" cy="11" r="7" />
-							<path d="m16 16 5 5" />
-						</svg>
-						<input
-							id={searchId}
-							onChange={(event) => setFilters({ ...filters, query: event.target.value })}
-							placeholder="Search publishers"
-							type="search"
-							value={filters.query}
-						/>
-					</div>
-				</div>
-				<div className="filter-field">
-					<label htmlFor={categoryId}>Section</label>
-					<select
-						id={categoryId}
-						onChange={(event) => setFilters({ ...filters, category: event.target.value })}
+			<CollectionControls>
+				<FilterPanel ariaLabel="History site filters" className="history-site-filters">
+					<SearchField
+						disabled={loading}
+						onChange={(query) => setFilters({ ...filters, query })}
+						placeholder="Search publishers"
+						value={filters.query}
+					/>
+					<SelectField
+						disabled={loading}
+						label="Section"
+						onChange={(category) => setFilters({ ...filters, category })}
+						options={[
+							{ label: "All sections", value: "" },
+							...categories.map((category) => ({
+								label: displayName(category),
+								value: category,
+							})),
+						]}
 						value={filters.category}
-					>
-						<option value="">All sections</option>
-						{categories.map((category) => (
-							<option key={category} value={category}>{displayName(category)}</option>
-						))}
-					</select>
-				</div>
-				<div className="filter-field">
-					<label htmlFor={orderId}>Order</label>
-					<select
-						id={orderId}
-						onChange={(event) => {
-							if (isHistorySiteOrder(event.target.value)) {
-								setFilters({ ...filters, order: event.target.value });
+					/>
+					<SelectField
+						disabled={loading}
+						label="Order"
+						onChange={(order) => {
+							if (isHistorySiteOrder(order)) {
+								setFilters({ ...filters, order });
 							}
 						}}
+						options={[
+							{ label: "Recently updated", value: "latest" },
+							{ label: "Publisher name", value: "name" },
+							{ label: "Most captures", value: "captures" },
+						]}
 						value={filters.order}
-					>
-						<option value="latest">Recently updated</option>
-						<option value="name">Publisher name</option>
-						<option value="captures">Most captures</option>
-					</select>
-				</div>
-			</section>
+					/>
+				</FilterPanel>
 
-			<div className="gallery-status history-site-status">
-				<span><strong>{filtered.length}</strong>{filtered.length === 1 ? "history" : "histories"} available</span>
-				{filtersActive ? (
-					<button onClick={() => setFilters(EMPTY_FILTERS)} type="button">Clear filters</button>
-				) : null}
-			</div>
+				<CollectionSummary
+					action={
+						filtersActive ? (
+							<Button onClick={clearFilters} variant="quiet">
+								Clear filters
+							</Button>
+						) : null
+					}
+					label={
+						loading ? (
+							<span aria-hidden="true" className="history-site-summary-skeleton" />
+						) : (
+							`${filtered.length} ${filtered.length === 1 ? "history" : "histories"}`
+						)
+					}
+				/>
+			</CollectionControls>
 
-			{filtered.length > 0 ? (
+			{loading ? <HistorySiteSkeleton /> : null}
+			{!loading && filtered.length > 0 ? (
 				<div className="history-site-grid">
-					{filtered.map((site) => <HistorySiteCard key={site.site} site={site} />)}
+					{filtered.map((site) => (
+						<HistorySiteCard key={site.site} site={site} />
+					))}
 				</div>
-			) : (
-				<div className="empty-state">No site histories match those filters.</div>
-			)}
+			) : !loading ? (
+				<NoDataState
+					action={filtersActive ? <Button onClick={clearFilters}>Clear filters</Button> : null}
+					description="Try another publisher name or remove one of the active filters."
+					title="No publisher histories found"
+				/>
+			) : null}
 		</>
 	);
 }

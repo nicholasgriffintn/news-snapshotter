@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { handleRequest } from "./router.ts";
+import { applyApiCachePolicy } from "./cache-control.ts";
 
 function environment(overrides = {}) {
 	return {
@@ -114,6 +115,32 @@ test("caches the lightweight public history availability response", async () => 
 	);
 });
 
+test("serves configured comparison cohorts publicly with short caching", async () => {
+	const response = await handleRequest(
+		apiRequest("/api/comparison/cohorts"),
+		environment({ HISTORY_DB: {} }),
+	);
+	const body = await response.json();
+
+	assert.equal(response.status, 200);
+	assert.equal(body.cohorts[0].id, "uk-national-hourly");
+	assert.equal(body.cohorts[0].sites.length, 6);
+	assert.ok(body.cohorts[0].sites.every(({ perspective }) => perspective === "unrated"));
+	assert.equal(response.headers.get("cache-control"), "public, max-age=60");
+});
+
+test("caches an explicitly selected comparison revision as immutable", () => {
+	const request = apiRequest("/api/comparison/stories/story-1?revision=revision-1");
+	const response = applyApiCachePolicy(
+		request,
+		new Response("{}", { headers: { etag: 'W/"revision-1"' } }),
+		false,
+	);
+
+	assert.equal(response.headers.get("cache-control"), "public, max-age=31536000, immutable");
+	assert.equal(response.headers.get("cloudflare-cdn-cache-control"), "max-age=31536000, immutable");
+});
+
 test("does not expose unexpected infrastructure failures", async (context) => {
 	context.mock.method(console, "error", () => undefined);
 	const response = await handleRequest(
@@ -217,6 +244,13 @@ test("protects history administration with the configured API key", async () => 
 	assert.equal((await response.json()).message, "Invalid API key");
 	assert.equal(clearResponse.status, 401);
 	assert.equal((await clearResponse.json()).message, "Invalid API key");
+});
+
+test("protects comparison administration with the configured API key", async () => {
+	const response = await handleRequest(apiRequest("/api/admin/comparison/runs"), environment());
+
+	assert.equal(response.status, 401);
+	assert.equal((await response.json()).message, "Invalid API key");
 });
 
 test("lists bounded capture failures for admins", async () => {

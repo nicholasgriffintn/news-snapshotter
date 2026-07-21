@@ -68,7 +68,9 @@ export function matchesArchivePeriod(
 	}
 	const bounds = archivePeriodBounds(filter, now);
 	return Boolean(
-		bounds && captured.getTime() >= bounds.start.getTime() && captured.getTime() <= bounds.end.getTime(),
+		bounds &&
+		captured.getTime() >= bounds.start.getTime() &&
+		captured.getTime() <= bounds.end.getTime(),
 	);
 }
 
@@ -82,7 +84,11 @@ export function archiveStorageDates(filter: ArchivePeriodFilter, now = new Date(
 		Date.UTC(bounds.start.getUTCFullYear(), bounds.start.getUTCMonth(), bounds.start.getUTCDate()),
 	);
 	cursor.setUTCDate(cursor.getUTCDate() - 1);
-	const end = Date.UTC(bounds.end.getUTCFullYear(), bounds.end.getUTCMonth(), bounds.end.getUTCDate());
+	const end = Date.UTC(
+		bounds.end.getUTCFullYear(),
+		bounds.end.getUTCMonth(),
+		bounds.end.getUTCDate(),
+	);
 	const dates: string[] = [];
 	while (cursor.getTime() <= end) {
 		dates.push(cursor.toISOString().slice(0, 10));

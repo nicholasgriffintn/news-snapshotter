@@ -6,6 +6,13 @@ export const TELEGRAPH_SITES = [
 		url: "https://www.telegraph.co.uk/",
 		priority: 1 as const,
 		category: "news" as const,
+		comparison: {
+			cohorts: ["uk-national-hourly"],
+			enabled: true,
+			jurisdiction: "GB",
+			language: "en",
+			maxHomepageItems: 40,
+		},
 		analysis: {
 			device: "desktop" as const,
 			extractor: "telegraph-front-page" as const,
