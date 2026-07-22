@@ -25,23 +25,6 @@ export type ComparisonStorySummary = {
 	windowId: string;
 };
 
-export type CoverageGap = {
-	analysedSites: number;
-	clusterConfidence: number;
-	confidence: number;
-	expectedSites: number;
-	label: string;
-	lastSeenAt: string;
-	maxProminence: number;
-	missingPublishers: Array<{ displayName: string; site: string }>;
-	publishers: Array<{ displayName: string; site: string }>;
-	revisionId: string;
-	slug: string;
-	sourceCount: number;
-	storyId: string;
-	windowId: string;
-};
-
 export type ComparisonStoryDetail = {
 	commonGround: ComparisonFinding[];
 	differences: ComparisonFinding[];

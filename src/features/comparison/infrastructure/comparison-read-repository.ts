@@ -23,165 +23,6 @@ export type ComparisonStoryCursor = {
 	storyId: string;
 };
 
-type CoverageGapRow = {
-	analysed_site_count: number;
-	cluster_confidence: number;
-	confidence: number;
-	expected_site_count: number;
-	last_seen_at: string;
-	max_prominence: number;
-	missing_publishers: string;
-	normalised_label: string;
-	publishers: string;
-	revision_id: string;
-	slug: string;
-	source_count: number;
-	story_id: string;
-	window_id: string;
-};
-
-export async function listCoverageGaps(
-	database: D1Database,
-	options: {
-		cohortId: string;
-		cursor?: ComparisonStoryCursor;
-		limit: number;
-		minimumAnalysedSites: number;
-		windowId?: string;
-	},
-) {
-	const bindings: Array<number | string> = [options.cohortId, options.minimumAnalysedSites];
-	const windowCondition = options.windowId
-		? "w.window_id = ?"
-		: `w.window_id = (
-			SELECT window_id FROM comparison_windows
-			WHERE cohort_id = ? AND status IN ('complete', 'partial')
-			ORDER BY starts_at DESC LIMIT 1
-		)`;
-	bindings.push(options.windowId ?? options.cohortId);
-
-	const cursorCondition = options.cursor
-		? `(
-			r.source_count < ? OR
-			(r.source_count = ? AND max_prominence < ?) OR
-			(r.source_count = ? AND max_prominence = ? AND MAX(ac.captured_at) < ?) OR
-			(r.source_count = ? AND max_prominence = ? AND MAX(ac.captured_at) = ? AND s.story_id < ?)
-		)`
-		: "1 = 1";
-	if (options.cursor) {
-		const sourceCount = Number(options.cursor.sourceCount);
-		const maxProminence = Number(options.cursor.maxProminence);
-		bindings.push(
-			sourceCount,
-			sourceCount,
-			maxProminence,
-			sourceCount,
-			maxProminence,
-			options.cursor.lastSeenAt,
-			sourceCount,
-			maxProminence,
-			options.cursor.lastSeenAt,
-			options.cursor.storyId,
-		);
-	}
-	bindings.push(options.limit + 1);
-
-	const rows = await database
-		.prepare(
-			`WITH latest_revisions AS (
-				SELECT
-					r.*,
-					ROW_NUMBER() OVER (
-						PARTITION BY r.story_id, r.window_id
-						ORDER BY r.created_at DESC, r.revision_id DESC
-					) AS revision_position
-				FROM story_revisions r
-				JOIN analysis_runs revision_run ON revision_run.run_id = r.run_id
-				WHERE r.withdrawn_at IS NULL
-					AND revision_run.pipeline_version = (
-						SELECT MAX(candidate_run.pipeline_version)
-						FROM story_revisions candidate_revision
-						JOIN analysis_runs candidate_run
-							ON candidate_run.run_id = candidate_revision.run_id
-						WHERE candidate_revision.window_id = r.window_id
-							AND candidate_revision.withdrawn_at IS NULL
-					)
-			)
-			SELECT
-				s.story_id, s.slug, s.normalised_label, r.revision_id, r.window_id,
-				r.source_count, r.confidence, w.expected_site_count, w.analysed_site_count,
-				MIN(ca.confidence) AS cluster_confidence,
-				MAX(ac.captured_at) AS last_seen_at,
-				GROUP_CONCAT(DISTINCT e.site) AS publishers,
-				GROUP_CONCAT(DISTINCT missing.site) AS missing_publishers,
-				MAX(CASE pe.prominence
-					WHEN 'lead' THEN 4 WHEN 'major' THEN 3 WHEN 'standard' THEN 2
-					WHEN 'minor' THEN 1 ELSE 0 END) AS max_prominence
-			FROM comparison_stories s
-			JOIN latest_revisions r ON r.story_id = s.story_id AND r.revision_position = 1
-			JOIN comparison_windows w ON w.window_id = r.window_id
-			JOIN story_revision_evidence e ON e.revision_id = r.revision_id
-			JOIN content_annotations ca
-				ON ca.run_id = e.annotation_run_id
-				AND ca.capture_id = e.capture_id
-				AND ca.placement_key = e.placement_key
-			JOIN analysed_captures ac ON ac.capture_id = e.capture_id
-			JOIN page_elements pe
-				ON pe.capture_id = e.capture_id AND pe.placement_key = e.placement_key
-			JOIN comparison_window_sites missing
-				ON missing.window_id = w.window_id
-				AND missing.status = 'analysed'
-				AND NOT EXISTS (
-					SELECT 1 FROM story_revision_evidence observed
-					WHERE observed.revision_id = r.revision_id AND observed.site = missing.site
-				)
-			WHERE w.cohort_id = ?
-				AND w.analysed_site_count >= ?
-				AND w.status IN ('complete', 'partial')
-				AND ${windowCondition}
-				AND r.analysis_status = 'available'
-				AND r.source_count >= 3
-				AND r.confidence >= 0.85
-			GROUP BY s.story_id, r.revision_id
-			HAVING max_prominence >= 3 AND cluster_confidence >= 0.85
-				AND ${cursorCondition}
-			ORDER BY r.source_count DESC, max_prominence DESC, last_seen_at DESC, s.story_id DESC
-			LIMIT ?`,
-		)
-		.bind(...bindings)
-		.all<CoverageGapRow>();
-	const page = rows.results.slice(0, options.limit);
-	const last = page.at(-1);
-
-	return {
-		gaps: page.map((row) => ({
-			analysedSites: row.analysed_site_count,
-			clusterConfidence: row.cluster_confidence,
-			confidence: row.confidence,
-			expectedSites: row.expected_site_count,
-			label: row.normalised_label,
-			lastSeenAt: row.last_seen_at,
-			maxProminence: row.max_prominence,
-			missingPublishers: row.missing_publishers.split(",").sort(),
-			publishers: row.publishers.split(",").sort(),
-			revisionId: row.revision_id,
-			slug: row.slug,
-			sourceCount: row.source_count,
-			storyId: row.story_id,
-			windowId: row.window_id,
-		})),
-		nextCursor:
-			rows.results.length > options.limit && last
-				? {
-						lastSeenAt: last.last_seen_at,
-						maxProminence: String(last.max_prominence),
-						sourceCount: String(last.source_count),
-						storyId: last.story_id,
-					}
-				: undefined,
-	};
-}
-
 export async function listComparisonStories(
 	database: D1Database,
 	options: {
@@ -190,6 +31,8 @@ export async function listComparisonStories(
 		from?: string;
 		limit: number;
 		publisher?: string;
+		query?: string;
+		queryPublishers?: string[];
 		topic?: string;
 		to?: string;
 		windowId?: string;
@@ -233,6 +76,29 @@ export async function listComparisonStories(
 			)`,
 		);
 		bindings.push(options.publisher);
+	}
+	if (options.query) {
+		const publisherMatches = options.queryPublishers?.length
+			? ` OR search_evidence.site IN (${options.queryPublishers.map(() => "?").join(", ")})`
+			: "";
+		conditions.push(
+			`(
+				LOWER(s.normalised_label) LIKE ? ESCAPE '\\' OR
+				LOWER(r.summary) LIKE ? ESCAPE '\\' OR
+				EXISTS (
+					SELECT 1 FROM story_topics search_topic
+					WHERE search_topic.revision_id = r.revision_id
+						AND LOWER(search_topic.topic) LIKE ? ESCAPE '\\'
+				) OR EXISTS (
+					SELECT 1 FROM story_revision_evidence search_evidence
+					WHERE search_evidence.revision_id = r.revision_id
+						AND (LOWER(search_evidence.site) LIKE ? ESCAPE '\\'${publisherMatches})
+				)
+			)`,
+		);
+		const escaped = options.query.toLocaleLowerCase("en-GB").replace(/[\\%_]/g, "\\$&");
+		const pattern = `%${escaped}%`;
+		bindings.push(pattern, pattern, pattern, pattern, ...(options.queryPublishers ?? []));
 	}
 	const having = options.cursor
 		? `HAVING (
@@ -332,6 +198,61 @@ export async function listComparisonStories(
 			windowId: row.window_id,
 		})),
 	};
+}
+
+export async function listComparisonStoryTopics(
+	database: D1Database,
+	options: {
+		cohortId: string;
+		from?: string;
+		to?: string;
+		windowId?: string;
+	},
+): Promise<string[]> {
+	const conditions = [
+		"w.cohort_id = ?",
+		"r.withdrawn_at IS NULL",
+		"w.status IN ('complete', 'partial')",
+		"EXISTS (SELECT 1 FROM story_revision_evidence e WHERE e.revision_id = r.revision_id)",
+	];
+	const bindings: string[] = [options.cohortId];
+	if (options.windowId) {
+		conditions.push("r.window_id = ?");
+		bindings.push(options.windowId);
+	} else if (options.from && options.to) {
+		conditions.push("w.starts_at >= ? AND w.starts_at < ?");
+		bindings.push(options.from, options.to);
+	} else {
+		conditions.push(
+			`r.window_id = (
+				SELECT window_id FROM comparison_windows
+				WHERE cohort_id = ? AND status IN ('complete', 'partial')
+				ORDER BY starts_at DESC LIMIT 1
+			)`,
+		);
+		bindings.push(options.cohortId);
+	}
+	const result = await database
+		.prepare(
+			`SELECT DISTINCT st.topic
+			FROM story_topics st
+			JOIN story_revisions r ON r.revision_id = st.revision_id
+			JOIN analysis_runs revision_run ON revision_run.run_id = r.run_id
+			JOIN comparison_windows w ON w.window_id = r.window_id
+			WHERE ${conditions.join(" AND ")}
+				AND revision_run.pipeline_version = (
+					SELECT MAX(candidate_run.pipeline_version)
+					FROM story_revisions candidate_revision
+					JOIN analysis_runs candidate_run ON candidate_run.run_id = candidate_revision.run_id
+					WHERE candidate_revision.window_id = r.window_id
+						AND candidate_revision.withdrawn_at IS NULL
+				)
+			ORDER BY st.topic
+			LIMIT 200`,
+		)
+		.bind(...bindings)
+		.all<{ topic: string }>();
+	return result.results.map(({ topic }) => topic);
 }
 
 type StoryEvidenceRow = {

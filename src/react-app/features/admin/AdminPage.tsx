@@ -51,7 +51,7 @@ export function AdminPage() {
 							<p>{activeToolDetails.description}</p>
 						</div>
 					</header>
-					<div className="admin-workspace__body">
+					<div className="admin-workspace__body" key={apiKey || "locked"}>
 						{configuration.status === "error" &&
 						(activeTool === "capture" || activeTool === "diagnostics") ? (
 							<p className="admin-configuration-error" role="alert">

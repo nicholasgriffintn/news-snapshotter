@@ -186,6 +186,53 @@ test("returns 404 when a valid screenshot key does not exist", async () => {
 	assert.equal(response.status, 404);
 });
 
+test("does not directly serve admin-only screenshots", async () => {
+	const env = {
+		SCREENSHOTS: {
+			get: async () => ({
+				body: "private diagnostic",
+				customMetadata: { visibility: "admin" },
+				httpEtag: "private-etag",
+				writeHttpMetadata: () => undefined,
+			}),
+		},
+	};
+	const key =
+		"brand=amiabot/category=news/date=2026-07-16/amiabot-desktop-2026-07-16T10-20-30-123Z.png";
+
+	const response = await serveScreenshot(
+		new Request(`https://archive.example/api/screenshots/image?key=${encodeURIComponent(key)}`),
+		env,
+	);
+
+	assert.equal(response.status, 404);
+	assert.equal(await response.text(), JSON.stringify({ message: "Screenshot not found" }));
+});
+
+test("serves strictly validated public image crops", async () => {
+	const env = {
+		SCREENSHOTS: {
+			get: async () => ({
+				body: "crop bytes",
+				customMetadata: { visibility: "public" },
+				httpEtag: "crop-etag",
+				writeHttpMetadata: (headers) => headers.set("content-type", "image/jpeg"),
+			}),
+		},
+	};
+	const key =
+		"brand=bbc/category=news/date=2026-07-16/site=bbc-home/device=desktop/" +
+		"2026-07-16T10-20-30-123Z.image-01.jpeg";
+
+	const response = await serveScreenshot(
+		new Request(`https://archive.example/api/screenshots/image?key=${encodeURIComponent(key)}`),
+		env,
+	);
+
+	assert.equal(response.status, 200);
+	assert.equal(await response.text(), "crop bytes");
+});
+
 test("serves stored screenshots with immutable caching and entity headers", async () => {
 	const getOptions = [];
 	const env = {

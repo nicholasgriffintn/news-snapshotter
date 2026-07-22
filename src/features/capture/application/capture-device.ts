@@ -12,7 +12,12 @@ import type { Device, ScreenshotResult, SiteDefinition } from "../../../core/dom
 
 type CaptureEnv = Pick<
 	Env,
-	"ARCHIVE_DATA" | "BROWSER" | "HISTORY_INDEX_QUEUE" | "HYPERBROWSER_API_KEY" | "SCREENSHOTS"
+	| "ARCHIVE_DATA"
+	| "BROWSER"
+	| "HISTORY_DB"
+	| "HISTORY_INDEX_QUEUE"
+	| "HYPERBROWSER_API_KEY"
+	| "SCREENSHOTS"
 >;
 
 async function capture(
@@ -20,6 +25,7 @@ async function capture(
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,
+	enqueueComparison: boolean,
 ): Promise<ScreenshotResult> {
 	const profile = resolveCaptureProfile(site);
 	const config = profile.deviceConfig[device];
@@ -42,6 +48,7 @@ async function capture(
 		return await storeCaptureArtefacts({
 			config,
 			device,
+			enqueueComparison,
 			env,
 			page: browserSession.page,
 			profileName: site.profile ?? site.brand,
@@ -66,9 +73,10 @@ export async function captureDevice(
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,
+	enqueueComparison = true,
 ): Promise<ScreenshotResult> {
 	try {
-		return await capture(env, site, device, triggeredAt);
+		return await capture(env, site, device, triggeredAt, enqueueComparison);
 	} catch (error) {
 		const reason = error instanceof DetectedCaptureError ? error.reason : "capture-error";
 		const message = errorMessage(error);

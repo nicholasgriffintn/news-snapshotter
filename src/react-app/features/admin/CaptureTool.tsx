@@ -47,7 +47,7 @@ export function CaptureTool({ apiKey, catalogue, providers }: CaptureToolProps) 
 	async function submit(event: React.FormEvent) {
 		event.preventDefault();
 		setSubmitting(true);
-		setStatus("Starting capture workflow…");
+		setStatus("Dispatching capture workflows…");
 
 		try {
 			let selection: {
@@ -72,9 +72,12 @@ export function CaptureTool({ apiKey, catalogue, providers }: CaptureToolProps) 
 			const result = await startSnapshotWorkflow(apiKey, selection);
 			const sitePlural = result.selectedSites.length === 1 ? "" : "s";
 			const runnerPlural = result.runnerCount === 1 ? "" : "s";
+			const failedDispatch = result.failedRunnerCount
+				? ` ${result.failedRunnerCount} runner${result.failedRunnerCount === 1 ? "" : "s"} failed to dispatch.`
+				: "";
 			setStatus(
-				`${result.batchId} started ${result.selectedSites.length} site${sitePlural} ` +
-					`across ${result.runnerCount} runner${runnerPlural}.`,
+				`${result.batchId} dispatched ${result.selectedSites.length} site${sitePlural} ` +
+					`across ${result.runnerCount} runner${runnerPlural}.${failedDispatch} Capture processing continues asynchronously.`,
 			);
 		} catch (reason) {
 			setStatus(reason instanceof Error ? reason.message : "Could not start workflow.");

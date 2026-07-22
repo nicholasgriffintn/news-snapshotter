@@ -225,12 +225,15 @@ export async function fetchHistoryChanges(
 
 export async function fetchHistoryFailures(
 	site: string,
-	options?: RequestOptions,
+	options: RequestOptions & { cursor?: string } = {},
 ): Promise<{ cursor?: string; failures: HistoryFailure[] }> {
-	const response = await fetch(
-		`/api/history/${encodeURIComponent(site)}/failures?limit=100`,
-		options,
-	);
+	const search = new URLSearchParams({ limit: "100" });
+	if (options.cursor) {
+		search.set("cursor", options.cursor);
+	}
+	const response = await fetch(`/api/history/${encodeURIComponent(site)}/failures?${search}`, {
+		signal: options.signal,
+	});
 	return readJson(response);
 }
 
@@ -372,6 +375,10 @@ export async function fetchHistoryAdminStatus(apiKey: string): Promise<HistoryAd
 		headers: { authorization: `Bearer ${apiKey}` },
 	});
 	return readJson(response);
+}
+
+export async function validateAdminCredential(apiKey: string): Promise<void> {
+	await fetchHistoryAdminStatus(apiKey);
 }
 
 export async function fetchHistoryExtractionFailures(
@@ -581,6 +588,7 @@ export type ComparisonFeedback = {
 	reason: string;
 	resolution?: string;
 	reviewStatus: string;
+	revisionAvailable: boolean;
 	revisionId: string;
 	storyId: string;
 	submittedAt: string;
@@ -641,6 +649,7 @@ export async function fetchComparisonFeedback(
 		reason: String(record.reason),
 		resolution: optionalRecordString(record, "resolution"),
 		reviewStatus: String(record.review_status),
+		revisionAvailable: Number(record.revision_available) === 1,
 		revisionId: String(record.revision_id),
 		storyId: String(record.story_id),
 		submittedAt: String(record.submitted_at),
@@ -668,6 +677,22 @@ export async function resolveComparisonFeedback(
 		`/api/admin/comparison/feedback/${encodeURIComponent(feedbackId)}/resolve`,
 		{
 			body: JSON.stringify(input),
+			headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+			method: "POST",
+		},
+	);
+	await readJson(response);
+}
+
+export async function withdrawComparisonRevision(
+	apiKey: string,
+	revisionId: string,
+	reason: string,
+): Promise<void> {
+	const response = await fetch(
+		`/api/admin/comparison/revisions/${encodeURIComponent(revisionId)}/withdraw`,
+		{
+			body: JSON.stringify({ reason }),
 			headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
 			method: "POST",
 		},

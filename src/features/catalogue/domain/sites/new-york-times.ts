@@ -17,7 +17,7 @@ export const NEW_YORK_TIMES_SITES = [
 		captureRegion: "international" as const,
 		name: "nytimes-international",
 		displayName: "The New York Times International",
-		url: "https://www.nytimes.com/international",
+		url: "https://www.nytimes.com/international/",
 		category: "news" as const,
 		priority: 1 as const,
 	},

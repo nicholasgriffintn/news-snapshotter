@@ -35,7 +35,6 @@ export function HistoryResearchPage({
 				query={research.query}
 				results={research.results}
 				selectedContent={research.selectedContent}
-				siteName={siteName}
 				site={site}
 			/>
 			<HistoryTrendPanel
@@ -47,7 +46,7 @@ export function HistoryResearchPage({
 				period={research.period}
 				trends={research.trends}
 			/>
-			<PublisherComparisonPanel site={site} />
+			<PublisherComparisonPanel period={research.period} site={site} />
 			<HistoryImageTimeline
 				error={research.imageError}
 				hasMore={research.hasMoreImages}

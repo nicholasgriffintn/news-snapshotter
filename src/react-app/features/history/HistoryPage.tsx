@@ -46,6 +46,9 @@ export function HistoryPage({ preferredName, site }: { preferredName?: string; s
 				<HistoryFailureNotice
 					failures={history.failures}
 					hasMore={Boolean(history.failureCursor)}
+					loadingMore={history.loadingMoreFailures}
+					onLoadMore={() => void history.loadMoreFailures()}
+					paginationError={history.failureError}
 				/>
 			) : null}
 

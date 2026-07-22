@@ -9,14 +9,29 @@ import { handleScheduledCapture } from "./run-scheduled-capture.ts";
 test("dispatches priority one sites from the hourly schedule", async (context) => {
 	const creations = [];
 	const analysisMessages = [];
+	const historyMessages = [];
 	const logs = [];
 	const scheduledTime = Date.UTC(2026, 6, 17, 9);
 	const { database, sqlite } = await createHistoryTestDatabase();
+	sqlite
+		.prepare(
+			`INSERT INTO processing_outbox (
+				outbox_id, destination, message_json, created_at
+			) VALUES (?, 'history-index', ?, ?)`,
+		)
+		.run(
+			"history-index:missed",
+			JSON.stringify({ failureKey: "missed.analysis-failure.json", kind: "failure" }),
+			"2026-07-17T08:00:00.000Z",
+		);
 	const env = {
 		ANALYSIS_QUEUE: {
 			send: async (body, options) => analysisMessages.push({ body, options }),
 		},
 		HISTORY_DB: database,
+		HISTORY_INDEX_QUEUE: {
+			send: async (body) => historyMessages.push(body),
+		},
 		NEWS_SNAPSHOTTER: {
 			create: async (options) => {
 				creations.push(options);
@@ -54,7 +69,10 @@ test("dispatches priority one sites from the hourly schedule", async (context) =
 	);
 	assert.ok(
 		creations.every((creation) => {
-			return creation.params.triggeredAt === "2026-07-17T09:00:00.000Z";
+			return (
+				creation.params.triggeredAt === "2026-07-17T09:00:00.000Z" &&
+				creation.params.enqueueComparison === true
+			);
 		}),
 	);
 	assert.deepEqual(logs, [
@@ -78,6 +96,10 @@ test("dispatches priority one sites from the hourly schedule", async (context) =
 			options: { delaySeconds: 900 },
 		},
 	]);
+	assert.deepEqual(historyMessages, [
+		{ failureKey: "missed.analysis-failure.json", kind: "failure" },
+	]);
+	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM processing_outbox").get().count, 0);
 	assert.equal(
 		sqlite.prepare("SELECT expected_site_count FROM comparison_windows").get().expected_site_count,
 		12,
@@ -131,4 +153,25 @@ test("queues the previous month for every indexed site from the monthly schedule
 		},
 	]);
 	sqlite.close();
+});
+
+for (const [cron, priority] of [
+	["15 2 * * *", 2],
+	["30 2 * * 1", 3],
+	["45 2 1 * *", 4],
+]) {
+	test(`returns a clear error for the reserved priority ${priority} schedule`, async () => {
+		await assert.rejects(
+			() => handleScheduledCapture({ cron, scheduledTime: Date.UTC(2026, 6, 17, 2, 15) }, {}),
+			new RegExp(`Scheduled priority ${priority} captures are not enabled yet`),
+		);
+	});
+}
+
+test("rejects an unknown scheduled trigger instead of dispatching priority one", async () => {
+	await assert.rejects(
+		() =>
+			handleScheduledCapture({ cron: "1 1 1 1 1", scheduledTime: Date.UTC(2026, 6, 17, 9) }, {}),
+		/Unknown scheduled trigger: 1 1 1 1 1/,
+	);
 });

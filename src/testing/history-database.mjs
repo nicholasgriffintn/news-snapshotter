@@ -20,6 +20,8 @@ const MIGRATIONS = [
 	"0014_comparison_query_indexes.sql",
 	"0015_history_aggregate_runs.sql",
 	"0016_saved_timeline_listing.sql",
+	"0017_history_lifecycle.sql",
+	"0018_processing_outbox.sql",
 ];
 
 export async function createHistoryTestDatabase() {

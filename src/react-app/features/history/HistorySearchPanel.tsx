@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 
 import type { HistorySearchResult } from "../../core/types.ts";
-import { Button } from "../../shared/Button.tsx";
-import { Card } from "../../shared/Card.tsx";
+import { Button, ButtonLink } from "../../shared/Button.tsx";
 import { SearchField } from "../../shared/Filters.tsx";
 import { dateTimeLabel, displayName } from "../../shared/format.ts";
 import { NoDataState } from "../../shared/NoDataState.tsx";
 import { StatusMessage } from "../../shared/StatusMessage.tsx";
-import { contentHistoryPath } from "./history-routes.ts";
+import { contentComparisonPath, contentHistoryPath } from "./history-routes.ts";
+import { MAXIMUM_CONTENT_COMPARISON_ITEMS } from "./history-selection.ts";
 
 export function HistorySearchPanel({
 	error,
@@ -21,7 +21,6 @@ export function HistorySearchPanel({
 	results,
 	selectedContent,
 	site,
-	siteName,
 }: {
 	error?: string;
 	hasMore: boolean;
@@ -34,14 +33,10 @@ export function HistorySearchPanel({
 	results: HistorySearchResult[];
 	selectedContent: Set<string>;
 	site: string;
-	siteName: string;
 }) {
 	const [draft, setDraft] = useState(query);
 	useEffect(() => setDraft(query), [query]);
-	const compareSearch = new URLSearchParams();
-	for (const elementKey of selectedContent) {
-		compareSearch.append("element", elementKey);
-	}
+	const comparisonLimitReached = selectedContent.size >= MAXIMUM_CONTENT_COMPARISON_ITEMS;
 
 	return (
 		<>
@@ -72,11 +67,22 @@ export function HistorySearchPanel({
 				) : null}
 				{query && !loading && results.length > 0 ? (
 					<div className="research-results__status">
-						<strong>
-							{results.length} {results.length === 1 ? "result" : "results"}{" "}
-							{hasMore ? "loaded" : ""}
-						</strong>
-						<span>Select two or more items to compare how their position changed.</span>
+						<div className="research-results__status-copy">
+							<strong>
+								{results.length} {results.length === 1 ? "result" : "results"}{" "}
+								{hasMore ? "loaded" : ""}
+							</strong>
+							<span>
+								{comparisonLimitReached
+									? "Maximum of 10 comparison items selected."
+									: "Select two or more items to compare how their position changed."}
+							</span>
+						</div>
+						{selectedContent.size >= 2 ? (
+							<ButtonLink href={contentComparisonPath(site, selectedContent)}>
+								Compare {selectedContent.size} items
+							</ButtonLink>
+						) : null}
 					</div>
 				) : null}
 				{loading ? (
@@ -112,6 +118,7 @@ export function HistorySearchPanel({
 										<input
 											aria-label={`Compare ${result.headline ?? `untitled ${result.kind}`}`}
 											checked={selectedContent.has(result.elementKey)}
+											disabled={comparisonLimitReached && !selectedContent.has(result.elementKey)}
 											onChange={() => onToggleContent(result.elementKey)}
 											type="checkbox"
 										/>

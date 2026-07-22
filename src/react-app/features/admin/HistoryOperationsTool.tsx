@@ -60,7 +60,8 @@ export function HistoryOperationsTool({
 				setIndexStatus(`Scanned ${scanned} objects; queued ${enqueued} history records…`);
 			} while (cursor);
 			setIndexStatus(
-				`Complete: scanned ${scanned} objects and queued ${enqueued} history records.`,
+				`Archive scan finished: scanned ${scanned} objects and queued ${enqueued} history records. ` +
+					"Indexing continues asynchronously.",
 			);
 			setStatus(await fetchHistoryAdminStatus(apiKey));
 		} catch (reason) {

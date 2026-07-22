@@ -41,19 +41,6 @@
 	text-transform: uppercase;
 }
 
-.comparison-story-card--gap {
-	border-color: var(--pink);
-}
-
-.comparison-story-card__gap svg {
-	width: 0.9rem;
-	height: 0.9rem;
-	stroke: currentColor;
-	stroke-linecap: square;
-	stroke-linejoin: miter;
-	stroke-width: 2;
-}
-
 .comparison-skeleton__summary,
 .comparison-skeleton__line,
 .comparison-skeleton__badge,

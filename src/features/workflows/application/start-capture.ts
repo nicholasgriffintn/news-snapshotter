@@ -44,5 +44,5 @@ export async function startCaptureWorkflow(
 	const sites = selection.provider
 		? selectedSites.map((site) => ({ ...site, provider: selection.provider }))
 		: selectedSites;
-	return dispatchCaptureWorkflows(env, sites, new Date().toISOString());
+	return dispatchCaptureWorkflows(env, sites, new Date().toISOString(), false);
 }

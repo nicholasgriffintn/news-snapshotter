@@ -42,6 +42,6 @@ export function historyExtraction(captureId, capturedAt, overrides = {}) {
 		contentHash: `content-${captureId}`,
 		elements: overrides.elements ?? [historyStory()],
 		structureHash: `structure-${captureId}`,
-		warnings: [],
+		warnings: overrides.warnings ?? [],
 	};
 }

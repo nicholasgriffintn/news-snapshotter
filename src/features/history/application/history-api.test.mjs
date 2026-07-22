@@ -15,7 +15,9 @@ test("serves bounded capture history without private archive keys", async () => 
 	await ingestExtraction(
 		database,
 		"capture-a.json.gz",
-		historyExtraction("capture-a", "2026-07-17T09:00:00.000Z"),
+		historyExtraction("capture-a", "2026-07-17T09:00:00.000Z", {
+			warnings: [{ code: "crop-failed", message: "Could not crop the lead image" }],
+		}),
 	);
 	await ingestExtraction(
 		database,
@@ -61,8 +63,27 @@ test("serves bounded capture history without private archive keys", async () => 
 	assert.equal("profile" in detailBody.capture, false);
 	assert.equal("sanitisationVersion" in detailBody.capture, false);
 	assert.equal("warnings" in detailBody, false);
-	assert.equal(detailBody.warningCount, 0);
+	assert.equal(detailBody.warningCount, 1);
 
+	sqlite.close();
+});
+
+test("serves existing capture details before the warnings migration is applied", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-a.json.gz",
+		historyExtraction("capture-a", "2026-07-17T09:00:00.000Z"),
+	);
+	sqlite.exec("ALTER TABLE analysed_captures DROP COLUMN warnings_json");
+
+	const detail = await handleHistoryRequest(
+		request("/api/history/bbc-home/captures/capture-a"),
+		database,
+	);
+
+	assert.equal(detail.status, 200);
+	assert.equal((await detail.json()).warningCount, 0);
 	sqlite.close();
 });
 

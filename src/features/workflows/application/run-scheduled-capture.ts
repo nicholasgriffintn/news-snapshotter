@@ -8,8 +8,15 @@ import {
 	enqueueHistoryAggregateMonth,
 	previousUtcMonth,
 } from "../../history/application/materialise-history-month.ts";
+import { flushProcessingOutbox } from "../../history/infrastructure/processing-outbox.ts";
 
 export const MONTHLY_HISTORY_AGGREGATE_CRON = "15 3 2,7,14 * *";
+export const PRIORITY_ONE_CAPTURE_CRON = "0 * * * *";
+export const PRIORITY_CAPTURE_CRONS = new Map<string, number>([
+	["15 2 * * *", 2],
+	["30 2 * * 1", 3],
+	["45 2 1 * *", 4],
+]);
 
 export async function handleScheduledCapture(
 	controller: ScheduledController,
@@ -33,10 +40,28 @@ export async function handleScheduledCapture(
 		);
 		return;
 	}
+	const reservedPriority = PRIORITY_CAPTURE_CRONS.get(controller.cron);
+	if (reservedPriority) {
+		throw new Error(`Scheduled priority ${reservedPriority} captures are not enabled yet`);
+	}
+	if (controller.cron !== PRIORITY_ONE_CAPTURE_CRON) {
+		throw new Error(`Unknown scheduled trigger: ${controller.cron}`);
+	}
+	const reconciliation = await flushProcessingOutbox(env.HISTORY_DB, env);
+	if (reconciliation.failed > 0) {
+		console.error(
+			JSON.stringify({
+				event: "processing-outbox-reconciliation-incomplete",
+				failed: reconciliation.failed,
+				sent: reconciliation.sent,
+				triggeredAt,
+			}),
+		);
+	}
 	const sites = selectSites(SITES, {
 		priority: 1,
 	});
-	const dispatch = await dispatchCaptureWorkflows(env, sites, triggeredAt);
+	const dispatch = await dispatchCaptureWorkflows(env, sites, triggeredAt, true);
 	try {
 		await scheduleComparisonWindows(env, sites, triggeredAt);
 	} catch (error) {

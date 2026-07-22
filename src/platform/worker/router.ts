@@ -225,7 +225,16 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 		} else if (error instanceof PayloadTooLargeError) {
 			response = jsonError(error.message, 413);
 		} else if (error instanceof SyntaxError) {
-			response = jsonError("Request body must be valid JSON", 400);
+			const parsesJsonBody =
+				request.method !== "GET" &&
+				request.method !== "HEAD" &&
+				request.headers.get("content-type")?.includes("application/json");
+			if (parsesJsonBody) {
+				response = jsonError("Request body must be valid JSON", 400);
+			} else {
+				console.error("Request failed", { error: errorMessage(error) });
+				response = jsonError("Internal server error", 500);
+			}
 		} else if (error instanceof URIError) {
 			response = jsonError("URL path is malformed", 400);
 		} else {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "../../shared/Button.tsx";
 import { CollectionControls, CollectionSummary } from "../../shared/CollectionSummary.tsx";
@@ -8,33 +8,15 @@ import { ComparisonFilters } from "./ComparisonFilters.tsx";
 import { ComparisonBriefingSkeleton } from "./ComparisonBriefingSkeleton.tsx";
 import { PageHeader } from "../../shared/PageHeaders.tsx";
 import { ComparisonStoryCard } from "./ComparisonStoryCard.tsx";
-import { useComparisonData } from "./comparison-api.ts";
+import { useComparisonData, useComparisonStoryPages } from "./comparison-api.ts";
 import {
 	EMPTY_COMPARISON_STORY_FILTERS,
 	comparisonPeriodRange,
 	comparisonStatusWindow,
 	comparisonStoryFiltersActive,
-	filterComparisonStories,
 	latestPublishedWindow,
 } from "./domain/comparison-period.ts";
-import type { ComparisonStorySummary, ComparisonWindow, CoverageGap } from "./domain/contracts.ts";
-
-function filterOptions(stories: readonly ComparisonStorySummary[]) {
-	const publishers = new Map<string, { displayName: string; site: string }>();
-
-	for (const story of stories) {
-		for (const publisher of story.publishers) {
-			publishers.set(publisher.site, publisher);
-		}
-	}
-
-	return {
-		publishers: [...publishers.values()].sort((left, right) =>
-			left.displayName.localeCompare(right.displayName),
-		),
-		topics: [...new Set(stories.flatMap((story) => story.topics))].sort(),
-	};
-}
+import type { ComparisonWindow } from "./domain/contracts.ts";
 
 export function ComparisonBriefingPage() {
 	const [filters, setFilters] = useState(EMPTY_COMPARISON_STORY_FILTERS);
@@ -44,34 +26,33 @@ export function ComparisonBriefingPage() {
 	const latestWindow = latestPublishedWindow(windows.data?.windows ?? []);
 	const statusWindow = comparisonStatusWindow(filters.period, latestWindow);
 	const range = comparisonPeriodRange(filters.period, latestWindow?.endsAt, filters.date);
-	const query = new URLSearchParams({ limit: "100" });
+	const query = new URLSearchParams({ limit: "25" });
 
 	if (range) {
 		query.set("from", range.from);
 		query.set("to", range.to);
 	}
+	if (filters.publisher) {
+		query.set("publisher", filters.publisher);
+	}
+	if (filters.query.trim()) {
+		query.set("q", filters.query.trim());
+	}
+	if (filters.topic) {
+		query.set("topic", filters.topic);
+	}
 
-	const stories = useComparisonData<{ stories: ComparisonStorySummary[] }>(
-		`/api/comparison/stories?${query}`,
+	const periodReady = filters.period === "latest" || Boolean(range);
+	const stories = useComparisonStoryPages(
+		periodReady ? `/api/comparison/stories?${query}` : undefined,
 	);
-	const coverageGaps = useComparisonData<{ gaps: CoverageGap[] }>("/api/comparison/gaps?limit=100");
+
 	const allStories = stories.data?.stories ?? [];
-	const options = useMemo(() => filterOptions(allStories), [allStories]);
-	const visibleStories = useMemo(
-		() => filterComparisonStories(allStories, filters),
-		[allStories, filters],
-	);
+	const options = stories.data?.facets ?? { publishers: [], topics: [] };
+	const visibleStories = allStories;
 	const filtersActive = comparisonStoryFiltersActive(filters);
 	const initialLoading = stories.loading && !stories.data;
 	const filtersLoading = initialLoading || (windows.loading && !windows.data);
-	const showCoverageGaps = filters.period === "latest" && !filtersActive;
-	const gapByRevision = useMemo(
-		() =>
-			new Map(
-				(coverageGaps.data?.gaps ?? []).map((gap) => [`${gap.storyId}:${gap.revisionId}`, gap]),
-			),
-		[coverageGaps.data?.gaps],
-	);
 
 	return (
 		<section className="page-stack comparison-page">
@@ -121,6 +102,11 @@ export function ComparisonBriefingPage() {
 					{stories.error}
 				</StatusMessage>
 			) : null}
+			{!periodReady && !windows.loading ? (
+				<StatusMessage role="status" tone="info">
+					Select a valid reporting period before loading comparisons.
+				</StatusMessage>
+			) : null}
 
 			{initialLoading ? (
 				<>
@@ -131,19 +117,7 @@ export function ComparisonBriefingPage() {
 				</>
 			) : null}
 
-			{!initialLoading && showCoverageGaps && coverageGaps.error ? (
-				<StatusMessage compact role="status" tone="info">
-					Coverage gap indicators are currently unavailable.
-				</StatusMessage>
-			) : null}
-
-			{!initialLoading && showCoverageGaps && coverageGaps.loading && !coverageGaps.data ? (
-				<StatusMessage compact role="status">
-					Checking coverage gaps…
-				</StatusMessage>
-			) : null}
-
-			{!stories.loading && !stories.error && visibleStories.length === 0 ? (
+			{periodReady && !stories.loading && !stories.error && visibleStories.length === 0 ? (
 				<NoDataState
 					action={
 						filtersActive ? (
@@ -163,13 +137,20 @@ export function ComparisonBriefingPage() {
 
 			{visibleStories.length > 0 ? (
 				<div className="history-site-grid comparison-story-grid">
-					{visibleStories.map((story) => {
-						const gap = showCoverageGaps
-							? gapByRevision.get(`${story.storyId}:${story.revisionId}`)
-							: undefined;
-
-						return <ComparisonStoryCard gap={gap} key={story.storyId} story={story} />;
-					})}
+					{visibleStories.map((story) => (
+						<ComparisonStoryCard key={story.storyId} story={story} />
+					))}
+				</div>
+			) : null}
+			{stories.data?.cursor ? (
+				<div className="research-pagination">
+					<Button
+						disabled={stories.loadingMore}
+						onClick={() => void stories.loadMore()}
+						variant="secondary"
+					>
+						{stories.loadingMore ? "Loading comparisons…" : "Load more comparisons"}
+					</Button>
 				</div>
 			) : null}
 		</section>

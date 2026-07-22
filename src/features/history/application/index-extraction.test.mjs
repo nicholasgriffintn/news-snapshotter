@@ -84,6 +84,38 @@ test("queues comparison analysis only after a configured capture is indexed", as
 	sqlite.close();
 });
 
+test("retains a failed comparison queue handoff for scheduled reconciliation", async (context) => {
+	context.mock.method(console, "error", () => undefined);
+	const document = historyExtraction("capture-news", "2026-07-17T09:00:00.000Z");
+	document.capture.site = "bbc-news";
+	document.capture.sourceUrl = "https://www.bbc.co.uk/news";
+	const { env, sqlite } = await environment(document);
+	env.ANALYSIS_QUEUE = {
+		send: async () => {
+			throw new Error("Analysis queue unavailable");
+		},
+	};
+
+	await indexExtractionArtefact(env, {
+		captureId: document.capture.captureId,
+		enqueueComparison: true,
+		extractionKey: "capture-news.extraction.v1.json.gz",
+		kind: "extraction",
+		site: document.capture.site,
+	});
+
+	const handoff = sqlite
+		.prepare("SELECT destination, message_json AS messageJson FROM processing_outbox")
+		.get();
+	assert.equal(handoff.destination, "analysis");
+	assert.deepEqual(JSON.parse(handoff.messageJson), {
+		captureId: "capture-news",
+		contentHash: "content-capture-news",
+		kind: "analyse-capture",
+	});
+	sqlite.close();
+});
+
 test("records identity mismatches as explicit indexing failures", async () => {
 	const document = historyExtraction("capture-a", "2026-07-17T09:00:00.000Z");
 	const { env, sqlite } = await environment(document);

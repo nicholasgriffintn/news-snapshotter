@@ -115,18 +115,13 @@ test("caches the lightweight public history availability response", async () => 
 	);
 });
 
-test("serves configured comparison cohorts publicly with short caching", async () => {
-	const response = await handleRequest(
-		apiRequest("/api/comparison/cohorts"),
-		environment({ HISTORY_DB: {} }),
-	);
-	const body = await response.json();
+test("does not expose obsolete comparison endpoints", async () => {
+	for (const path of ["/api/comparison/cohorts", "/api/comparison/gaps"]) {
+		const response = await handleRequest(apiRequest(path), environment({ HISTORY_DB: {} }));
 
-	assert.equal(response.status, 200);
-	assert.equal(body.cohorts[0].id, "uk-national-hourly");
-	assert.equal(body.cohorts[0].sites.length, 12);
-	assert.ok(body.cohorts[0].sites.every(({ perspective }) => perspective === "unrated"));
-	assert.equal(response.headers.get("cache-control"), "public, max-age=60");
+		assert.equal(response.status, 404);
+		assert.equal((await response.json()).message, "Not found");
+	}
 });
 
 test("caches an explicitly selected comparison revision as immutable", () => {
@@ -160,6 +155,25 @@ test("does not expose unexpected infrastructure failures", async (context) => {
 		message: "Internal server error",
 		status: "error",
 	});
+});
+
+test("does not misreport server-side JSON failures as malformed request bodies", async (context) => {
+	context.mock.method(console, "error", () => undefined);
+	const response = await handleRequest(
+		apiRequest("/api/history/sites"),
+		environment({
+			HISTORY_DB: {
+				prepare: () => ({
+					all: async () => {
+						throw new SyntaxError("stored JSON is corrupt");
+					},
+				}),
+			},
+		}),
+	);
+
+	assert.equal(response.status, 500);
+	assert.equal((await response.json()).message, "Internal server error");
 });
 
 test("lists the supported capture profiles", async () => {
@@ -369,6 +383,7 @@ test("starts a workflow for a valid named site selection", async () => {
 	assert.equal(body.runnerCount, 1);
 	assert.equal(creations[0].params.sites.length, 1);
 	assert.equal(creations[0].params.sites[0].name, "bbc-home");
+	assert.equal(creations[0].params.enqueueComparison, false);
 });
 
 test("overrides the profile provider for an admin capture", async () => {

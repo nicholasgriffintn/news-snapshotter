@@ -12,8 +12,9 @@ import { HistoryRouter } from "./features/history/HistoryRouter";
 import { ComparisonBetaBanner } from "./features/comparison/ComparisonBetaBanner.tsx";
 import { ResearchBetaBanner } from "./features/history/ResearchBetaBanner.tsx";
 import { ComparisonRouter } from "./features/comparison/ComparisonRouter";
-import { Button } from "./shared/Button.tsx";
+import { Button, ButtonLink } from "./shared/Button.tsx";
 import { PageHeader } from "./shared/PageHeaders.tsx";
+import { NoDataState } from "./shared/NoDataState.tsx";
 
 export default function App() {
 	const [contactOpen, setContactOpen] = useState(false);
@@ -23,8 +24,6 @@ export default function App() {
 		page === "history" ? decodeURIComponent(window.location.pathname.split("/")[2] ?? "") : "";
 	const historyResource =
 		page === "history" ? decodeURIComponent(window.location.pathname.split("/")[3] ?? "") : "";
-
-	console.log(historySite);
 
 	return (
 		<main className="shell">
@@ -75,6 +74,13 @@ export default function App() {
 			) : null}
 
 			{page === "terms" ? <LegalPage kind="terms" onContact={() => setContactOpen(true)} /> : null}
+			{page === "not-found" ? (
+				<NoDataState
+					action={<ButtonLink href="/">Return to the archive</ButtonLink>}
+					description="The requested page does not exist or is no longer available."
+					title="Page not found"
+				/>
+			) : null}
 
 			<nav aria-label="Legal and contact" className="legal-nav">
 				<a href="/terms">Terms</a>

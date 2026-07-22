@@ -83,6 +83,11 @@ function environment() {
 			},
 			BROWSER: {},
 			CAPTURE_FAILURES: { put: async (...args) => failures.push(args) },
+			HISTORY_DB: {
+				prepare: () => ({
+					bind: () => ({ run: async () => undefined }),
+				}),
+			},
 			HISTORY_INDEX_QUEUE: {
 				send: async (message) => {
 					messages.push(message);
@@ -183,7 +188,7 @@ test("stores desktop analysis independently from screenshot artefacts", async (c
 			site: "bbc-home",
 		},
 	]);
-	assert.deepEqual(events, ["archive", "archive", "screenshot", "screenshot", "queue"]);
+	assert.deepEqual(events, ["screenshot", "screenshot", "archive", "archive", "queue"]);
 });
 
 test("captures full and thumbnail images with metadata and closes the browser", async (context) => {

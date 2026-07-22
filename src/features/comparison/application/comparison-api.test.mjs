@@ -59,7 +59,6 @@ test("rejects invalid comparison query and feedback input through the HTTP inter
 	const env = {};
 	const requests = [
 		new Request("https://example.com/api/comparison/stories?limit=101"),
-		new Request("https://example.com/api/comparison/gaps?limit=0"),
 		new Request("https://example.com/api/comparison/stories?from=2026-07-01T00:00:00.000Z"),
 		new Request(
 			"https://example.com/api/comparison/publishers/bbc-news" +
@@ -184,9 +183,59 @@ test("serves only published, evidence-linked comparison revisions", async (conte
 		}),
 		1,
 	);
+	sqlite
+		.prepare(
+			`INSERT INTO comparison_stories (
+				story_id, cohort_id, slug, normalised_label, first_seen_at, last_seen_at, status
+			) VALUES (?, ?, ?, ?, ?, ?, 'open')`,
+		)
+		.run(
+			"facet-story",
+			"uk-national-hourly",
+			"facet-story",
+			"A later-page topic",
+			"2026-07-20T09:05:00.000Z",
+			"2026-07-20T09:05:00.000Z",
+		);
+	sqlite
+		.prepare(
+			`INSERT INTO story_revisions (
+				revision_id, story_id, run_id, window_id, summary, common_ground_json,
+				differences_json, analysis_status, confidence, source_count,
+				left_source_count, centre_source_count, right_source_count,
+				unrated_source_count, evidence_count, perspective_snapshot_json,
+				r2_document_key, created_at
+			)
+			SELECT
+				'facet-revision', 'facet-story', run_id, window_id, 'Later-page summary',
+				common_ground_json, differences_json, analysis_status, confidence, 1,
+				0, 0, 0, 1, 1, perspective_snapshot_json, r2_document_key, created_at
+			FROM story_revisions
+			WHERE revision_id = (
+				SELECT current_revision_id FROM comparison_stories
+				WHERE story_id != 'facet-story' LIMIT 1
+			)`,
+		)
+		.run();
+	sqlite
+		.prepare(
+			`INSERT INTO story_revision_evidence (
+				revision_id, evidence_id, annotation_run_id, capture_id, placement_key, site
+			)
+			SELECT 'facet-revision', 'facet-evidence', annotation_run_id, capture_id, placement_key, site
+			FROM story_revision_evidence
+			WHERE revision_id != 'facet-revision' LIMIT 1`,
+		)
+		.run();
+	sqlite
+		.prepare("INSERT INTO story_topics (revision_id, story_id, topic) VALUES (?, ?, ?)")
+		.run("facet-revision", "facet-story", "later-topic");
+	sqlite
+		.prepare("UPDATE comparison_stories SET current_revision_id = ? WHERE story_id = ?")
+		.run("facet-revision", "facet-story");
 
 	const listResponse = await handleComparisonRequest(
-		new Request("https://example.com/api/comparison/stories"),
+		new Request("https://example.com/api/comparison/stories?limit=1"),
 		env,
 	);
 	assert.equal(listResponse.status, 200);
@@ -196,6 +245,8 @@ test("serves only published, evidence-linked comparison revisions", async (conte
 	assert.equal(list.stories[0].analysisStatus, "available");
 	assert.equal(list.stories[0].label, "Bank of England interest rates decision");
 	assert.equal(list.stories[0].summary, "The Bank of England made an interest-rate decision.");
+	assert.ok(list.facets.publishers.some(({ displayName }) => displayName === "Daily Mail"));
+	assert.deepEqual(list.facets.topics, ["economy", "later-topic"]);
 	const storyId = list.stories[0].storyId;
 	const periodResponse = await handleComparisonRequest(
 		new Request(
@@ -204,6 +255,21 @@ test("serves only published, evidence-linked comparison revisions", async (conte
 		env,
 	);
 	assert.equal((await periodResponse.json()).stories[0].storyId, storyId);
+	const matchingSearch = await handleComparisonRequest(
+		new Request("https://example.com/api/comparison/stories?q=interest"),
+		env,
+	);
+	assert.equal((await matchingSearch.json()).stories.length, 1);
+	const publisherNameSearch = await handleComparisonRequest(
+		new Request("https://example.com/api/comparison/stories?q=The%20Guardian"),
+		env,
+	);
+	assert.equal((await publisherNameSearch.json()).stories.length, 1);
+	const missingSearch = await handleComparisonRequest(
+		new Request("https://example.com/api/comparison/stories?q=royal"),
+		env,
+	);
+	assert.equal((await missingSearch.json()).stories.length, 0);
 
 	const detailResponse = await handleComparisonRequest(
 		new Request(`https://example.com/api/comparison/stories/${storyId}`),
@@ -286,20 +352,6 @@ test("serves only published, evidence-linked comparison revisions", async (conte
 	assert.equal(publisher.publisher.leadTimeline.length, 1);
 	assert.equal(publisher.publisher.leadTimeline[0].captureId, "bbc-news:desktop:test");
 	assert.equal(publisher.publisher.headlineTimeline.length, 1);
-
-	const gapsResponse = await handleComparisonRequest(
-		new Request(`https://example.com/api/comparison/gaps?window=${encodeURIComponent(windowId)}`),
-		env,
-	);
-	const gaps = await gapsResponse.json();
-	assert.equal(gapsResponse.status, 200);
-	assert.equal(gaps.gaps.length, 1);
-	assert.equal(gaps.gaps[0].storyId, storyId);
-	assert.deepEqual(gaps.gaps[0].missingPublishers, [
-		{ displayName: "Daily Mail", site: "dailymail-home" },
-	]);
-	assert.equal(gaps.gaps[0].analysedSites, 4);
-	assert.equal(gaps.gaps[0].clusterConfidence, 0.97);
 
 	const feedbackResponse = await handleComparisonRequest(
 		new Request("https://example.com/api/comparison/feedback", {

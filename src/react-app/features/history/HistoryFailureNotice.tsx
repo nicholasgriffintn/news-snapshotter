@@ -1,13 +1,21 @@
 import type { HistoryFailure } from "../../core/types.ts";
 import { dateTimeLabel } from "../../shared/format.ts";
+import { Button } from "../../shared/Button.tsx";
+import { StatusMessage } from "../../shared/StatusMessage.tsx";
 import { groupHistoryFailures, historyFailureGuidance } from "./domain/history-failure-guidance.ts";
 
 export function HistoryFailureNotice({
 	failures,
 	hasMore,
+	loadingMore,
+	onLoadMore,
+	paginationError,
 }: {
 	failures: HistoryFailure[];
 	hasMore: boolean;
+	loadingMore: boolean;
+	onLoadMore: () => void;
+	paginationError: string;
 }) {
 	const countLabel = hasMore ? `${failures.length}+` : String(failures.length);
 
@@ -49,6 +57,16 @@ export function HistoryFailureNotice({
 						</section>
 					);
 				})}
+				{paginationError ? (
+					<StatusMessage compact role="alert" tone="error">
+						{paginationError}
+					</StatusMessage>
+				) : null}
+				{hasMore ? (
+					<Button disabled={loadingMore} onClick={onLoadMore} variant="secondary">
+						{loadingMore ? "Loading older failures…" : "Load older failures"}
+					</Button>
+				) : null}
 			</div>
 		</details>
 	);

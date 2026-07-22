@@ -77,6 +77,14 @@ export function resolvePageMetadata(
 			title: "Administration | News Snapshotter",
 		};
 	}
+	if (page === "not-found") {
+		return {
+			canonicalPath: pathname,
+			description: "The requested News Snapshotter page was not found.",
+			indexable: false,
+			title: "Page not found | News Snapshotter",
+		};
+	}
 
 	return {
 		canonicalPath: "/",

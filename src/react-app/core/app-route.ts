@@ -1,4 +1,11 @@
-export type AppPage = "admin" | "archive" | "compare" | "history" | "privacy" | "terms";
+export type AppPage =
+	| "admin"
+	| "archive"
+	| "compare"
+	| "history"
+	| "not-found"
+	| "privacy"
+	| "terms";
 
 export function resolveAppPage(path: string): AppPage {
 	if (path === "/admin" || path.startsWith("/admin/")) {
@@ -10,11 +17,11 @@ export function resolveAppPage(path: string): AppPage {
 	if (path === "/compare" || path.startsWith("/compare/")) {
 		return "compare";
 	}
-	if (path === "/privacy" || path.startsWith("/privacy/")) {
+	if (path === "/privacy") {
 		return "privacy";
 	}
-	if (path === "/terms" || path.startsWith("/terms/")) {
+	if (path === "/terms") {
 		return "terms";
 	}
-	return "archive";
+	return path === "/" ? "archive" : "not-found";
 }

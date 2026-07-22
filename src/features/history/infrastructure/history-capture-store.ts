@@ -19,6 +19,7 @@ type CaptureRow = {
 	source_url: string;
 	structure_hash: string;
 	triggered_at: string;
+	warnings_json?: string | null;
 };
 
 type ObservationRow = {
@@ -143,6 +144,9 @@ export async function loadCaptureExtraction(
 		contentHash: capture.content_hash,
 		elements: observations.results.map(rowToElement),
 		structureHash: capture.structure_hash,
-		warnings: [],
+		warnings:
+			capture.warnings_json === undefined || capture.warnings_json === null
+				? []
+				: (JSON.parse(capture.warnings_json) as PageExtraction["warnings"]),
 	};
 }

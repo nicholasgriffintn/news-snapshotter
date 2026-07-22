@@ -9,8 +9,8 @@ import { recordComparisonFeedback } from "../infrastructure/comparison-admin-rep
 import {
 	getComparisonStory,
 	getPublisherComparison,
-	listCoverageGaps,
 	listComparisonStories,
+	listComparisonStoryTopics,
 	type ComparisonStoryCursor,
 } from "../infrastructure/comparison-read-repository.ts";
 import {
@@ -76,9 +76,19 @@ function assertPeriod(from: string, to: string): void {
 
 function publisherComparisonPeriod(url: URL): { from: string; to: string } {
 	const to = optionalComparisonDate(url, "to") ?? new Date().toISOString();
+	const period = url.searchParams.get("period");
+	if (period && (url.searchParams.has("from") || url.searchParams.has("to"))) {
+		throw new InvalidInputError("period cannot be combined with from or to");
+	}
+	const periodDays = period
+		? ({ "24h": 1, "30d": 30, "7d": 7, "90d": 90 } as const)[period as "24h" | "30d" | "7d" | "90d"]
+		: undefined;
+	if (period && !periodDays) {
+		throw new InvalidInputError("publisher comparison period is invalid");
+	}
 	const from =
 		optionalComparisonDate(url, "from") ??
-		new Date(Date.parse(to) - 7 * 24 * 60 * 60_000).toISOString();
+		new Date(Date.parse(to) - (periodDays ?? 7) * 24 * 60 * 60_000).toISOString();
 	assertPeriod(from, to);
 
 	return { from, to };
@@ -253,19 +263,6 @@ function withEtag(request: Request, response: Response, revisionId: string): Res
 	return new Response(response.body, { headers, status: response.status });
 }
 
-function cohortResponse(): Response {
-	return Response.json({
-		cohorts: COMPARISON_COHORTS.map((cohort) => ({
-			...cohort,
-			sites: comparisonSites(SITES, cohort.id).map((site) => ({
-				displayName: siteName(site.name),
-				name: site.name,
-				perspective: "unrated",
-			})),
-		})),
-	});
-}
-
 async function windowsResponse(url: URL, env: Env): Promise<Response> {
 	const result = await listComparisonWindows(env.HISTORY_DB, comparisonCohortId(url), {
 		cursor: comparisonWindowCursor(url),
@@ -282,52 +279,46 @@ async function windowsResponse(url: URL, env: Env): Promise<Response> {
 
 async function storiesResponse(url: URL, env: Env): Promise<Response> {
 	const period = storyComparisonPeriod(url);
-	const result = await listComparisonStories(env.HISTORY_DB, {
-		cohortId: comparisonCohortId(url),
-		cursor: comparisonStoryCursor(url),
-		from: period.from,
-		limit: comparisonListLimit(url),
-		publisher: optionalQueryIdentifier(url, "publisher"),
-		topic: optionalQueryIdentifier(url, "topic"),
-		to: period.to,
-		windowId: optionalQueryIdentifier(url, "window"),
-	});
+	const cohortId = comparisonCohortId(url);
+	const query = optionalQueryIdentifier(url, "q");
+	const windowId = optionalQueryIdentifier(url, "window");
+	const publishers = comparisonSites(SITES, cohortId)
+		.map(({ name: site }) => ({ displayName: siteName(site), site }))
+		.sort((left, right) => left.displayName.localeCompare(right.displayName));
+	const queryPublishers = query
+		? publishers
+				.filter(({ displayName }) =>
+					displayName.toLocaleLowerCase("en-GB").includes(query.toLocaleLowerCase("en-GB")),
+				)
+				.map(({ site }) => site)
+		: undefined;
+	const [result, topics] = await Promise.all([
+		listComparisonStories(env.HISTORY_DB, {
+			cohortId,
+			cursor: comparisonStoryCursor(url),
+			from: period.from,
+			limit: comparisonListLimit(url),
+			publisher: optionalQueryIdentifier(url, "publisher"),
+			query,
+			queryPublishers,
+			topic: optionalQueryIdentifier(url, "topic"),
+			to: period.to,
+			windowId,
+		}),
+		listComparisonStoryTopics(env.HISTORY_DB, {
+			cohortId,
+			from: period.from,
+			to: period.to,
+			windowId,
+		}),
+	]);
 
 	return Response.json({
 		cursor: result.nextCursor ? encodeCursor(result.nextCursor) : undefined,
+		facets: { publishers, topics },
 		stories: result.stories.map((story) => ({
 			...story,
 			publishers: story.publishers.map((site) => ({
-				displayName: siteName(site),
-				site,
-			})),
-		})),
-	});
-}
-
-async function gapsResponse(url: URL, env: Env): Promise<Response> {
-	const cohortId = comparisonCohortId(url);
-	const cohort = COMPARISON_COHORTS.find(({ id }) => id === cohortId);
-	if (!cohort) {
-		throw new InvalidInputError("cohort is not configured");
-	}
-	const result = await listCoverageGaps(env.HISTORY_DB, {
-		cohortId,
-		cursor: comparisonStoryCursor(url),
-		limit: comparisonListLimit(url),
-		minimumAnalysedSites: cohort.minimumAnalysedSites,
-		windowId: optionalQueryIdentifier(url, "window"),
-	});
-
-	return Response.json({
-		cursor: result.nextCursor ? encodeCursor(result.nextCursor) : undefined,
-		gaps: result.gaps.map((gap) => ({
-			...gap,
-			missingPublishers: gap.missingPublishers.map((site) => ({
-				displayName: siteName(site),
-				site,
-			})),
-			publishers: gap.publishers.map((site) => ({
 				displayName: siteName(site),
 				site,
 			})),
@@ -473,18 +464,13 @@ export async function handleComparisonRequest(
 		return null;
 	}
 	try {
-		if (request.method === "GET" && url.pathname === "/api/comparison/cohorts") {
-			return cohortResponse();
-		}
 		if (request.method === "GET" && url.pathname === "/api/comparison/windows") {
 			return await windowsResponse(url, env);
 		}
 		if (request.method === "GET" && url.pathname === "/api/comparison/stories") {
 			return await storiesResponse(url, env);
 		}
-		if (request.method === "GET" && url.pathname === "/api/comparison/gaps") {
-			return await gapsResponse(url, env);
-		}
+
 		const storyMatch = /^\/api\/comparison\/stories\/([^/]+)$/.exec(url.pathname);
 		if (request.method === "GET" && storyMatch) {
 			return await storyResponse(

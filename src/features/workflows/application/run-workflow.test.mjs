@@ -70,6 +70,31 @@ test("returns an empty summary when no sites are selected", async () => {
 	});
 });
 
+test("passes the workflow comparison policy to each capture", async () => {
+	const policies = [];
+	const step = { do: async (_name, _config, callback) => callback() };
+	const capture = async (_env, site, device, timestamp, enqueueComparison) => {
+		policies.push(enqueueComparison);
+		return {
+			capturedAt: timestamp,
+			device,
+			key: `${site.name}-${device}.png`,
+			name: site.name,
+			status: "success",
+			triggeredAt: timestamp,
+		};
+	};
+
+	await runSnapshotWorkflow(
+		{},
+		{ enqueueComparison: false, triggeredAt, sites: [sites[0]] },
+		step,
+		capture,
+	);
+
+	assert.deepEqual(policies, [false, false]);
+});
+
 test("bounds durable capture steps without retrying a timed-out browser operation", async () => {
 	const configs = [];
 	const step = {

@@ -23,6 +23,71 @@ function timelineRequest(method, path, body) {
 	return new Request(`https://archive.example${path}`, init);
 }
 
+function seedComparisonFeedback(sqlite, captureId) {
+	sqlite
+		.prepare(
+			`INSERT INTO analysis_runs (
+				run_id, idempotency_key, kind, capture_id, input_hash, pipeline_version,
+				taxonomy_version, prompt_version, schema_version, model, status, created_at
+			) VALUES (?, ?, 'capture-annotation', ?, ?, 1, 1, 1, 1, 'test-model', 'succeeded', ?)`,
+		)
+		.run("run-a", "run-a-key", captureId, "input-a", "2026-07-17T09:05:00.000Z");
+	sqlite
+		.prepare(
+			`INSERT INTO comparison_stories (
+				story_id, cohort_id, slug, normalised_label, first_seen_at, last_seen_at, status,
+				current_revision_id
+			) VALUES (?, ?, ?, ?, ?, ?, 'open', ?)`,
+		)
+		.run(
+			"story-a",
+			"uk-national-hourly",
+			"story-a",
+			"Story A",
+			"2026-07-17T09:00:00.000Z",
+			"2026-07-17T09:00:00.000Z",
+			"revision-a",
+		);
+	sqlite
+		.prepare(
+			`INSERT INTO story_revisions (
+				revision_id, story_id, run_id, summary, common_ground_json, differences_json,
+				analysis_status, confidence, source_count, evidence_count,
+				perspective_snapshot_json, r2_document_key, created_at
+			) VALUES (?, ?, ?, ?, '[]', '[]', 'available', 0.8, 1, 1, '[]', ?, ?)`,
+		)
+		.run(
+			"revision-a",
+			"story-a",
+			"run-a",
+			"A comparison summary",
+			"comparison/revision-a.json",
+			"2026-07-17T09:10:00.000Z",
+		);
+	sqlite
+		.prepare(
+			`INSERT INTO story_revision_evidence (
+				revision_id, evidence_id, annotation_run_id, capture_id, placement_key, site
+			) VALUES (?, ?, ?, ?, ?, ?)`,
+		)
+		.run("revision-a", "evidence-a", "run-a", captureId, "placement-a", "bbc-home");
+	sqlite
+		.prepare(
+			`INSERT INTO analysis_feedback (
+				feedback_id, revision_id, story_id, story_label, evidence_id, reason, note, submitted_at
+			) VALUES (?, ?, ?, ?, ?, 'incorrect', ?, ?)`,
+		)
+		.run(
+			"feedback-a",
+			"revision-a",
+			"story-a",
+			"Story A",
+			"evidence-a",
+			"The comparison needs review",
+			"2026-07-17T09:15:00.000Z",
+		);
+}
+
 test("reindex scans bounded R2 pages and queues only desktop history artefacts", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	sqlite
@@ -41,6 +106,12 @@ test("reindex scans bounded R2 pages and queues only desktop history artefacts",
 			"INSERT INTO history_monthly_aggregate_runs (site, month, generated_at) VALUES (?, ?, ?)",
 		)
 		.run("bbc-home", "2026-06", "2026-07-01T00:00:00.000Z");
+	await ingestExtraction(
+		database,
+		"capture-reset.json.gz",
+		historyExtraction("capture-reset", "2026-07-17T09:00:00.000Z"),
+	);
+	seedComparisonFeedback(sqlite, "capture-reset");
 	const batches = [];
 	const response = await handleHistoryAdminRequest(
 		request("/api/admin/history/reindex", { limit: 100, reset: true, site: "bbc-home" }),
@@ -120,6 +191,15 @@ test("reindex scans bounded R2 pages and queues only desktop history artefacts",
 		sqlite.prepare("SELECT COUNT(*) AS count FROM history_monthly_aggregate_runs").get().count,
 		0,
 	);
+	assert.equal(sqlite.prepare("SELECT COUNT(*) AS count FROM comparison_stories").get().count, 0);
+	const preservedFeedback = sqlite
+		.prepare(
+			"SELECT revision_id, story_id, story_label FROM analysis_feedback WHERE feedback_id = ?",
+		)
+		.get("feedback-a");
+	assert.equal(preservedFeedback.revision_id, "revision-a");
+	assert.equal(preservedFeedback.story_id, "story-a");
+	assert.equal(preservedFeedback.story_label, "Story A");
 	sqlite.close();
 });
 

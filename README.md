@@ -41,6 +41,18 @@ Every configured device is captured once per workflow run. There are no same-run
 
 Failures are written to the `CAPTURE_FAILURES` KV namespace under a date partition and retained for 90 days. Records contain the site, brand, category, device, reason, source URL, and capture timestamps. Wrangler automatically provisions the namespace when it is first deployed.
 
+## Scheduled operations
+
+The Worker registers these UTC schedules:
+
+| Cron              | Operation                                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| `0 * * * *`       | Capture priority-one publishers, prepare comparison windows, and reconcile queue handoffs |
+| `15 2 * * *`      | Reserved priority-two trigger; intentionally errors until that tier is enabled            |
+| `30 2 * * 1`      | Reserved priority-three trigger; intentionally errors until that tier is enabled          |
+| `45 2 1 * *`      | Reserved priority-four trigger; intentionally errors until that tier is enabled           |
+| `15 3 2,7,14 * *` | Queue monthly History aggregate materialisation                                           |
+
 ## API
 
 Screenshot, catalogue, and history reads are public. Workflow and admin requests require
@@ -116,6 +128,9 @@ The Worker requires these bindings:
 - `ARCHIVE_DATA`: private R2 bucket for compressed HTML and extraction artefacts
 - `HISTORY_DB`: D1 database containing queryable capture, observation, and change metadata
 - `HISTORY_INDEX_QUEUE`: Queue producer for persisted extraction artefacts
+- `ANALYSIS_QUEUE`: Queue producer for comparison analysis and publication work
+- `AI`: Workers AI binding used by the comparison pipeline
+- `STORY_VECTORS`: remote Vectorize index used to cluster story evidence
 - `CAPTURE_FAILURES`: Workers KV namespace for failed captures
 - `CONTACT_EMAIL`: restricted Email Service binding for archive enquiries
 - `CONTACT_RATE_LIMIT`: native Rate Limiting binding for contact submissions

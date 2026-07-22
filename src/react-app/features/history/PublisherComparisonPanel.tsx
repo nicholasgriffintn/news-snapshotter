@@ -7,6 +7,7 @@ import { SectionHeader } from "../../shared/PageHeaders.tsx";
 import { StatusMessage } from "../../shared/StatusMessage.tsx";
 import { useComparisonData } from "../comparison/comparison-api.ts";
 import type { PublisherComparison } from "../comparison/domain/contracts.ts";
+import type { ResearchPeriod } from "./domain/research-state.ts";
 
 type PublisherTimelineItem = {
 	captureId: string;
@@ -95,10 +96,32 @@ function PublisherTimeline({
 	);
 }
 
-export function PublisherComparisonPanel({ site }: { site: string }) {
+export function PublisherComparisonPanel({
+	period,
+	site,
+}: {
+	period: ResearchPeriod;
+	site: string;
+}) {
 	const result = useComparisonData<PublisherComparison>(
-		`/api/comparison/publishers/${encodeURIComponent(site)}`,
+		period === "all"
+			? undefined
+			: `/api/comparison/publishers/${encodeURIComponent(site)}?period=${encodeURIComponent(period)}`,
 	);
+	if (period === "all") {
+		return (
+			<Card as="section" className="research-panel comparison-publisher-workspace" id="comparison">
+				<SectionHeader
+					description="Compare homepage leadership, topic prominence and publication timing across the cohort."
+					title="Publisher comparison"
+				/>
+				<StatusMessage compact role="status" tone="info">
+					Publisher comparison supports reporting periods up to 90 days. Select a shorter Research
+					period.
+				</StatusMessage>
+			</Card>
+		);
+	}
 	if (result.loading && !result.data) {
 		return (
 			<Card
@@ -118,7 +141,17 @@ export function PublisherComparisonPanel({ site }: { site: string }) {
 		);
 	}
 	if (result.error || !result.data) {
-		return null;
+		return (
+			<Card as="section" className="research-panel comparison-publisher-workspace" id="comparison">
+				<SectionHeader
+					description="Compare homepage leadership, topic prominence and publication timing across the cohort."
+					title="Publisher comparison"
+				/>
+				<StatusMessage compact role="alert" tone="error">
+					{result.error ?? "Publisher comparison could not be loaded."}
+				</StatusMessage>
+			</Card>
+		);
 	}
 	const data = result.data;
 

@@ -5,6 +5,8 @@ import type { Device, ScreenshotSummary, SiteCategory } from "../../../core/doma
 const PREFIX_LIST_CONCURRENCY = 16;
 const SCREENSHOT_KEY =
 	/^brand=[a-z0-9-]+\/category=(news|sport)\/date=\d{4}-\d{2}-\d{2}\/[a-z0-9-]+-(?:(?:desktop|mobile)-)?\d{4}-\d{2}-\d{2}T[\d-]+Z(?:-thumbnail\.jpg|\.(?:jpe?g|png|webp))$/;
+const SCREENSHOT_CROP_KEY =
+	/^brand=[a-z0-9-]+\/category=(news|sport)\/date=\d{4}-\d{2}-\d{2}\/site=[a-z0-9-]+\/device=(desktop|mobile)\/\d{4}-\d{2}-\d{2}T[\d-]+Z\.image-\d{2}\.jpeg$/;
 
 export function screenshotImageUrl(key: string): string {
 	return `/api/screenshots/image?key=${encodeURIComponent(key)}`;
@@ -90,12 +92,15 @@ export async function serveScreenshot(
 	env: Pick<Env, "SCREENSHOTS">,
 ): Promise<Response> {
 	const key = new URL(request.url).searchParams.get("key");
-	if (!key || !SCREENSHOT_KEY.test(key)) {
+	if (!key || (!SCREENSHOT_KEY.test(key) && !SCREENSHOT_CROP_KEY.test(key))) {
 		return Response.json({ message: "Invalid screenshot key" }, { status: 400 });
 	}
 
 	const object = await env.SCREENSHOTS.get(key, { onlyIf: request.headers });
 	if (!object) {
+		return Response.json({ message: "Screenshot not found" }, { status: 404 });
+	}
+	if (object.customMetadata?.visibility === "admin") {
 		return Response.json({ message: "Screenshot not found" }, { status: 404 });
 	}
 

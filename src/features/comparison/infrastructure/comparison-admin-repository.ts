@@ -10,9 +10,14 @@ export async function recordComparisonFeedback(
 	},
 ): Promise<string | null> {
 	const revision = await database
-		.prepare("SELECT revision_id FROM story_revisions WHERE revision_id = ?")
+		.prepare(
+			`SELECT r.revision_id, r.story_id, s.normalised_label
+			FROM story_revisions r
+			JOIN comparison_stories s ON s.story_id = r.story_id
+			WHERE r.revision_id = ?`,
+		)
 		.bind(input.revisionId)
-		.first<{ revision_id: string }>();
+		.first<{ normalised_label: string; revision_id: string; story_id: string }>();
 	if (!revision) {
 		return null;
 	}
@@ -32,12 +37,14 @@ export async function recordComparisonFeedback(
 	await database
 		.prepare(
 			`INSERT INTO analysis_feedback (
-				feedback_id, revision_id, evidence_id, reason, note, submitted_at
-			) VALUES (?, ?, ?, ?, ?, ?)`,
+				feedback_id, revision_id, story_id, story_label, evidence_id, reason, note, submitted_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		)
 		.bind(
 			feedbackId,
 			input.revisionId,
+			revision.story_id,
+			revision.normalised_label,
 			input.evidenceId ?? null,
 			input.reason,
 			input.note ?? null,
@@ -170,10 +177,12 @@ export async function listAnalysisFeedback(
 			`SELECT
 				af.feedback_id, af.revision_id, af.evidence_id, af.reason, af.note,
 				af.submitted_at, af.review_status, af.resolution, af.resolved_at,
-				r.story_id, s.normalised_label
+				COALESCE(r.story_id, af.story_id) AS story_id,
+				COALESCE(s.normalised_label, af.story_label) AS normalised_label,
+				CASE WHEN r.revision_id IS NULL THEN 0 ELSE 1 END AS revision_available
 			FROM analysis_feedback af
-			JOIN story_revisions r ON r.revision_id = af.revision_id
-			JOIN comparison_stories s ON s.story_id = r.story_id
+			LEFT JOIN story_revisions r ON r.revision_id = af.revision_id
+			LEFT JOIN comparison_stories s ON s.story_id = r.story_id
 			WHERE af.review_status = ?
 			ORDER BY af.submitted_at DESC, af.feedback_id DESC
 			LIMIT ?`,

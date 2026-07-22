@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
 import { storeCaptureArtefacts } from "./capture-artefacts.ts";
 
 test("keeps a stored screenshot successful when indexing cannot be queued", async (context) => {
 	context.mock.method(console, "error", () => undefined);
+	const { database, sqlite } = await createHistoryTestDatabase();
 	const screenshots = [];
 	const page = {
 		evaluate: async () => {
@@ -43,6 +45,7 @@ test("keeps a stored screenshot successful when indexing cannot be queued", asyn
 		device: "desktop",
 		env: {
 			ARCHIVE_DATA: { put: async () => undefined },
+			HISTORY_DB: database,
 			HISTORY_INDEX_QUEUE: {
 				send: async () => {
 					throw new Error("Queue unavailable");
@@ -75,9 +78,15 @@ test("keeps a stored screenshot successful when indexing cannot be queued", asyn
 	assert.equal(result.analysis.indexingStatus, "not-queued");
 	assert.equal(screenshots.length, 2);
 	assert.equal(screenshots[0][2].customMetadata.displayName, "BBC");
+	assert.equal(
+		sqlite.prepare("SELECT destination FROM processing_outbox").get().destination,
+		"history-index",
+	);
+	sqlite.close();
 });
 
 test("captures images before analysis persistence can expose delayed page furniture", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
 	let delayedBannerVisible = false;
 	const screenshots = [];
 	const page = {
@@ -121,6 +130,7 @@ test("captures images before analysis persistence can expose delayed page furnit
 					delayedBannerVisible = true;
 				},
 			},
+			HISTORY_DB: database,
 			HISTORY_INDEX_QUEUE: { send: async () => undefined },
 			SCREENSHOTS: { put: async (...args) => screenshots.push(args) },
 		},
@@ -144,7 +154,8 @@ test("captures images before analysis persistence can expose delayed page furnit
 	});
 
 	assert.deepEqual(
-		screenshots.map(([, contents]) => contents.toString()),
+		screenshots.map(([, body]) => body.toString()),
 		["clean page", "clean page"],
 	);
+	sqlite.close();
 });

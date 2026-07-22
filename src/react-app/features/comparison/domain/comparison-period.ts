@@ -48,7 +48,11 @@ export function comparisonPeriodRange(
 			return undefined;
 		}
 		const from = new Date(`${date}T00:00:00.000Z`);
-		if (!Number.isFinite(from.getTime())) {
+		if (
+			!Number.isFinite(from.getTime()) ||
+			from.toISOString().slice(0, 10) !== date ||
+			from.getTime() > Date.now()
+		) {
 			return undefined;
 		}
 		return { from: from.toISOString(), to: new Date(from.getTime() + 86_400_000).toISOString() };

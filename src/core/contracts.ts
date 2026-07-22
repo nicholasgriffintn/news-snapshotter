@@ -54,6 +54,7 @@ export type CaptureSelection = {
 
 export type CaptureDispatch = {
 	batchId: string;
+	failedRunnerCount: number;
 	runnerCount: number;
 	selectedSites: CatalogueSite[];
 	triggeredAt: string;

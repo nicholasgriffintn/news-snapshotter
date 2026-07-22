@@ -3,6 +3,11 @@ import { SITES } from "../../catalogue/domain/sites.ts";
 import type { AnalysisMessage } from "../../comparison/domain/pipeline.ts";
 import { parsePageExtraction } from "../domain/extraction.ts";
 import { ingestExtraction } from "../infrastructure/history-ingestion-repository.ts";
+import {
+	completeProcessingHandoff,
+	failProcessingHandoff,
+	retainProcessingHandoff,
+} from "../infrastructure/processing-outbox.ts";
 
 export type HistoryIndexMessage =
 	| {
@@ -215,13 +220,22 @@ export async function indexExtractionArtefact(
 		await clearResolvedIndexingFailure(env.HISTORY_DB, message.extractionKey);
 		const site = SITES.find(({ name }) => name === document.capture.site);
 		if (site?.comparison?.enabled && message.enqueueComparison && env.ANALYSIS_QUEUE) {
+			const analysisMessage = {
+				captureId: document.capture.captureId,
+				contentHash: document.contentHash,
+				kind: "analyse-capture" as const,
+			};
+			const outboxId = `analysis:${document.capture.captureId}:${document.contentHash}`;
+			await retainProcessingHandoff(env.HISTORY_DB, {
+				destination: "analysis",
+				message: analysisMessage,
+				outboxId,
+			});
 			try {
-				await env.ANALYSIS_QUEUE.send({
-					captureId: document.capture.captureId,
-					contentHash: document.contentHash,
-					kind: "analyse-capture",
-				});
+				await env.ANALYSIS_QUEUE.send(analysisMessage);
+				await completeProcessingHandoff(env.HISTORY_DB, outboxId);
 			} catch (error) {
+				await failProcessingHandoff(env.HISTORY_DB, outboxId, error);
 				console.error("Could not enqueue comparison analysis", {
 					captureId: document.capture.captureId,
 					error: errorMessage(error),

@@ -117,3 +117,7 @@ test("catalogue capture regions distinguish UK, US, and international editions",
 	assert.equal(siteNamed("nytimes-international").captureRegion, "international");
 	assert.equal(siteNamed("washingtonpost-com").captureRegion, "us");
 });
+
+test("catalogue URLs use publisher canonical routes", () => {
+	assert.equal(siteNamed("nytimes-international").url, "https://www.nytimes.com/international/");
+});

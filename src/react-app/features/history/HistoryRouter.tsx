@@ -7,6 +7,8 @@ import { SavedTimelinesPage } from "./SavedTimelinesPage.tsx";
 import { ContentComparisonPage } from "./ContentComparisonPage.tsx";
 import { contentKeyFromSearch } from "./history-routes.ts";
 import { useHistoryCatalogue } from "./useHistoryCatalogue.ts";
+import { ButtonLink } from "../../shared/Button.tsx";
+import { NoDataState } from "../../shared/NoDataState.tsx";
 
 export function HistoryRouter({ site }: { site: string }) {
 	const catalogue = useHistoryCatalogue();
@@ -43,5 +45,18 @@ export function HistoryRouter({ site }: { site: string }) {
 			<SavedTimelinesPage preferredName={preferredName} site={site} />
 		);
 	}
-	return <HistoryPage preferredName={preferredName} site={site} />;
+	if (!resource) {
+		return <HistoryPage preferredName={preferredName} site={site} />;
+	}
+	return (
+		<NoDataState
+			action={
+				<ButtonLink href={`/history/${encodeURIComponent(site)}`}>
+					Return to site history
+				</ButtonLink>
+			}
+			description="The requested history page does not exist or is no longer available."
+			title="History page not found"
+		/>
+	);
 }

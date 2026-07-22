@@ -6,6 +6,7 @@ import {
 	fetchHistoryExtractions,
 	requeueComparisonCaptures,
 	resolveComparisonFeedback,
+	withdrawComparisonRevision,
 	type ComparisonAnalysisRun,
 	type ComparisonFeedback,
 	type ExtractionSummary,
@@ -108,6 +109,7 @@ function FeedbackItem({
 }) {
 	const [resolution, setResolution] = useState("");
 	const [state, setState] = useState("");
+	const [busy, setBusy] = useState(false);
 
 	async function resolve(status: "dismissed" | "resolved"): Promise<void> {
 		if (resolution.trim().length < 5) {
@@ -115,6 +117,7 @@ function FeedbackItem({
 			return;
 		}
 		setState("Saving review…");
+		setBusy(true);
 		try {
 			await resolveComparisonFeedback(apiKey, feedback.feedbackId, {
 				resolution: resolution.trim(),
@@ -123,6 +126,30 @@ function FeedbackItem({
 			onResolved();
 		} catch (reason) {
 			setState(message(reason, "Could not save the review."));
+		} finally {
+			setBusy(false);
+		}
+	}
+
+	async function withdraw(): Promise<void> {
+		const reason = resolution.trim();
+		if (reason.length < 5 || reason.length > 500) {
+			setState("Add a review note between 5 and 500 characters first.");
+			return;
+		}
+		if (!window.confirm(`Withdraw the published revision for “${feedback.label}”?`)) {
+			return;
+		}
+		setBusy(true);
+		setState("Withdrawing revision…");
+		try {
+			await withdrawComparisonRevision(apiKey, feedback.revisionId, reason);
+			setState("Revision withdrawn. The report remains pending for review.");
+			onResolved();
+		} catch (reason) {
+			setState(message(reason, "Could not withdraw the revision."));
+		} finally {
+			setBusy(false);
 		}
 	}
 
@@ -133,14 +160,18 @@ function FeedbackItem({
 					<strong>{feedback.reason.replaceAll("-", " ")}</strong>
 					<time dateTime={feedback.submittedAt}>{dateTimeLabel(feedback.submittedAt)}</time>
 				</div>
-				<a
-					href={
-						`/compare/stories/${encodeURIComponent(feedback.storyId)}` +
-						`?revision=${encodeURIComponent(feedback.revisionId)}`
-					}
-				>
-					Open comparison
-				</a>
+				{feedback.revisionAvailable ? (
+					<a
+						href={
+							`/compare/stories/${encodeURIComponent(feedback.storyId)}` +
+							`?revision=${encodeURIComponent(feedback.revisionId)}`
+						}
+					>
+						Open comparison
+					</a>
+				) : (
+					<span>Source comparison was reset</span>
+				)}
 			</header>
 			<h4>{feedback.label}</h4>
 			{feedback.note ? <p>{feedback.note}</p> : <p>No note was supplied.</p>}
@@ -149,17 +180,23 @@ function FeedbackItem({
 					<label>
 						<span>Review note</span>
 						<input
-							maxLength={1_000}
+							disabled={busy}
+							maxLength={500}
 							onChange={(event) => setResolution(event.target.value)}
 							value={resolution}
 						/>
 					</label>
-					<Button onClick={() => void resolve("resolved")} variant="secondary">
+					<Button disabled={busy} onClick={() => void resolve("resolved")} variant="secondary">
 						Resolve
 					</Button>
-					<Button onClick={() => void resolve("dismissed")} variant="secondary">
+					<Button disabled={busy} onClick={() => void resolve("dismissed")} variant="secondary">
 						Dismiss
 					</Button>
+					{feedback.revisionAvailable ? (
+						<Button disabled={busy} onClick={() => void withdraw()} variant="danger">
+							Withdraw revision
+						</Button>
+					) : null}
 				</div>
 			) : (
 				<p className="comparison-feedback-item__resolution">{feedback.resolution}</p>

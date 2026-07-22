@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { displayName, timeLabel } from "../../shared/format.ts";
 import { Dialog, DialogCloseButton } from "../../shared/Dialog.tsx";
@@ -8,19 +8,29 @@ import { DeviceIcon } from "./DeviceIcon";
 
 export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClose: () => void }) {
 	const initialDevice = preferredVariant(group).device;
+	const tabPanelId = useId();
 	const [device, setDevice] = useState<Snapshot["device"]>(initialDevice);
 	const devices = (["desktop", "mobile"] as const).filter((candidate) => group.variants[candidate]);
 	const snapshot = group.variants[device] ?? preferredVariant(group);
 	const title = displayName(group.name, group.displayName);
 
 	function selectAdjacentDevice(event: React.KeyboardEvent, currentIndex: number) {
-		if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") {
+		if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
 			return;
 		}
 		event.preventDefault();
-		const direction = event.key === "ArrowRight" ? 1 : -1;
-		const nextIndex = (currentIndex + direction + devices.length) % devices.length;
+		const nextIndex =
+			event.key === "Home"
+				? 0
+				: event.key === "End"
+					? devices.length - 1
+					: (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + devices.length) %
+						devices.length;
 		setDevice(devices[nextIndex]);
+		event.currentTarget.parentElement
+			?.querySelectorAll<HTMLButtonElement>("[role=tab]")
+			.item(nextIndex)
+			.focus();
 	}
 
 	return (
@@ -50,11 +60,14 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 				<div aria-label="Screenshot variant" className="modal__variants" role="tablist">
 					{devices.map((candidate, index) => (
 						<button
+							aria-controls={tabPanelId}
 							aria-selected={snapshot.device === candidate}
+							id={`${tabPanelId}-${candidate}`}
 							key={candidate}
 							onClick={() => setDevice(candidate)}
 							onKeyDown={(event) => selectAdjacentDevice(event, index)}
 							role="tab"
+							tabIndex={snapshot.device === candidate ? 0 : -1}
 							type="button"
 						>
 							<DeviceIcon device={candidate} />
@@ -64,7 +77,13 @@ export function SnapshotModal({ group, onClose }: { group: SnapshotGroup; onClos
 				</div>
 			) : null}
 
-			<div className={`modal__image modal__image--${snapshot.device}`} role="tabpanel">
+			<div
+				aria-labelledby={`${tabPanelId}-${snapshot.device}`}
+				className={`modal__image modal__image--${snapshot.device}`}
+				id={tabPanelId}
+				role="tabpanel"
+				tabIndex={0}
+			>
 				<img
 					alt={`Full ${snapshot.device} screenshot of ${title}`}
 					key={snapshot.key}

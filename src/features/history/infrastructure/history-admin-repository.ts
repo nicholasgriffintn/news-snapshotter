@@ -171,7 +171,89 @@ export async function resetHistoryIndex(database: D1Database, site?: string): Pr
 		const prepared = database.prepare(`${sql}${suffix}`);
 		return site ? prepared.bind(site) : prepared;
 	};
-	const statements = [
+	const comparisonStatements: D1PreparedStatement[] = site
+		? [
+				database
+					.prepare(
+						`DELETE FROM story_revisions
+						WHERE window_id IN (
+							SELECT window_id FROM comparison_window_sites WHERE site = ?
+						) OR revision_id IN (
+							SELECT revision_id FROM story_revision_evidence WHERE site = ?
+						)`,
+					)
+					.bind(site, site),
+				database.prepare(
+					`UPDATE comparison_stories SET current_revision_id = (
+						SELECT revision_id FROM story_revisions
+						WHERE story_id = comparison_stories.story_id AND withdrawn_at IS NULL
+						ORDER BY created_at DESC, revision_id DESC LIMIT 1
+					)
+					WHERE current_revision_id IS NOT NULL
+						AND NOT EXISTS (
+							SELECT 1 FROM story_revisions
+							WHERE revision_id = comparison_stories.current_revision_id
+						)`,
+				),
+				database.prepare("DELETE FROM story_memberships WHERE site = ?").bind(site),
+				database
+					.prepare(
+						`DELETE FROM analysis_runs
+						WHERE kind IN ('story-comparison', 'window-finalisation')
+							AND window_id IN (
+								SELECT window_id FROM comparison_window_sites WHERE site = ?
+							)`,
+					)
+					.bind(site),
+				database
+					.prepare(
+						`DELETE FROM analysis_runs
+						WHERE kind = 'capture-annotation' AND capture_id IN (
+							SELECT capture_id FROM analysed_captures WHERE site = ?
+						)`,
+					)
+					.bind(site),
+				database.prepare(
+					`DELETE FROM comparison_stories
+					WHERE NOT EXISTS (
+						SELECT 1 FROM story_memberships
+						WHERE story_memberships.story_id = comparison_stories.story_id
+					)`,
+				),
+				database
+					.prepare(
+						`UPDATE comparison_window_sites SET
+							status = 'expected', capture_id = NULL, failure_reason = NULL, updated_at = ?
+						WHERE site = ?`,
+					)
+					.bind(new Date().toISOString(), site),
+				database
+					.prepare(
+						`UPDATE comparison_windows SET
+							captured_site_count = (
+								SELECT COUNT(*) FROM comparison_window_sites
+								WHERE comparison_window_sites.window_id = comparison_windows.window_id
+									AND capture_id IS NOT NULL
+							),
+							analysed_site_count = (
+								SELECT COUNT(*) FROM comparison_window_sites
+								WHERE comparison_window_sites.window_id = comparison_windows.window_id
+									AND status = 'analysed'
+							),
+							status = 'pending', finalised_at = NULL
+						WHERE window_id IN (
+							SELECT window_id FROM comparison_window_sites WHERE site = ?
+						)`,
+					)
+					.bind(site),
+			]
+		: [
+				database.prepare("DELETE FROM comparison_stories"),
+				database.prepare("DELETE FROM analysis_runs"),
+				database.prepare("DELETE FROM comparison_windows"),
+			];
+	await database.batch([
+		...comparisonStatements,
 		statement("DELETE FROM history_monthly_aggregates"),
 		statement("DELETE FROM history_monthly_aggregate_runs"),
 		statement("DELETE FROM history_ingestion_metrics"),
@@ -179,6 +261,5 @@ export async function resetHistoryIndex(database: D1Database, site?: string): Pr
 		statement("DELETE FROM analysed_captures"),
 		statement("DELETE FROM images"),
 		statement("DELETE FROM extraction_failures"),
-	];
-	await database.batch(statements);
+	]);
 }

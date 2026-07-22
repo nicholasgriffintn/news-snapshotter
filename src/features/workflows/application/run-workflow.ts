@@ -4,6 +4,7 @@ import { captureDevice } from "../../capture/application/capture-device.ts";
 import type { Device, ScreenshotResult, SiteDefinition } from "../../../core/domain.ts";
 
 export type SnapshotWorkflowParams = {
+	enqueueComparison: boolean;
 	sites: SiteDefinition[];
 	startDelaySeconds?: number;
 	triggeredAt: string;
@@ -34,6 +35,7 @@ type CaptureDevice = (
 		| "ARCHIVE_DATA"
 		| "BROWSER"
 		| "CAPTURE_FAILURES"
+		| "HISTORY_DB"
 		| "HISTORY_INDEX_QUEUE"
 		| "HYPERBROWSER_API_KEY"
 		| "SCREENSHOTS"
@@ -41,6 +43,7 @@ type CaptureDevice = (
 	site: SiteDefinition,
 	device: Device,
 	triggeredAt: string,
+	enqueueComparison: boolean,
 ) => Promise<ScreenshotResult>;
 
 export async function runSnapshotWorkflow(
@@ -49,7 +52,7 @@ export async function runSnapshotWorkflow(
 	step: WorkflowStepLike,
 	capture: CaptureDevice = captureDevice,
 ) {
-	const { sites, triggeredAt } = params;
+	const { enqueueComparison, sites, triggeredAt } = params;
 	const results: ScreenshotResult[] = [];
 	if (params.startDelaySeconds && step.sleep) {
 		const duration: `${number} seconds` = `${params.startDelaySeconds} seconds`;
@@ -64,7 +67,7 @@ export async function runSnapshotWorkflow(
 				await step.sleep(`wait between ${site.name} devices`, duration);
 			}
 			const result = await step.do(`screenshot-${site.name}-${device}`, CAPTURE_STEP_CONFIG, () => {
-				return capture(env, site, device, triggeredAt);
+				return capture(env, site, device, triggeredAt, enqueueComparison);
 			});
 			results.push(result);
 		}

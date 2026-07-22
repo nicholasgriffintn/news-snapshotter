@@ -55,7 +55,9 @@ export function useHistoryPage(site: string) {
 	const [loadingCaptures, setLoadingCaptures] = useState(true);
 	const [loadingCapture, setLoadingCapture] = useState(false);
 	const [loadingOlder, setLoadingOlder] = useState(false);
+	const [loadingMoreFailures, setLoadingMoreFailures] = useState(false);
 	const [error, setError] = useState("");
+	const [failureError, setFailureError] = useState("");
 
 	useEffect(() => {
 		function onPopState() {
@@ -71,20 +73,13 @@ export function useHistoryPage(site: string) {
 		setError("");
 		setCaptures([]);
 		setCaptureCursor(undefined);
-		setFailures([]);
-		setFailureCursor(undefined);
-		Promise.all([
-			fetchHistoryCaptures(site, undefined, { signal: controller.signal }),
-			fetchHistoryFailures(site, { signal: controller.signal }),
-		])
-			.then(([capturePage, failurePage]) => {
+		fetchHistoryCaptures(site, undefined, { signal: controller.signal })
+			.then((capturePage) => {
 				if (controller.signal.aborted) {
 					return;
 				}
 				setCaptures(capturePage.captures);
 				setCaptureCursor(capturePage.cursor);
-				setFailures(failurePage.failures);
-				setFailureCursor(failurePage.cursor);
 				setSelection((current) => {
 					const next = normaliseHistorySelection(current, capturePage.captures);
 					if (next !== current) {
@@ -101,6 +96,28 @@ export function useHistoryPage(site: string) {
 			.finally(() => {
 				if (!controller.signal.aborted) {
 					setLoadingCaptures(false);
+				}
+			});
+		return () => controller.abort();
+	}, [site]);
+
+	useEffect(() => {
+		const controller = new AbortController();
+		setFailures([]);
+		setFailureCursor(undefined);
+		setFailureError("");
+		fetchHistoryFailures(site, { signal: controller.signal })
+			.then((page) => {
+				if (!controller.signal.aborted) {
+					setFailures(page.failures);
+					setFailureCursor(page.cursor);
+				}
+			})
+			.catch((reason: unknown) => {
+				if (!isAbortError(reason)) {
+					setFailureError(
+						reason instanceof Error ? reason.message : "Could not load failure notices",
+					);
 				}
 			});
 		return () => controller.abort();
@@ -178,6 +195,39 @@ export function useHistoryPage(site: string) {
 		}
 	}, [captureCursor, site]);
 
+	const loadMoreFailures = useCallback(async () => {
+		if (!failureCursor || loadingMoreFailures) {
+			return;
+		}
+		setLoadingMoreFailures(true);
+		setFailureError("");
+		try {
+			const page = await fetchHistoryFailures(site, { cursor: failureCursor });
+			if (page.cursor && page.cursor === failureCursor) {
+				throw new Error("Failure pagination did not advance");
+			}
+			setFailures((current) => {
+				const seen = new Set(
+					current.map(
+						({ captureId, failedAt, stage }) => `${failedAt}:${captureId ?? ""}:${stage}`,
+					),
+				);
+				return [
+					...current,
+					...page.failures.filter(
+						({ captureId, failedAt, stage }) =>
+							!seen.has(`${failedAt}:${captureId ?? ""}:${stage}`),
+					),
+				];
+			});
+			setFailureCursor(page.cursor);
+		} catch (reason) {
+			setFailureError(reason instanceof Error ? reason.message : "Could not load older failures");
+		} finally {
+			setLoadingMoreFailures(false);
+		}
+	}, [failureCursor, loadingMoreFailures, site]);
+
 	const edgeChanges = useMemo(() => {
 		return changes.filter((change) => {
 			return (
@@ -193,10 +243,13 @@ export function useHistoryPage(site: string) {
 		captures,
 		changes: edgeChanges,
 		error,
+		failureError,
 		failures,
 		failureCursor,
 		loadOlder,
+		loadMoreFailures,
 		loading: loadingCaptures || loadingCapture,
+		loadingMoreFailures,
 		loadingOlder,
 		selectCapture,
 		selection,

@@ -19,8 +19,8 @@ function captureStatement(
 				capture_id, site, device, captured_at, triggered_at, source_url,
 				screenshot_key, html_key, extraction_key, content_hash, structure_hash,
 				page_width, page_height, extractor_name, extractor_version, schema_version,
-				sanitisation_version, profile, status, indexed_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'indexed', ?)
+				sanitisation_version, profile, warnings_json, status, indexed_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'indexed', ?)
 			ON CONFLICT(capture_id) DO UPDATE SET
 				extraction_key = excluded.extraction_key,
 				content_hash = excluded.content_hash,
@@ -30,6 +30,7 @@ function captureStatement(
 				extractor_name = excluded.extractor_name,
 				extractor_version = excluded.extractor_version,
 				schema_version = excluded.schema_version,
+				warnings_json = excluded.warnings_json,
 				status = 'indexed',
 				indexed_at = excluded.indexed_at`,
 		)
@@ -52,6 +53,7 @@ function captureStatement(
 			capture.schemaVersion,
 			capture.sanitisationVersion,
 			capture.profile,
+			JSON.stringify(document.warnings),
 			new Date().toISOString(),
 		);
 }

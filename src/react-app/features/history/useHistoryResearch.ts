@@ -6,6 +6,7 @@ import { fetchHistoryTrends } from "../../platform/api-client.ts";
 import { researchStateFromSearch, type ResearchPeriod } from "./domain/research-state.ts";
 import { useHistoryImages } from "./useHistoryImages.ts";
 import { useHistorySearch } from "./useHistorySearch.ts";
+import { toggleContentSelection } from "./history-selection.ts";
 
 function updateResearchUrl(values: Record<string, string>): void {
 	const url = new URL(window.location.href);
@@ -73,15 +74,7 @@ export function useHistoryResearch(site: string) {
 		updateResearchUrl({ month: value });
 	}, []);
 	const toggleContent = useCallback((elementKey: string) => {
-		setSelectedContent((current) => {
-			const next = new Set(current);
-			if (next.has(elementKey)) {
-				next.delete(elementKey);
-			} else {
-				next.add(elementKey);
-			}
-			return next;
-		});
+		setSelectedContent((current) => toggleContentSelection(current, elementKey));
 	}, []);
 
 	return {
