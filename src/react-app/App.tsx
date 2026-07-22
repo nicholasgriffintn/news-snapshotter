@@ -10,6 +10,7 @@ import { Disclosure, DisclosureModal } from "./features/legal/Disclosure";
 import { LegalPage } from "./features/legal/LegalPage";
 import { HistoryRouter } from "./features/history/HistoryRouter";
 import { ComparisonBetaBanner } from "./features/comparison/ComparisonBetaBanner.tsx";
+import { ResearchBetaBanner } from "./features/history/ResearchBetaBanner.tsx";
 import { ComparisonRouter } from "./features/comparison/ComparisonRouter";
 import { Button } from "./shared/Button.tsx";
 import { PageHeader } from "./shared/PageHeaders.tsx";
@@ -20,6 +21,9 @@ export default function App() {
 	const page = resolveAppPage(window.location.pathname);
 	const historySite =
 		page === "history" ? decodeURIComponent(window.location.pathname.split("/")[2] ?? "") : "";
+	const historyResource = page === "history" ? decodeURIComponent(window.location.pathname.split("/")[3] ?? "") : "";
+
+	console.log(historySite);
 
 	return (
 		<main className="shell">
@@ -27,6 +31,8 @@ export default function App() {
 			<SiteHeader page={page} />
 
 			{page === "compare" ? <ComparisonBetaBanner /> : null}
+
+			{page === "history" && historyResource === "research" ? <ResearchBetaBanner /> : null}
 
 			{page === "archive" ? (
 				<PageHeader

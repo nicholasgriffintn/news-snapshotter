@@ -1,3 +1,26 @@
+.beta-banner {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.75rem;
+	padding: 0.7rem 1rem;
+	color: var(--ink);
+	font-size: 0.82rem;
+	font-weight: 900;
+	letter-spacing: 0.04em;
+	text-align: center;
+	background: var(--yellow);
+	border: 2px solid var(--cream);
+	box-shadow: 6px 6px 0 var(--pink);
+}
+
+.beta-banner strong {
+	font-family: var(--impact);
+	font-size: 1rem;
+	letter-spacing: 0.09em;
+	text-transform: uppercase;
+}
+
 .page-stack {
 	display: grid;
 	gap: 1.5rem;
