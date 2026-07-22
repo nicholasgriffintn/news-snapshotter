@@ -100,7 +100,8 @@ async function readTrendRows(
 					page_elements.prominence
 				FROM capture_windows
 				JOIN page_elements ON page_elements.capture_id = capture_windows.capture_id
-				${conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : ""}
+				WHERE page_elements.kind = 'story'
+				${conditions.length > 0 ? `AND ${conditions.join(" AND ")}` : ""}
 				ORDER BY capture_windows.captured_at, capture_windows.capture_id, page_elements.placement_key
 				LIMIT ?`,
 			)

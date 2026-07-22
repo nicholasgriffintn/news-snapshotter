@@ -123,6 +123,57 @@ test("searches FTS fields and builds image and time-weighted trend timelines", a
 	sqlite.close();
 });
 
+test("coverage patterns only include story elements", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-a.json.gz",
+		historyExtraction("capture-a", "2026-07-17T09:00:00.000Z", {
+			elements: [
+				historyStory({
+					category: "Politics",
+					headline: "Election result live",
+					prominence: "lead",
+				}),
+				historyStory({
+					canonicalUrl: undefined,
+					category: "Navigation",
+					elementKey: "section-heading",
+					headline: "Forbidden nonstory phrase",
+					kind: "heading",
+					prominence: "lead",
+				}),
+			],
+		}),
+	);
+
+	for (const [mode, includedLabel, excludedLabel] of [
+		["category", "Politics", "Navigation"],
+		["main-headline-words", "election", "forbidden"],
+		["all-headline-words", "election", "forbidden"],
+	]) {
+		const trends = await historyTrends(
+			database,
+			"bbc-home",
+			"all",
+			mode,
+			new Date("2026-07-17T10:00:00.000Z"),
+		);
+		const labels = trends.periods.flatMap(({ values }) => values.map(({ label }) => label));
+
+		assert.ok(labels.includes(includedLabel));
+		assert.ok(!labels.includes(excludedLabel));
+	}
+
+	await materialiseHistoryMonth(database, "bbc-home", "2026-07");
+	const cached = await historyTrends(database, "bbc-home", "all", "all-headline-words");
+	assert.equal(cached.materialised, true);
+	const cachedLabels = cached.periods.flatMap(({ values }) => values.map(({ label }) => label));
+	assert.ok(cachedLabels.includes("election"));
+	assert.ok(!cachedLabels.includes("forbidden"));
+	sqlite.close();
+});
+
 test("combines materialised closed months with live unmaterialised months", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	await ingestExtraction(
