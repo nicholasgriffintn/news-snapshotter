@@ -6,9 +6,12 @@ import { historyExtraction, historyStory } from "../testing/extraction-fixture.m
 import { ingestExtraction } from "./history-ingestion-repository.ts";
 import {
 	createSavedTimeline,
+	deleteSavedTimeline,
 	getSavedTimeline,
 	listHistoryImages,
+	listSavedTimelines,
 	searchHistory,
+	updateSavedTimeline,
 } from "./history-research-repository.ts";
 import {
 	historyTrends,
@@ -175,6 +178,111 @@ test("creates and reads a shareable multi-content timeline", async () => {
 	assert.match(created.slug, /^election-and-markets-/);
 	assert.equal(timeline.name, "Election and markets");
 	assert.equal(new Set(timeline.observations.map(({ elementKey }) => elementKey)).size, 2);
+	sqlite.close();
+});
+
+test("lists saved timeline summaries for one site", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-a.json.gz",
+		researchCapture("capture-a", "2026-07-17T09:00:00.000Z", "Election result live"),
+	);
+	await createSavedTimeline(database, {
+		elementKeys: [
+			"https://www.bbc.co.uk/news/articles/story-one",
+			"https://www.bbc.co.uk/news/articles/story-two",
+		],
+		name: "Election and markets",
+		site: "bbc-home",
+	});
+
+	const timelines = await listSavedTimelines(database, "bbc-home");
+
+	assert.equal(timelines.length, 1);
+	assert.equal(timelines[0].name, "Election and markets");
+	assert.equal(timelines[0].contentCount, 2);
+	assert.deepEqual(timelines[0].elementKeys, [
+		"https://www.bbc.co.uk/news/articles/story-one",
+		"https://www.bbc.co.uk/news/articles/story-two",
+	]);
+	assert.deepEqual(await listSavedTimelines(database, "guardian-uk"), []);
+	sqlite.close();
+});
+
+test("updates a saved timeline without changing its public identity", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-a.json.gz",
+		researchCapture("capture-a", "2026-07-17T09:00:00.000Z", "Election result live"),
+	);
+	const created = await createSavedTimeline(database, {
+		elementKeys: [
+			"https://www.bbc.co.uk/news/articles/story-one",
+			"https://www.bbc.co.uk/news/articles/story-two",
+		],
+		name: "Election and markets",
+		site: "bbc-home",
+	});
+
+	const updated = await updateSavedTimeline(database, created.timelineId, {
+		elementKeys: [
+			"https://www.bbc.co.uk/news/articles/story-two",
+			"https://www.bbc.co.uk/videos/election-result",
+		],
+		name: "Markets and video",
+		site: "bbc-home",
+	});
+
+	assert.equal(updated, true);
+	const timeline = await getSavedTimeline(database, created.slug);
+	assert.equal(timeline.timelineId, created.timelineId);
+	assert.equal(timeline.slug, created.slug);
+	assert.equal(timeline.name, "Markets and video");
+	assert.deepEqual((await listSavedTimelines(database))[0].elementKeys, [
+		"https://www.bbc.co.uk/news/articles/story-two",
+		"https://www.bbc.co.uk/videos/election-result",
+	]);
+	assert.equal(
+		await updateSavedTimeline(database, "missing", {
+			elementKeys: [
+				"https://www.bbc.co.uk/news/articles/story-one",
+				"https://www.bbc.co.uk/news/articles/story-two",
+			],
+			name: "Missing",
+			site: "bbc-home",
+		}),
+		false,
+	);
+	sqlite.close();
+});
+
+test("deletes a saved timeline and its selected content", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-a.json.gz",
+		researchCapture("capture-a", "2026-07-17T09:00:00.000Z", "Election result live"),
+	);
+	const created = await createSavedTimeline(database, {
+		elementKeys: [
+			"https://www.bbc.co.uk/news/articles/story-one",
+			"https://www.bbc.co.uk/news/articles/story-two",
+		],
+		name: "Election and markets",
+		site: "bbc-home",
+	});
+
+	assert.equal(await deleteSavedTimeline(database, created.timelineId), true);
+	assert.equal(await getSavedTimeline(database, created.slug), null);
+	assert.equal(
+		sqlite
+			.prepare("SELECT COUNT(*) AS count FROM saved_timeline_elements WHERE timeline_id = ?")
+			.get(created.timelineId).count,
+		0,
+	);
+	assert.equal(await deleteSavedTimeline(database, created.timelineId), false);
 	sqlite.close();
 });
 

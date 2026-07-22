@@ -14,6 +14,15 @@ function request(path, body) {
 	});
 }
 
+function timelineRequest(method, path, body) {
+	const init = { method };
+	if (body !== undefined) {
+		init.body = JSON.stringify(body);
+		init.headers = { "content-type": "application/json" };
+	}
+	return new Request(`https://archive.example${path}`, init);
+}
+
 test("reindex scans bounded R2 pages and queues only desktop history artefacts", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	const batches = [];
@@ -193,6 +202,63 @@ test("lists indexed extractions with bounded ordering and site filtering", async
 		site.extractions.map(({ captureId }) => captureId),
 		["older"],
 	);
+	sqlite.close();
+});
+
+test("manages saved timelines through the admin API", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const extraction = historyExtraction("timeline-capture", "2026-07-17T09:00:00.000Z");
+	const second = structuredClone(extraction.elements[0]);
+	second.elementKey = "https://www.bbc.co.uk/news/articles/story-two";
+	second.canonicalUrl = second.elementKey;
+	second.placementKey = `${second.elementKey}#section=news&occurrence=1`;
+	second.headline = "Second story";
+	extraction.elements.push(second);
+	await ingestExtraction(database, "timeline-capture.json.gz", extraction);
+	const env = { HISTORY_DB: database };
+	const input = {
+		elementKeys: extraction.elements.map(({ elementKey }) => elementKey),
+		name: "Election coverage",
+		site: "bbc-home",
+	};
+
+	const createdResponse = await handleHistoryAdminRequest(
+		timelineRequest("POST", "/api/admin/history/timelines", input),
+		env,
+	);
+	const created = await createdResponse.json();
+	assert.equal(createdResponse.status, 201);
+
+	const listResponse = await handleHistoryAdminRequest(
+		timelineRequest("GET", "/api/admin/history/timelines"),
+		env,
+	);
+	const listed = await listResponse.json();
+	assert.equal(listed.timelines.length, 1);
+	assert.deepEqual(listed.timelines[0].elementKeys, input.elementKeys);
+
+	const updateResponse = await handleHistoryAdminRequest(
+		timelineRequest("PUT", `/api/admin/history/timelines/${created.timelineId}`, {
+		...input,
+		name: "Updated election coverage",
+	}),
+		env,
+	);
+	assert.equal(updateResponse.status, 200);
+	assert.equal((await updateResponse.json()).timelineId, created.timelineId);
+
+	const deleteResponse = await handleHistoryAdminRequest(
+		timelineRequest("DELETE", `/api/admin/history/timelines/${created.timelineId}`),
+		env,
+	);
+	assert.equal(deleteResponse.status, 200);
+	assert.deepEqual(await deleteResponse.json(), { deleted: true });
+
+	const missingResponse = await handleHistoryAdminRequest(
+		timelineRequest("DELETE", `/api/admin/history/timelines/${created.timelineId}`),
+		env,
+	);
+	assert.equal(missingResponse.status, 404);
 	sqlite.close();
 });
 

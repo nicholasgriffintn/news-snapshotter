@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 
 import {
-	createHistoryTimeline,
 	fetchHistoryAdminStatus,
 	indexHistoryArchivePage,
 	materialiseHistoryAggregates,
 	type HistoryAdminStatus,
 } from "../../platform/api-client.ts";
 import { Button } from "../../shared/Button.tsx";
+import { TimelineManagementTool } from "./TimelineManagementTool.tsx";
 
 export function HistoryOperationsTool({
 	apiKey,
@@ -25,10 +25,6 @@ export function HistoryOperationsTool({
 	const [reset, setReset] = useState(false);
 	const [running, setRunning] = useState(false);
 	const [status, setStatus] = useState<HistoryAdminStatus>();
-	const [timelineName, setTimelineName] = useState("");
-	const [timelineSite, setTimelineSite] = useState("");
-	const [timelineContent, setTimelineContent] = useState("");
-	const [timelineStatus, setTimelineStatus] = useState("");
 
 	useEffect(() => {
 		if (!apiKey) {
@@ -75,28 +71,6 @@ export function HistoryOperationsTool({
 			setIndexStatus(reason instanceof Error ? reason.message : "History operation failed.");
 		} finally {
 			setRunning(false);
-		}
-	}
-
-	async function saveTimeline(): Promise<void> {
-		if (!apiKey) {
-			return;
-		}
-		const elementKeys = timelineContent
-			.split(/\r?\n/)
-			.map((value) => value.trim())
-			.filter(Boolean);
-		try {
-			const timeline = await createHistoryTimeline(apiKey, {
-				name: timelineName.trim(),
-				site: timelineSite.trim(),
-				elementKeys,
-			});
-			setTimelineStatus(
-				`Saved: /history/${encodeURIComponent(timelineSite.trim())}/timelines/${timeline.slug}`,
-			);
-		} catch (reason) {
-			setTimelineStatus(reason instanceof Error ? reason.message : "Could not save timeline.");
 		}
 	}
 
@@ -169,39 +143,11 @@ export function HistoryOperationsTool({
 				</p>
 			</section>
 
-			<section className="admin-tool">
-				<header className="admin-tool__header">
-					<h3>Save a timeline</h3>
-				</header>
-				<div className="history-operation-form">
-					<label>
-						<span>Name</span>
-						<input onChange={(event) => setTimelineName(event.target.value)} value={timelineName} />
-					</label>
-					<label>
-						<span>Site</span>
-						<input
-							onChange={(event) => setTimelineSite(event.target.value)}
-							placeholder="bbc-home"
-							value={timelineSite}
-						/>
-					</label>
-					<label className="history-story-ids">
-						<span>Content keys (one per line, 2–10)</span>
-						<textarea
-							onChange={(event) => setTimelineContent(event.target.value)}
-							rows={8}
-							value={timelineContent}
-						/>
-					</label>
-					<Button disabled={!apiKey} onClick={() => void saveTimeline()}>
-						Save public timeline
-					</Button>
-				</div>
-				<p aria-live="polite" className="admin-status">
-					{timelineStatus}
-				</p>
-			</section>
+			<TimelineManagementTool
+				apiKey={apiKey}
+				initialSite={initialSite}
+				sites={status?.sites.map(({ site }) => site) ?? []}
+			/>
 
 			<section className="admin-tool">
 				<header className="admin-tool__header">

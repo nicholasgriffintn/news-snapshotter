@@ -225,17 +225,22 @@ export async function listHistoryImages(
 	};
 }
 
-export async function createSavedTimeline(
+type SavedTimelineInput = { elementKeys: string[]; name: string; site: string };
+
+export type SavedTimelineSummary = {
+	contentCount: number;
+	createdAt: string;
+	elementKeys: string[];
+	name: string;
+	site: string;
+	slug: string;
+	timelineId: string;
+};
+
+async function assertTimelineElements(
 	database: D1Database,
-	input: { elementKeys: string[]; name: string; site: string },
-): Promise<{ slug: string; timelineId: string }> {
-	const timelineId = crypto.randomUUID();
-	const safeName = input.name
-		.toLocaleLowerCase("en-GB")
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-|-$/g, "")
-		.slice(0, 48);
-	const slug = `${safeName || "timeline"}-${timelineId.slice(0, 8)}`;
+	input: Pick<SavedTimelineInput, "elementKeys" | "site">,
+): Promise<void> {
 	const existing = await database
 		.prepare(
 			`SELECT DISTINCT page_elements.element_key
@@ -250,6 +255,20 @@ export async function createSavedTimeline(
 	if (existing.results.length !== input.elementKeys.length) {
 		throw new Error("Every timeline item must exist for the selected site");
 	}
+}
+
+export async function createSavedTimeline(
+	database: D1Database,
+	input: SavedTimelineInput,
+): Promise<{ slug: string; timelineId: string }> {
+	const timelineId = crypto.randomUUID();
+	const safeName = input.name
+		.toLocaleLowerCase("en-GB")
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-|-$/g, "")
+		.slice(0, 48);
+	const slug = `${safeName || "timeline"}-${timelineId.slice(0, 8)}`;
+	await assertTimelineElements(database, input);
 	await database.batch([
 		database
 			.prepare(
@@ -265,6 +284,91 @@ export async function createSavedTimeline(
 		}),
 	]);
 	return { slug, timelineId };
+}
+
+export async function listSavedTimelines(
+	database: D1Database,
+	site?: string,
+): Promise<SavedTimelineSummary[]> {
+	const result = await database
+		.prepare(
+			`SELECT
+				saved_timelines.timeline_id AS timelineId,
+				saved_timelines.slug,
+				saved_timelines.name,
+				saved_timelines.site,
+				saved_timelines.created_at AS createdAt,
+				saved_timeline_elements.element_key AS elementKey,
+				saved_timeline_elements.position
+			FROM saved_timelines
+			LEFT JOIN saved_timeline_elements
+				ON saved_timeline_elements.timeline_id = saved_timelines.timeline_id
+			${site ? "WHERE saved_timelines.site = ?" : ""}
+			ORDER BY saved_timelines.created_at DESC, saved_timelines.timeline_id, saved_timeline_elements.position`,
+		)
+		.bind(...(site ? [site] : []))
+		.all<Record<string, unknown>>();
+	const timelines = new Map<string, SavedTimelineSummary>();
+	for (const row of result.results) {
+		const timelineId = String(row.timelineId);
+		const timeline = timelines.get(timelineId) ?? {
+			contentCount: 0,
+			createdAt: String(row.createdAt),
+			elementKeys: [],
+			name: String(row.name),
+			site: String(row.site),
+			slug: String(row.slug),
+			timelineId,
+		};
+		if (typeof row.elementKey === "string") {
+			timeline.elementKeys.push(row.elementKey);
+			timeline.contentCount += 1;
+		}
+		timelines.set(timelineId, timeline);
+	}
+	return [...timelines.values()];
+}
+
+export async function updateSavedTimeline(
+	database: D1Database,
+	timelineId: string,
+	input: SavedTimelineInput,
+): Promise<boolean> {
+	const exists = await database
+		.prepare("SELECT timeline_id FROM saved_timelines WHERE timeline_id = ?")
+		.bind(timelineId)
+		.first();
+	if (!exists) {
+		return false;
+	}
+	await assertTimelineElements(database, input);
+	await database.batch([
+		database
+			.prepare("UPDATE saved_timelines SET name = ?, site = ? WHERE timeline_id = ?")
+			.bind(input.name, input.site, timelineId),
+		database
+			.prepare("DELETE FROM saved_timeline_elements WHERE timeline_id = ?")
+			.bind(timelineId),
+		...input.elementKeys.map((elementKey, position) =>
+			database
+				.prepare(
+					"INSERT INTO saved_timeline_elements (timeline_id, element_key, position) VALUES (?, ?, ?)",
+				)
+				.bind(timelineId, elementKey, position),
+		),
+	]);
+	return true;
+}
+
+export async function deleteSavedTimeline(
+	database: D1Database,
+	timelineId: string,
+): Promise<boolean> {
+	const result = await database
+		.prepare("DELETE FROM saved_timelines WHERE timeline_id = ?")
+		.bind(timelineId)
+		.run();
+	return (result.meta.changes ?? 0) > 0;
 }
 
 export async function getSavedTimeline(

@@ -12,6 +12,8 @@ import type {
 	HistorySite,
 	HistoryTrends,
 	SavedTimeline,
+	SavedTimelineRecord,
+	SavedTimelineSummary,
 	Snapshot,
 } from "../core/types.ts";
 import type { CaptureDispatch, CaptureSelection } from "../../core/contracts.ts";
@@ -310,11 +312,23 @@ export async function fetchElementHistory(
 	return readJson(response);
 }
 
+export async function fetchSavedTimelines(
+	site: string,
+	options?: RequestOptions,
+): Promise<SavedTimelineSummary[]> {
+	const response = await fetch(`/api/history/${encodeURIComponent(site)}/timelines`, options);
+	return (await readJson<{ timelines: SavedTimelineSummary[] }>(response)).timelines;
+}
+
 export async function fetchSavedTimeline(
+	site: string,
 	slug: string,
 	options?: RequestOptions,
 ): Promise<SavedTimeline> {
-	const response = await fetch(`/api/history/timelines/${encodeURIComponent(slug)}`, options);
+	const response = await fetch(
+		`/api/history/${encodeURIComponent(site)}/timelines/${encodeURIComponent(slug)}`,
+		options,
+	);
 	return readJson(response);
 }
 
@@ -419,16 +433,60 @@ export async function indexHistoryArchivePage(
 	return readJson(response);
 }
 
+type AdminCredential = string;
+
+function timelineAdminHeaders(credential: AdminCredential, json = false): Headers {
+	const headers = new Headers();
+	headers.set("authorization", ["Bearer", credential].join(" "));
+	if (json) {
+		headers.set("content-type", "application/json");
+	}
+	return headers;
+}
+
+export async function fetchAdminHistoryTimelines(
+	credential: AdminCredential,
+): Promise<SavedTimelineRecord[]> {
+	const response = await fetch("/api/admin/history/timelines", {
+		headers: timelineAdminHeaders(credential),
+	});
+	return (await readJson<{ timelines: SavedTimelineRecord[] }>(response)).timelines;
+}
+
 export async function createHistoryTimeline(
-	apiKey: string,
+	credential: AdminCredential,
 	input: { elementKeys: string[]; name: string; site: string },
 ): Promise<{ slug: string; timelineId: string }> {
 	const response = await fetch("/api/admin/history/timelines", {
 		body: JSON.stringify(input),
-		headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+		headers: timelineAdminHeaders(credential, true),
 		method: "POST",
 	});
 	return readJson(response);
+}
+
+export async function updateHistoryTimeline(
+	credential: AdminCredential,
+	timelineId: string,
+	input: { elementKeys: string[]; name: string; site: string },
+): Promise<void> {
+	const response = await fetch(`/api/admin/history/timelines/${encodeURIComponent(timelineId)}`, {
+		body: JSON.stringify(input),
+		headers: timelineAdminHeaders(credential, true),
+		method: "PUT",
+	});
+	await readJson(response);
+}
+
+export async function deleteHistoryTimeline(
+	credential: AdminCredential,
+	timelineId: string,
+): Promise<void> {
+	const response = await fetch(`/api/admin/history/timelines/${encodeURIComponent(timelineId)}`, {
+		headers: timelineAdminHeaders(credential),
+		method: "DELETE",
+	});
+	await readJson(response);
 }
 
 export async function materialiseHistoryAggregates(

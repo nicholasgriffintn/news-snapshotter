@@ -9,7 +9,12 @@ import {
 	listExtractionFailures,
 	resetHistoryIndex,
 } from "../infrastructure/history-admin-repository.ts";
-import { createSavedTimeline } from "../infrastructure/history-research-repository.ts";
+import {
+	createSavedTimeline,
+	deleteSavedTimeline,
+	listSavedTimelines,
+	updateSavedTimeline,
+} from "../infrastructure/history-research-repository.ts";
 import { materialiseHistoryMonth } from "../infrastructure/history-trend-repository.ts";
 import { parsePageExtraction } from "../domain/extraction.ts";
 import { SITES } from "../../catalogue/domain/sites.ts";
@@ -303,6 +308,50 @@ function extractionListOptions(url: URL): ExtractionListOptions {
 	return { limit, site: siteValue || undefined, sort };
 }
 
+function timelineInput(body: unknown): { elementKeys: string[]; name: string; site: string } {
+	if (!body || typeof body !== "object" || Array.isArray(body)) {
+		throw new InvalidInputError("Timeline request must be an object");
+	}
+
+	const record = body as Record<string, unknown>;
+	const elementKeys = Array.isArray(record.elementKeys)
+		? record.elementKeys.filter((key): key is string => typeof key === "string")
+		: [];
+	const name = typeof record.name === "string" ? record.name.trim() : "";
+	const site = typeof record.site === "string" ? record.site.trim() : "";
+
+	if (
+		name.length === 0 ||
+		name.length > 120 ||
+		site.length === 0 ||
+		site.length > 200 ||
+		!Array.isArray(record.elementKeys) ||
+		elementKeys.length !== record.elementKeys.length ||
+		elementKeys.length < 2 ||
+		elementKeys.length > 10 ||
+		elementKeys.some((key) => key.length === 0 || key.length > 4_096) ||
+		new Set(elementKeys).size !== elementKeys.length
+	) {
+		throw new InvalidInputError(
+			"Timeline requires a name, site, and 2 to 10 unique content keys",
+		);
+	}
+
+	return { elementKeys, name, site };
+}
+
+function timelineId(pathname: string): string | undefined {
+	const match = /^\/api\/admin\/history\/timelines\/([^/]+)$/.exec(pathname);
+	if (!match) {
+		return undefined;
+	}
+	const value = decodeURIComponent(match[1]);
+	if (!value || value.length > 100) {
+		throw new InvalidInputError("Timeline ID is invalid");
+	}
+	return value;
+}
+
 export async function handleHistoryAdminRequest(
 	request: Request,
 	env: HistoryAdminEnv,
@@ -354,45 +403,34 @@ export async function handleHistoryAdminRequest(
 		});
 	}
 
-	if (request.method === "POST" && url.pathname === "/api/admin/history/timelines") {
-		const body: unknown = await request.json();
-
-		if (!body || typeof body !== "object" || Array.isArray(body)) {
-			throw new InvalidInputError("Timeline request must be an object");
+	if (url.pathname === "/api/admin/history/timelines") {
+		if (request.method === "GET") {
+			return Response.json({ timelines: await listSavedTimelines(env.HISTORY_DB) });
 		}
-
-		const record = body as Record<string, unknown>;
-		const elementKeys = Array.isArray(record.elementKeys)
-			? record.elementKeys.filter((key): key is string => typeof key === "string")
-			: [];
-
-		if (
-			typeof record.name !== "string" ||
-			record.name.trim().length === 0 ||
-			record.name.length > 120 ||
-			typeof record.site !== "string" ||
-			record.site.length === 0 ||
-			record.site.length > 200 ||
-			!Array.isArray(record.elementKeys) ||
-			elementKeys.length !== record.elementKeys.length ||
-			elementKeys.length < 2 ||
-			elementKeys.length > 10 ||
-			elementKeys.some((key) => key.length > 4_096) ||
-			new Set(elementKeys).size !== elementKeys.length
-		) {
-			throw new InvalidInputError(
-				"Timeline requires a name, site, and 2 to 10 unique content keys",
+		if (request.method === "POST") {
+			return Response.json(
+				await createSavedTimeline(env.HISTORY_DB, timelineInput(await request.json())),
+				{ status: 201 },
 			);
 		}
+	}
 
-		return Response.json(
-			await createSavedTimeline(env.HISTORY_DB, {
-				name: record.name.trim(),
-				site: record.site,
-				elementKeys,
-			}),
-			{ status: 201 },
+	const selectedTimelineId = timelineId(url.pathname);
+	if (selectedTimelineId && request.method === "PUT") {
+		const updated = await updateSavedTimeline(
+			env.HISTORY_DB,
+			selectedTimelineId,
+			timelineInput(await request.json()),
 		);
+		return updated
+			? Response.json({ timelineId: selectedTimelineId })
+			: Response.json({ message: "Timeline not found", status: "error" }, { status: 404 });
+	}
+	if (selectedTimelineId && request.method === "DELETE") {
+		const deleted = await deleteSavedTimeline(env.HISTORY_DB, selectedTimelineId);
+		return deleted
+			? Response.json({ deleted: true })
+			: Response.json({ message: "Timeline not found", status: "error" }, { status: 404 });
 	}
 
 	if (request.method === "POST" && url.pathname === "/api/admin/history/aggregates") {

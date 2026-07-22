@@ -2,7 +2,7 @@ export function HistoryNav({
 	current,
 	site,
 }: {
-	current: "captures" | "research" | "sites";
+	current: "captures" | "research" | "sites" | "timelines";
 	site?: string;
 }) {
 	return (
@@ -23,6 +23,12 @@ export function HistoryNav({
 						href={`/history/${encodeURIComponent(site)}/research`}
 					>
 						Research
+					</a>
+					<a
+						aria-current={current === "timelines" ? "page" : undefined}
+						href={`/history/${encodeURIComponent(site)}/timelines`}
+					>
+						Timelines
 					</a>
 				</>
 			) : null}

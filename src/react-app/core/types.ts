@@ -187,25 +187,35 @@ export type ElementHistory = {
 	observations: ContentObservation[];
 };
 
-export type SavedTimeline = {
+export type SavedTimelineObservation = {
+	canonicalUrl?: string;
+	captureId?: string;
+	capturedAt?: string;
+	headline?: string;
+	imageSourceUrl?: string;
+	imageCropKey?: string;
+	position: number;
+	prominence?: string;
+	rank?: number;
+	elementKey: string;
+	kind: HistoryElement["kind"];
+	top?: number;
+};
+
+export type SavedTimelineSummary = {
+	contentCount: number;
 	createdAt: string;
 	name: string;
-	observations: Array<{
-		canonicalUrl?: string;
-		captureId?: string;
-		capturedAt?: string;
-		headline?: string;
-		imageSourceUrl?: string;
-		imageCropKey?: string;
-		position: number;
-		prominence?: string;
-		rank?: number;
-		elementKey: string;
-		kind: HistoryElement["kind"];
-		top?: number;
-	}>;
 	site: string;
 	slug: string;
 	timelineId: string;
+};
+
+export type SavedTimelineRecord = SavedTimelineSummary & {
+	elementKeys: string[];
+};
+
+export type SavedTimeline = Omit<SavedTimelineSummary, "contentCount"> & {
+	observations: SavedTimelineObservation[];
 	truncated?: boolean;
 };

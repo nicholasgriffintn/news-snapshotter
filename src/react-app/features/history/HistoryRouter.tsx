@@ -3,6 +3,7 @@ import { ElementHistoryPage } from "./ElementHistoryPage.tsx";
 import { HistoryIndexPage } from "./HistoryIndexPage.tsx";
 import { HistoryResearchPage } from "./HistoryResearchPage.tsx";
 import { SavedTimelinePage } from "./SavedTimelinePage.tsx";
+import { SavedTimelinesPage } from "./SavedTimelinesPage.tsx";
 import { ContentComparisonPage } from "./ContentComparisonPage.tsx";
 import { contentKeyFromSearch } from "./history-routes.ts";
 import { useHistoryCatalogue } from "./useHistoryCatalogue.ts";
@@ -35,8 +36,12 @@ export function HistoryRouter({ site }: { site: string }) {
 			);
 		}
 	}
-	if (resource === "timelines" && identifier) {
-		return <SavedTimelinePage site={site} slug={identifier} />;
+	if (resource === "timelines") {
+		return identifier ? (
+			<SavedTimelinePage site={site} slug={identifier} />
+		) : (
+			<SavedTimelinesPage preferredName={preferredName} site={site} />
+		);
 	}
 	return <HistoryPage preferredName={preferredName} site={site} />;
 }

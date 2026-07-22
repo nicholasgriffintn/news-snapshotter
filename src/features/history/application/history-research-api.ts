@@ -3,6 +3,7 @@ import { InvalidInputError } from "../../../core/errors.ts";
 import {
 	getSavedTimeline,
 	listHistoryImages,
+	listSavedTimelines,
 	searchHistory,
 	type ResearchCursor,
 	type SearchCursor,
@@ -116,6 +117,25 @@ export async function handleHistoryResearchRequest(
 			to: timestamp(url, "to"),
 		});
 		return Response.json({ cursor: encodedCursor(result.nextCursor), results: result.results });
+	}
+
+	const siteTimelineMatch = /^\/api\/history\/([^/]+)\/timelines(?:\/([^/]+))?$/.exec(url.pathname);
+	if (siteTimelineMatch) {
+		const site = decodeURIComponent(siteTimelineMatch[1]);
+		const slug = siteTimelineMatch[2] ? decodeURIComponent(siteTimelineMatch[2]) : undefined;
+		if (!site || site.length > 200 || (slug !== undefined && (!slug || slug.length > 100))) {
+			throw new InvalidInputError("Timeline path is invalid");
+		}
+		if (!slug) {
+			const timelines = (await listSavedTimelines(database, site)).map(
+				({ elementKeys: _elementKeys, ...timeline }) => timeline,
+			);
+			return Response.json({ timelines });
+		}
+		const timeline = await getSavedTimeline(database, slug);
+		return timeline && timeline.site === site
+			? Response.json(timeline)
+			: Response.json({ message: "Timeline not found", status: "error" }, { status: 404 });
 	}
 
 	const timelineMatch = /^\/api\/history\/timelines\/([^/]+)$/.exec(url.pathname);
