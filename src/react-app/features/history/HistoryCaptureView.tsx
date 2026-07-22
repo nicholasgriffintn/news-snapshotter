@@ -12,7 +12,6 @@ import {
 	toggledContentKinds,
 } from "./domain/content-kind-filter.ts";
 
-
 export function HistoryCaptureView({
 	capture,
 	overlay,

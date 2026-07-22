@@ -1,6 +1,14 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 
-type ButtonVariant = "danger" | "icon" | "plain" | "primary" | "quiet" | "secondary" | "tertiary" | "text";
+type ButtonVariant =
+	| "danger"
+	| "icon"
+	| "plain"
+	| "primary"
+	| "quiet"
+	| "secondary"
+	| "tertiary"
+	| "text";
 type ButtonLayout = "card";
 
 function buttonClassName(

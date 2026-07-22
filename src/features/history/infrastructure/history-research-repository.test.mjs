@@ -13,10 +13,7 @@ import {
 	searchHistory,
 	updateSavedTimeline,
 } from "./history-research-repository.ts";
-import {
-	historyTrends,
-	materialiseHistoryMonth,
-} from "./history-trend-repository.ts";
+import { historyTrends, materialiseHistoryMonth } from "./history-trend-repository.ts";
 
 function researchCapture(captureId, capturedAt, headline) {
 	return historyExtraction(captureId, capturedAt, {
@@ -126,8 +123,148 @@ test("searches FTS fields and builds image and time-weighted trend timelines", a
 	sqlite.close();
 });
 
+test("combines materialised closed months with live unmaterialised months", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-january.json.gz",
+		researchCapture("capture-january", "2026-01-31T23:00:00.000Z", "January election"),
+	);
+	await ingestExtraction(
+		database,
+		"capture-february.json.gz",
+		researchCapture("capture-february", "2026-02-01T01:00:00.000Z", "February election"),
+	);
+	await materialiseHistoryMonth(database, "bbc-home", "2026-01");
+
+	const trends = await historyTrends(database, "bbc-home", "all", "category");
+
+	assert.deepEqual(
+		trends.periods.map(({ period }) => period),
+		["2026-01", "2026-02"],
+	);
+	assert.equal(trends.materialised, true);
+	sqlite.close();
+});
+
+test("materialises every monthly observation beyond one query page", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-a.json.gz",
+		researchCapture("capture-a", "2026-07-17T09:00:00.000Z", "Election result live"),
+	);
+	await ingestExtraction(
+		database,
+		"capture-b.json.gz",
+		researchCapture("capture-b", "2026-07-17T10:00:00.000Z", "Election result reaction"),
+	);
+	sqlite.exec(`WITH RECURSIVE sequence(value) AS (
+		SELECT 1 UNION ALL SELECT value + 1 FROM sequence WHERE value < 10001
+	)
+	INSERT INTO page_elements (
+		capture_id, placement_key, element_key, kind, canonical_url, headline, text_fingerprint,
+		selector_hint, rank, top, left_position, width, height, viewport_depth,
+		category, prominence
+	)
+	SELECT
+		'capture-a', printf('generated-placement-%05d', value), printf('generated-%05d', value),
+		'story', NULL,
+		printf('Generated election story %05d', value), printf('fingerprint-%05d', value),
+		NULL, value + 100, value, 0, 100, 100, 0, 'Generated', 'standard'
+	FROM sequence`);
+
+	await materialiseHistoryMonth(database, "bbc-home", "2026-07");
+	const generated = sqlite
+		.prepare(
+			`SELECT observation_count AS count
+			FROM history_monthly_aggregates
+			WHERE site = 'bbc-home' AND month = '2026-07' AND mode = 'category' AND label = 'Generated'`,
+		)
+		.get();
+
+	assert.equal(generated.count, 10_001);
+	sqlite.close();
+});
+
+test("caps the final closed-month observation at the month boundary", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-january.json.gz",
+		researchCapture("capture-january", "2026-01-31T23:00:00.000Z", "January election"),
+	);
+
+	await materialiseHistoryMonth(database, "bbc-home", "2026-01");
+	const politics = sqlite
+		.prepare(
+			`SELECT weighted_seconds AS weightSeconds
+			FROM history_monthly_aggregates
+			WHERE site = 'bbc-home' AND month = '2026-01' AND mode = 'category' AND label = 'Politics'`,
+		)
+		.get();
+
+	assert.equal(politics.weightSeconds, 3_600);
+	sqlite.close();
+});
+
+test("does not project an open month through its future month boundary", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-january.json.gz",
+		researchCapture("capture-january", "2026-01-31T23:00:00.000Z", "January election"),
+	);
+
+	const trends = await historyTrends(
+		database,
+		"bbc-home",
+		"all",
+		"category",
+		new Date("2026-01-31T23:30:00.000Z"),
+	);
+	const politics = trends.periods[0].values.find(({ label }) => label === "Politics");
+
+	assert.equal(politics.weightSeconds, 0);
+	sqlite.close();
+});
+
+test("ignores cached rows without a completed monthly run marker", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-january.json.gz",
+		researchCapture("capture-january", "2026-01-31T22:00:00.000Z", "January election"),
+	);
+	sqlite
+		.prepare(
+			`INSERT INTO history_monthly_aggregates (
+				site, month, mode, label, observation_count, weighted_seconds, generated_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		)
+		.run("bbc-home", "2026-01", "category", "Politics", 100, 100, "2026-02-01T00:00:00.000Z");
+
+	const trends = await historyTrends(
+		database,
+		"bbc-home",
+		"all",
+		"category",
+		new Date("2026-02-01T00:00:00.000Z"),
+	);
+	const politics = trends.periods[0].values.find(({ label }) => label === "Politics");
+
+	assert.equal(politics.count, 1);
+	assert.equal(trends.materialised, false);
+	sqlite.close();
+});
+
 test("filters filler words from materialised coverage patterns", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
+	sqlite
+		.prepare(
+			"INSERT INTO history_monthly_aggregate_runs (site, month, generated_at) VALUES (?, ?, ?)",
+		)
+		.run("bbc-home", "2026-07", "2026-07-18T00:00:00.000Z");
 	const insertAggregate = (label, count, weightSeconds) =>
 		database
 			.prepare(
@@ -135,15 +272,7 @@ test("filters filler words from materialised coverage patterns", async () => {
 					site, month, mode, label, observation_count, weighted_seconds, generated_at
 				) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 			)
-			.bind(
-				"bbc-home",
-				"2026-07",
-				"all-headline-words",
-				label,
-				count,
-				weightSeconds,
-				"2026-08-01",
-			);
+			.bind("bbc-home", "2026-07", "all-headline-words", label, count, weightSeconds, "2026-08-01");
 	await database.batch([
 		insertAggregate("and", 12, 43_200),
 		insertAggregate("election", 4, 14_400),
@@ -254,6 +383,17 @@ test("updates a saved timeline without changing its public identity", async () =
 			site: "bbc-home",
 		}),
 		false,
+	);
+	await assert.rejects(
+		updateSavedTimeline(database, created.timelineId, {
+			elementKeys: [
+				"https://www.bbc.co.uk/news/articles/story-two",
+				"https://www.bbc.co.uk/news/articles/missing",
+			],
+			name: "Invalid selection",
+			site: "bbc-home",
+		}),
+		{ name: "InvalidInputError" },
 	);
 	sqlite.close();
 });

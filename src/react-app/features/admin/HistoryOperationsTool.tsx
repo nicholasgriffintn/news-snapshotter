@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
 	fetchHistoryAdminStatus,
 	indexHistoryArchivePage,
-	materialiseHistoryAggregates,
 	type HistoryAdminStatus,
 } from "../../platform/api-client.ts";
 import { Button } from "../../shared/Button.tsx";
@@ -16,9 +15,6 @@ export function HistoryOperationsTool({
 	apiKey: string;
 	initialSite?: string;
 }) {
-	const [aggregateMonth, setAggregateMonth] = useState(new Date().toISOString().slice(0, 7));
-	const [aggregateSite, setAggregateSite] = useState("");
-	const [aggregateStatus, setAggregateStatus] = useState("");
 	const [indexSite, setIndexSite] = useState(initialSite);
 	const [indexStatus, setIndexStatus] = useState("");
 	const [mode, setMode] = useState<"backfill" | "reindex">("backfill");
@@ -71,21 +67,6 @@ export function HistoryOperationsTool({
 			setIndexStatus(reason instanceof Error ? reason.message : "History operation failed.");
 		} finally {
 			setRunning(false);
-		}
-	}
-
-	async function buildAggregates(): Promise<void> {
-		if (!apiKey) {
-			return;
-		}
-		try {
-			const result = await materialiseHistoryAggregates(apiKey, {
-				month: aggregateMonth,
-				site: aggregateSite.trim(),
-			});
-			setAggregateStatus(`Materialised ${result.rows} aggregate rows.`);
-		} catch (reason) {
-			setAggregateStatus(reason instanceof Error ? reason.message : "Could not build aggregates.");
 		}
 	}
 
@@ -148,39 +129,6 @@ export function HistoryOperationsTool({
 				initialSite={initialSite}
 				sites={status?.sites.map(({ site }) => site) ?? []}
 			/>
-
-			<section className="admin-tool">
-				<header className="admin-tool__header">
-					<h3>Monthly aggregates</h3>
-				</header>
-				<div className="history-operation-form">
-					<label>
-						<span>Site</span>
-						<input
-							onChange={(event) => setAggregateSite(event.target.value)}
-							placeholder="bbc-home"
-							value={aggregateSite}
-						/>
-					</label>
-					<label>
-						<span>Month</span>
-						<input
-							onChange={(event) => setAggregateMonth(event.target.value)}
-							type="month"
-							value={aggregateMonth}
-						/>
-					</label>
-					<Button
-						disabled={!apiKey || !aggregateSite.trim()}
-						onClick={() => void buildAggregates()}
-					>
-						Materialise month
-					</Button>
-				</div>
-				<p aria-live="polite" className="admin-status">
-					{aggregateStatus}
-				</p>
-			</section>
 
 			{status?.resourceUsage.map((usage) => (
 				<section className="admin-tool" key={usage.site}>

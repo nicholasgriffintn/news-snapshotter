@@ -51,24 +51,24 @@ export function normaliseContentElements(
 	const occurrences = new Map<string, number>();
 
 	return [...uniquePlacements.values()].map((element, index) => {
-			const context = safeSegment(element.section ?? element.category ?? element.kind) || "page";
-			const placementGroup = `${element.elementKey}\n${context}`;
-			const occurrence = (occurrences.get(placementGroup) ?? 0) + 1;
-			occurrences.set(placementGroup, occurrence);
-			let summary = element.summary;
+		const context = safeSegment(element.section ?? element.category ?? element.kind) || "page";
+		const placementGroup = `${element.elementKey}\n${context}`;
+		const occurrence = (occurrences.get(placementGroup) ?? 0) + 1;
+		occurrences.set(placementGroup, occurrence);
+		let summary = element.summary;
 
-			if (summary === element.headline) {
-				summary = undefined;
-			}
+		if (summary === element.headline) {
+			summary = undefined;
+		}
 
-			return {
-				...element,
-				placementKey: `${element.elementKey}#section=${context}&occurrence=${occurrence}`,
-				position: {
-					...element.position,
-					pageOrder: index + 1,
-				},
-				summary,
-			};
+		return {
+			...element,
+			placementKey: `${element.elementKey}#section=${context}&occurrence=${occurrence}`,
+			position: {
+				...element.position,
+				pageOrder: index + 1,
+			},
+			summary,
+		};
 	});
 }

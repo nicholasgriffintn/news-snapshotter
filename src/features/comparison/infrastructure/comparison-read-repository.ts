@@ -50,10 +50,7 @@ export async function listCoverageGaps(
 		windowId?: string;
 	},
 ) {
-	const bindings: Array<number | string> = [
-		options.cohortId,
-		options.minimumAnalysedSites,
-	];
+	const bindings: Array<number | string> = [options.cohortId, options.minimumAnalysedSites];
 	const windowCondition = options.windowId
 		? "w.window_id = ?"
 		: `w.window_id = (
@@ -465,13 +462,16 @@ function leadStoryChanges(rows: readonly LeadObservationRow[]) {
 		}
 	}
 
-	return changes.reverse().slice(0, 50).map((row) => ({
-		captureId: row.capture_id,
-		capturedAt: row.captured_at,
-		headline: row.headline,
-		label: row.label,
-		storyId: row.story_id,
-	}));
+	return changes
+		.reverse()
+		.slice(0, 50)
+		.map((row) => ({
+			captureId: row.capture_id,
+			capturedAt: row.captured_at,
+			headline: row.headline,
+			label: row.label,
+			storyId: row.story_id,
+		}));
 }
 
 function leadHeadlineChanges(rows: readonly LeadObservationRow[]) {
@@ -486,12 +486,15 @@ function leadHeadlineChanges(rows: readonly LeadObservationRow[]) {
 		}
 	}
 
-	return changes.reverse().slice(0, 50).map((row) => ({
-		captureId: row.capture_id,
-		capturedAt: row.captured_at,
-		headline: row.headline,
-		storyId: row.story_id,
-	}));
+	return changes
+		.reverse()
+		.slice(0, 50)
+		.map((row) => ({
+			captureId: row.capture_id,
+			capturedAt: row.captured_at,
+			headline: row.headline,
+			storyId: row.story_id,
+		}));
 }
 
 export async function getPublisherComparison(
@@ -524,15 +527,7 @@ export async function getPublisherComparison(
 				AND w.status IN ('complete', 'partial')
 				AND sm.cohort_id = ?`,
 		)
-		.bind(
-			input.site,
-			input.site,
-			input.site,
-			input.cohortId,
-			input.from,
-			input.to,
-			input.cohortId,
-		)
+		.bind(input.site, input.site, input.site, input.cohortId, input.from, input.to, input.cohortId)
 		.first<PublisherSummaryRow>();
 	const topics = await database
 		.prepare(

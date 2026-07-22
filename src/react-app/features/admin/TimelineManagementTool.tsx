@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { HistorySearchResult, SavedTimelineRecord } from "../../core/types.ts";
 import {
@@ -9,10 +9,12 @@ import {
 	updateHistoryTimeline,
 } from "../../platform/api-client.ts";
 import { Button, ButtonLink } from "../../shared/Button.tsx";
+import { isAbortError } from "../../shared/errors.ts";
 import { dateTimeLabel, displayName } from "../../shared/format.ts";
 import { savedTimelinePath } from "../history/saved-timeline.ts";
 import {
 	addTimelineElement,
+	createRequestGate,
 	defaultTimelineSite,
 	removeTimelineElement,
 } from "./timeline-editor.ts";
@@ -50,26 +52,42 @@ export function TimelineManagementTool({
 	const [saving, setSaving] = useState(false);
 	const [status, setStatus] = useState("");
 	const [publishedPath, setPublishedPath] = useState("");
+	const timelineRequests = useRef(createRequestGate());
+	const searchRequests = useRef(createRequestGate());
 
 	const loadTimelines = useCallback(async () => {
 		if (!apiKey) {
+			timelineRequests.current.cancel();
 			setTimelines([]);
+			setLoadingTimelines(false);
+			setTimelineError("");
 			return;
 		}
+		const request = timelineRequests.current.start();
 		setLoadingTimelines(true);
 		setTimelineError("");
 		try {
-			setTimelines(await fetchAdminHistoryTimelines(apiKey));
+			const records = await fetchAdminHistoryTimelines(apiKey, { signal: request.signal });
+			if (timelineRequests.current.isCurrent(request)) {
+				setTimelines(records);
+			}
 		} catch (reason) {
-			setTimelineError(reason instanceof Error ? reason.message : "Could not load timelines.");
+			if (timelineRequests.current.isCurrent(request) && !isAbortError(reason)) {
+				setTimelineError(reason instanceof Error ? reason.message : "Could not load timelines.");
+			}
 		} finally {
-			setLoadingTimelines(false);
+			if (timelineRequests.current.isCurrent(request)) {
+				setLoadingTimelines(false);
+			}
 		}
 	}, [apiKey]);
 
 	useEffect(() => {
 		void loadTimelines();
+		return () => timelineRequests.current.cancel();
 	}, [loadTimelines]);
+
+	useEffect(() => () => searchRequests.current.cancel(), []);
 
 	useEffect(() => {
 		if (!site && defaultSite) {
@@ -91,6 +109,8 @@ export function TimelineManagementTool({
 	}
 
 	function changeSite(nextSite: string): void {
+		searchRequests.current.cancel();
+		setSearching(false);
 		setSite(nextSite);
 		setSelectedElementKeys([]);
 		setSelectedLabels({});
@@ -107,8 +127,12 @@ export function TimelineManagementTool({
 		}
 		setSearching(true);
 		setSearchError("");
+		const request = searchRequests.current.start();
 		try {
-			const page = await searchHistory({ query: nextQuery, site });
+			const page = await searchHistory({ query: nextQuery, site }, { signal: request.signal });
+			if (!searchRequests.current.isCurrent(request)) {
+				return;
+			}
 			setResults(page.results);
 			setSelectedLabels((current) => {
 				const next = { ...current };
@@ -118,10 +142,14 @@ export function TimelineManagementTool({
 				return next;
 			});
 		} catch (reason) {
-			setResults([]);
-			setSearchError(reason instanceof Error ? reason.message : "Could not search history.");
+			if (searchRequests.current.isCurrent(request) && !isAbortError(reason)) {
+				setResults([]);
+				setSearchError(reason instanceof Error ? reason.message : "Could not search history.");
+			}
 		} finally {
-			setSearching(false);
+			if (searchRequests.current.isCurrent(request)) {
+				setSearching(false);
+			}
 		}
 	}
 
@@ -250,7 +278,11 @@ export function TimelineManagementTool({
 								value={query}
 							/>
 						</label>
-						<Button disabled={!site || !query.trim() || searching} type="submit" variant="secondary">
+						<Button
+							disabled={!site || !query.trim() || searching}
+							type="submit"
+							variant="secondary"
+						>
 							{searching ? "Searching…" : "Search"}
 						</Button>
 					</form>
@@ -300,9 +332,9 @@ export function TimelineManagementTool({
 										<Button
 											aria-label={`Remove ${selectedLabels[elementKey] ?? elementKey} from timeline`}
 											onClick={() =>
-											setSelectedElementKeys((current) =>
-												removeTimelineElement(current, elementKey),
-											)
+												setSelectedElementKeys((current) =>
+													removeTimelineElement(current, elementKey),
+												)
 											}
 											variant="quiet"
 										>
@@ -316,7 +348,9 @@ export function TimelineManagementTool({
 
 					<div className="timeline-editor__actions">
 						<Button
-							disabled={!apiKey || saving || !name.trim() || !site || selectedElementKeys.length < 2}
+							disabled={
+								!apiKey || saving || !name.trim() || !site || selectedElementKeys.length < 2
+							}
 							onClick={() => void saveTimeline()}
 						>
 							{saving ? "Saving…" : editingTimelineId ? "Update timeline" : "Publish timeline"}
@@ -345,14 +379,15 @@ export function TimelineManagementTool({
 					{apiKey && !loadingTimelines && !timelineError && timelines.length === 0 ? (
 						<p>No timelines have been published.</p>
 					) : null}
-					{timelines.length > 0 ? (
+					{apiKey && timelines.length > 0 ? (
 						<ul>
 							{timelines.map((timeline) => (
 								<li key={timeline.timelineId}>
 									<div>
 										<strong>{timeline.name}</strong>
 										<span>
-											{displayName(timeline.site)} · {timeline.contentCount} items · {dateTimeLabel(timeline.createdAt)}
+											{displayName(timeline.site)} · {timeline.contentCount} items ·{" "}
+											{dateTimeLabel(timeline.createdAt)}
 										</span>
 									</div>
 									<div className="timeline-record__actions">

@@ -135,7 +135,8 @@ export type AnnotationEvidenceBinding = {
 	placementKey: string;
 };
 
-const LABEL_PREFIX = /^(?:audio|entertainment video|front page|news report|sport|sports video|video)\s*:\s*/i;
+const LABEL_PREFIX =
+	/^(?:audio|entertainment video|front page|news report|sport|sports video|video)\s*:\s*/i;
 const GENERIC_LABELS = new Set([
 	"audio",
 	"business story",
@@ -285,8 +286,7 @@ function parseFraming(
 		(framing.actors !== undefined && !stringArray(framing.actors)) ||
 		(framing.causalLanguage !== undefined && !stringArray(framing.causalLanguage)) ||
 		(framing.emphasis !== undefined && !stringArray(framing.emphasis)) ||
-		(framing.certainty !== undefined &&
-			!isSafeAnalysisText(framing.certainty, MAX_VALUE_LENGTH))
+		(framing.certainty !== undefined && !isSafeAnalysisText(framing.certainty, MAX_VALUE_LENGTH))
 	) {
 		return undefined;
 	}

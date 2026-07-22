@@ -104,7 +104,9 @@ export function SavedTimelinePage({ site, slug }: { site: string; slug: string }
 											</time>
 										) : null}
 										<strong>{observation.headline ?? observation.elementKey}</strong>
-										{observation.rank !== undefined ? <span>Page position {observation.rank}</span> : null}
+										{observation.rank !== undefined ? (
+											<span>Page position {observation.rank}</span>
+										) : null}
 									</div>
 								</li>
 							))}

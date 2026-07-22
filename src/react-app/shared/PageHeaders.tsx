@@ -10,7 +10,13 @@ type PageHeaderProps = {
 	breadcrumbs?: { href?: string; label: string }[];
 };
 
-export function PageHeader({ aside, description, title, variant = "display", breadcrumbs }: PageHeaderProps) {
+export function PageHeader({
+	aside,
+	description,
+	title,
+	variant = "display",
+	breadcrumbs,
+}: PageHeaderProps) {
 	const intro =
 		variant === "display" && (description || aside) ? (
 			<div className="page-header__intro">

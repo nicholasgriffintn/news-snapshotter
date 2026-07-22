@@ -63,10 +63,7 @@ export function canJoinRecentStory(input: {
 	}
 
 	const labelOverlap = matchingTerms(input.label, input.candidateLabel);
-	const entityOverlap = matchingTerms(
-		input.entities.join(" "),
-		input.candidateEntities.join(" "),
-	);
+	const entityOverlap = matchingTerms(input.entities.join(" "), input.candidateEntities.join(" "));
 
 	if (entityOverlap.count > 0 && entityOverlap.ratio >= 0.5) {
 		return labelOverlap.count >= 3 && labelOverlap.ratio >= 0.5;

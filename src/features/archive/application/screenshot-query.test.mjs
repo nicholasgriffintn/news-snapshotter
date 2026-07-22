@@ -11,20 +11,14 @@ test("defaults screenshot queries to the current and preceding UTC storage days"
 });
 
 test("accepts unique valid storage dates and rejects invalid or excessive input", () => {
-	assert.deepEqual(
-		parseScreenshotDates(["2026-07-18", "2026-07-19", "2026-07-18"]),
-		["2026-07-18", "2026-07-19"],
-	);
+	assert.deepEqual(parseScreenshotDates(["2026-07-18", "2026-07-19", "2026-07-18"]), [
+		"2026-07-18",
+		"2026-07-19",
+	]);
 	assert.throws(() => parseScreenshotDates(["2026-02-30"]), /valid dates/);
 	assert.throws(
 		() =>
-			parseScreenshotDates([
-				"2026-07-15",
-				"2026-07-16",
-				"2026-07-17",
-				"2026-07-18",
-				"2026-07-19",
-			]),
+			parseScreenshotDates(["2026-07-15", "2026-07-16", "2026-07-17", "2026-07-18", "2026-07-19"]),
 		/at most 4/,
 	);
 });

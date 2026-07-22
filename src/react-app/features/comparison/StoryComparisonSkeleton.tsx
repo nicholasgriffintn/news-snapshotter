@@ -39,7 +39,10 @@ export function StoryComparisonSkeleton() {
 				}
 			/>
 
-			<div aria-hidden="true" className="status-message status-message--compact status-message--info">
+			<div
+				aria-hidden="true"
+				className="status-message status-message--compact status-message--info"
+			>
 				<span className="comparison-skeleton__line comparison-detail-skeleton__status" />
 			</div>
 
@@ -83,7 +86,10 @@ export function StoryComparisonSkeleton() {
 
 				<div aria-hidden="true" className="comparison-evidence__rail">
 					{EVIDENCE_CARDS.map((card) => (
-						<Card className="comparison-evidence-card comparison-evidence-card--skeleton" key={card}>
+						<Card
+							className="comparison-evidence-card comparison-evidence-card--skeleton"
+							key={card}
+						>
 							<header className="ui-card-meta">
 								<span className="comparison-skeleton__line comparison-detail-skeleton__publisher" />
 								<span className="comparison-skeleton__line comparison-detail-skeleton__placement" />

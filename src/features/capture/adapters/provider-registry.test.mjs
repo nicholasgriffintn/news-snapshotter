@@ -154,10 +154,7 @@ test("closes a Cloudflare browser when page creation fails", async (context) => 
 		},
 	}));
 
-	await assert.rejects(
-		openCaptureBrowser("cloudflare", providerContext()),
-		/page creation failed/,
-	);
+	await assert.rejects(openCaptureBrowser("cloudflare", providerContext()), /page creation failed/);
 	assert.equal(closed, true);
 });
 

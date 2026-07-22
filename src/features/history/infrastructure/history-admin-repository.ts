@@ -173,9 +173,9 @@ export async function resetHistoryIndex(database: D1Database, site?: string): Pr
 	};
 	const statements = [
 		statement("DELETE FROM history_monthly_aggregates"),
+		statement("DELETE FROM history_monthly_aggregate_runs"),
 		statement("DELETE FROM history_ingestion_metrics"),
 		statement("DELETE FROM content_observation_search"),
-		statement("DELETE FROM saved_timelines"),
 		statement("DELETE FROM analysed_captures"),
 		statement("DELETE FROM images"),
 		statement("DELETE FROM extraction_failures"),

@@ -40,7 +40,11 @@ test("lists valid full screenshots newest first with image URLs", async () => {
 		}),
 	};
 
-	const result = await listScreenshots(bucket, ["date=2026-07-16/"], new Map([["bbc-home", "BBC"]]));
+	const result = await listScreenshots(
+		bucket,
+		["date=2026-07-16/"],
+		new Map([["bbc-home", "BBC"]]),
+	);
 
 	assert.deepEqual(
 		result.screenshots.map(({ brand }) => brand),
@@ -189,9 +193,9 @@ test("serves stored screenshots with immutable caching and entity headers", asyn
 			get: async (_key, options) => {
 				getOptions.push(options);
 				return {
-				body: "image bytes",
-				httpEtag: "etag-value",
-				writeHttpMetadata: (headers) => headers.set("content-type", "image/png"),
+					body: "image bytes",
+					httpEtag: "etag-value",
+					writeHttpMetadata: (headers) => headers.set("content-type", "image/png"),
 				};
 			},
 		},

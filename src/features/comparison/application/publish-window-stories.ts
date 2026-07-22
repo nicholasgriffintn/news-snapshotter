@@ -26,11 +26,7 @@ import { compareHomepageStory } from "../infrastructure/workers-ai-analysis.ts";
 
 type StoryPublicationEnv = Pick<
 	Env,
-	| "AI"
-	| "ARCHIVE_DATA"
-	| "COMPARISON_CANARY_MODEL"
-	| "COMPARISON_CANARY_PERCENT"
-	| "HISTORY_DB"
+	"AI" | "ARCHIVE_DATA" | "COMPARISON_CANARY_MODEL" | "COMPARISON_CANARY_PERCENT" | "HISTORY_DB"
 >;
 
 const PUBLISHER_NAMES = new Map(
@@ -152,9 +148,7 @@ export async function publishWindowStories(
 				story.evidence.map(({ evidenceId, site }) => [evidenceId, site]),
 			);
 			const publisherNames = [
-				...new Set(
-					story.evidence.flatMap(({ site }) => PUBLISHER_NAMES.get(site) ?? [site]),
-				),
+				...new Set(story.evidence.flatMap(({ site }) => PUBLISHER_NAMES.get(site) ?? [site])),
 			];
 			const model = await compareHomepageStory(
 				env.AI,
@@ -192,18 +186,14 @@ export async function publishWindowStories(
 			const message = errorMessage(error);
 			const retryable = isRetryableAnalysisError(error);
 			const fallback = unavailableComparison(story.label, story.evidence);
-			const outputR2Key = await storeAnalysisOutput(
-				env.ARCHIVE_DATA,
-				claim.runId,
-				claim.attempt,
-				{ error: message, status: "unavailable" },
-			);
+			const outputR2Key = await storeAnalysisOutput(env.ARCHIVE_DATA, claim.runId, claim.attempt, {
+				error: message,
+				status: "unavailable",
+			});
 			await saveStoryRevision({
 				analysis: {
 					aiGatewayLogId: null,
-					errorCode: retryable
-						? "story-comparison-transient"
-						: "story-comparison-terminal",
+					errorCode: retryable ? "story-comparison-transient" : "story-comparison-terminal",
 					errorMessage: message,
 					inputR2Key,
 					outputR2Key,

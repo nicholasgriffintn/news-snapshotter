@@ -17,9 +17,27 @@ test("builds encoded public timeline paths", () => {
 
 test("groups observations in the editor-selected content order", () => {
 	const groups = groupSavedTimelineObservations([
-		{ captureId: "later", capturedAt: "2026-07-17T10:00:00.000Z", elementKey: "second", kind: "story", position: 1 },
-		{ captureId: "first-a", capturedAt: "2026-07-17T09:00:00.000Z", elementKey: "first", kind: "story", position: 0 },
-		{ captureId: "first-b", capturedAt: "2026-07-17T10:00:00.000Z", elementKey: "first", kind: "story", position: 0 },
+		{
+			captureId: "later",
+			capturedAt: "2026-07-17T10:00:00.000Z",
+			elementKey: "second",
+			kind: "story",
+			position: 1,
+		},
+		{
+			captureId: "first-a",
+			capturedAt: "2026-07-17T09:00:00.000Z",
+			elementKey: "first",
+			kind: "story",
+			position: 0,
+		},
+		{
+			captureId: "first-b",
+			capturedAt: "2026-07-17T10:00:00.000Z",
+			elementKey: "first",
+			kind: "story",
+			position: 0,
+		},
 	]);
 
 	assert.deepEqual(

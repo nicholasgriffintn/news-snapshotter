@@ -52,10 +52,7 @@ export type WindowStoryEvidence = {
 	storyId: string;
 };
 
-function revisionEvidence(
-	row: PublicationEvidenceRow,
-	evidenceId: string,
-): StoryRevisionEvidence {
+function revisionEvidence(row: PublicationEvidenceRow, evidenceId: string): StoryRevisionEvidence {
 	return {
 		annotationRunId: row.annotation_run_id,
 		captureId: row.capture_id,
@@ -128,9 +125,7 @@ export async function listWindowStoryEvidence(
 				(left, right) => left.rank - right.rank || left.site.localeCompare(right.site),
 			);
 			return {
-				evidence: representatives.map((row, index) =>
-					revisionEvidence(row, `source-${index + 1}`),
-				),
+				evidence: representatives.map((row, index) => revisionEvidence(row, `source-${index + 1}`)),
 				label: story.label,
 				storyId,
 			};

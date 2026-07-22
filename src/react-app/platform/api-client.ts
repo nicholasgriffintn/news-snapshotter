@@ -446,9 +446,11 @@ function timelineAdminHeaders(credential: AdminCredential, json = false): Header
 
 export async function fetchAdminHistoryTimelines(
 	credential: AdminCredential,
+	options?: RequestOptions,
 ): Promise<SavedTimelineRecord[]> {
 	const response = await fetch("/api/admin/history/timelines", {
 		headers: timelineAdminHeaders(credential),
+		...options,
 	});
 	return (await readJson<{ timelines: SavedTimelineRecord[] }>(response)).timelines;
 }
@@ -487,18 +489,6 @@ export async function deleteHistoryTimeline(
 		method: "DELETE",
 	});
 	await readJson(response);
-}
-
-export async function materialiseHistoryAggregates(
-	apiKey: string,
-	input: { month: string; site: string },
-): Promise<{ rows: number }> {
-	const response = await fetch("/api/admin/history/aggregates", {
-		body: JSON.stringify(input),
-		headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
-		method: "POST",
-	});
-	return readJson(response);
 }
 
 export type ExtractorPreview = {

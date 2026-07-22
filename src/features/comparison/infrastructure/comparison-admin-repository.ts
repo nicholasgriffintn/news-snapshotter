@@ -55,8 +55,7 @@ export async function listAnalysisRuns(
 	const bindings: Array<number | string> = [];
 
 	if (options.status === "stale") {
-		where =
-			"WHERE r.status IN ('pending', 'running') AND COALESCE(r.started_at, r.created_at) < ?";
+		where = "WHERE r.status IN ('pending', 'running') AND COALESCE(r.started_at, r.created_at) < ?";
 		bindings.push(new Date(Date.now() - ANALYSIS_STALE_AFTER_MS).toISOString());
 	} else if (options.status) {
 		where = "WHERE r.status = ?";

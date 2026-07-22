@@ -21,7 +21,8 @@ export default function App() {
 	const page = resolveAppPage(window.location.pathname);
 	const historySite =
 		page === "history" ? decodeURIComponent(window.location.pathname.split("/")[2] ?? "") : "";
-	const historyResource = page === "history" ? decodeURIComponent(window.location.pathname.split("/")[3] ?? "") : "";
+	const historyResource =
+		page === "history" ? decodeURIComponent(window.location.pathname.split("/")[3] ?? "") : "";
 
 	console.log(historySite);
 

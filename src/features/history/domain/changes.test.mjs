@@ -153,11 +153,7 @@ test("tracks kind, category, and prominence independently for matched content", 
 
 	assert.deepEqual(
 		changes.map(({ type }) => ({ type })),
-		[
-			{ type: "category-changed" },
-			{ type: "kind-changed" },
-			{ type: "promoted" },
-		],
+		[{ type: "category-changed" }, { type: "kind-changed" }, { type: "promoted" }],
 	);
 });
 

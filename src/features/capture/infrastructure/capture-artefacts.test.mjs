@@ -106,8 +106,7 @@ test("captures images before analysis persistence can expose delayed page furnit
 				pageWidth: 1_000,
 			});
 		},
-		screenshot: async () =>
-			Buffer.from(delayedBannerVisible ? "cookie banner" : "clean page"),
+		screenshot: async () => Buffer.from(delayedBannerVisible ? "cookie banner" : "clean page"),
 	};
 
 	await storeCaptureArtefacts({

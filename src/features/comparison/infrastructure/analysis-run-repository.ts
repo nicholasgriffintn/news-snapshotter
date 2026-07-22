@@ -133,8 +133,7 @@ export async function canaryGenerationAllowance(
 			(canaryDegradedRate ?? 0) <=
 			(primaryDegradedRate ?? 0) + COMPARISON_PIPELINE.maximumCanaryRegression;
 	} else if (canaryHasEvidence) {
-		allowed =
-			(canaryDegradedRate ?? 0) <= COMPARISON_PIPELINE.maximumCanaryDegradedRate;
+		allowed = (canaryDegradedRate ?? 0) <= COMPARISON_PIPELINE.maximumCanaryDegradedRate;
 	}
 
 	return {

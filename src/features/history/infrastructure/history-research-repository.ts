@@ -1,3 +1,4 @@
+import { InvalidInputError } from "../../../core/errors.ts";
 import { historySearchQuery } from "../domain/search-query.ts";
 
 export type ResearchCursor = {
@@ -253,7 +254,7 @@ async function assertTimelineElements(
 		.bind(input.site, ...input.elementKeys)
 		.all<{ element_key: string }>();
 	if (existing.results.length !== input.elementKeys.length) {
-		throw new Error("Every timeline item must exist for the selected site");
+		throw new InvalidInputError("Every timeline item must exist for the selected site");
 	}
 }
 
@@ -304,7 +305,7 @@ export async function listSavedTimelines(
 			LEFT JOIN saved_timeline_elements
 				ON saved_timeline_elements.timeline_id = saved_timelines.timeline_id
 			${site ? "WHERE saved_timelines.site = ?" : ""}
-			ORDER BY saved_timelines.created_at DESC, saved_timelines.timeline_id, saved_timeline_elements.position`,
+			ORDER BY saved_timelines.created_at DESC, saved_timelines.timeline_id DESC, saved_timeline_elements.position`,
 		)
 		.bind(...(site ? [site] : []))
 		.all<Record<string, unknown>>();
@@ -346,9 +347,7 @@ export async function updateSavedTimeline(
 		database
 			.prepare("UPDATE saved_timelines SET name = ?, site = ? WHERE timeline_id = ?")
 			.bind(input.name, input.site, timelineId),
-		database
-			.prepare("DELETE FROM saved_timeline_elements WHERE timeline_id = ?")
-			.bind(timelineId),
+		database.prepare("DELETE FROM saved_timeline_elements WHERE timeline_id = ?").bind(timelineId),
 		...input.elementKeys.map((elementKey, position) =>
 			database
 				.prepare(

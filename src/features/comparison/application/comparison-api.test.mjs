@@ -9,7 +9,6 @@ import { handleComparisonAdminRequest } from "./comparison-admin.ts";
 import { handleComparisonRequest } from "./comparison-api.ts";
 import { publishWindowStories } from "./publish-window-stories.ts";
 
-
 function annotationResponse(headline = "") {
 	const distinctStory = headline.includes("Royal family");
 	return {
@@ -61,9 +60,7 @@ test("rejects invalid comparison query and feedback input through the HTTP inter
 	const requests = [
 		new Request("https://example.com/api/comparison/stories?limit=101"),
 		new Request("https://example.com/api/comparison/gaps?limit=0"),
-		new Request(
-			"https://example.com/api/comparison/stories?from=2026-07-01T00:00:00.000Z",
-		),
+		new Request("https://example.com/api/comparison/stories?from=2026-07-01T00:00:00.000Z"),
 		new Request(
 			"https://example.com/api/comparison/publishers/bbc-news" +
 				"?from=2026-01-01T00:00:00.000Z&to=2026-07-01T00:00:00.000Z",
@@ -146,10 +143,7 @@ test("serves only published, evidence-linked comparison revisions", async (conte
 			contentHash: capture.contentHash,
 		});
 	}
-	const laterBbcCapture = historyExtraction(
-		"bbc-news:desktop:later",
-		"2026-07-20T10:05:00.000Z",
-	);
+	const laterBbcCapture = historyExtraction("bbc-news:desktop:later", "2026-07-20T10:05:00.000Z");
 	laterBbcCapture.capture.site = "bbc-news";
 	laterBbcCapture.capture.sourceUrl = "https://www.bbc.co.uk/news";
 	laterBbcCapture.elements[0].headline = "Bank keeps interest rates unchanged";
@@ -227,7 +221,7 @@ test("serves only published, evidence-linked comparison revisions", async (conte
 	const replacementRevisionId = "replacement-revision";
 	sqlite
 		.prepare(
-				`INSERT INTO story_revisions (
+			`INSERT INTO story_revisions (
 					revision_id, story_id, run_id, window_id, summary, common_ground_json,
 					differences_json, analysis_status, confidence, source_count,
 					left_source_count, centre_source_count, right_source_count,
@@ -271,9 +265,7 @@ test("serves only published, evidence-linked comparison revisions", async (conte
 	assert.equal(historicalResponse.status, 200);
 	assert.equal((await historicalResponse.json()).revision.revisionId, detail.revision.revisionId);
 	const unknownRevisionResponse = await handleComparisonRequest(
-		new Request(
-			`https://example.com/api/comparison/stories/${storyId}?revision=unknown-revision`,
-		),
+		new Request(`https://example.com/api/comparison/stories/${storyId}?revision=unknown-revision`),
 		env,
 	);
 	assert.equal(unknownRevisionResponse.status, 404);

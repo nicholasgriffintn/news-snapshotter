@@ -45,7 +45,8 @@ export function SnapshotCard({
 				<div className="snapshot-card__copy">
 					<h3 className="ui-card-title">{title}</h3>
 					<span className="ui-card-description--meta">
-						{group.url} - {displayName(group.brand)} - <time dateTime={group.capturedAt}>{timeLabel(group.capturedAt)}</time>
+						{group.url} - {displayName(group.brand)} -{" "}
+						<time dateTime={group.capturedAt}>{timeLabel(group.capturedAt)}</time>
 					</span>
 				</div>
 			</button>

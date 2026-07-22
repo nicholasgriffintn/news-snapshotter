@@ -116,10 +116,7 @@ export function collectDocument(extractorDefinition: ExtractorDefinition): strin
 				: undefined;
 			const href = attributedUrl ?? link?.href ?? link?.getAttribute("href") ?? undefined;
 			const canonicalUrl = href ? resolveWebUrl(href) : undefined;
-			if (
-				canonicalUrl &&
-				!contentUrlAllowed(canonicalUrl, rule.excludedUrlPathPrefixes)
-			) {
+			if (canonicalUrl && !contentUrlAllowed(canonicalUrl, rule.excludedUrlPathPrefixes)) {
 				return [];
 			}
 			const rect = card.getBoundingClientRect();

@@ -48,7 +48,7 @@ export function ComparisonStoryCard({
 					<time dateTime={story.lastSeenAt}>Updated {dateTimeLabel(story.lastSeenAt)}</time>
 					{gap ? (
 						<>
-							{' '}
+							{" "}
 							<Badge className="comparison-story-card__gap" tone="warning">
 								<svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
 									<path d="M12 3 22 20H2L12 3Z" />

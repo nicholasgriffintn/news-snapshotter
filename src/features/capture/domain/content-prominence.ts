@@ -45,8 +45,7 @@ export function determineContentProminence<T extends ProminenceCandidate>(
 	const inferredLead = classified
 		.filter((element) => {
 			return (
-				element.position.viewportDepth <= 1 &&
-				element.position.width / width >= LEAD_WIDTH_RATIO
+				element.position.viewportDepth <= 1 && element.position.width / width >= LEAD_WIDTH_RATIO
 			);
 		})
 		.sort((left, right) => {
@@ -54,9 +53,7 @@ export function determineContentProminence<T extends ProminenceCandidate>(
 			if (impactDifference !== 0) {
 				return impactDifference;
 			}
-			return (
-				left.position.top - right.position.top || left.position.left - right.position.left
-			);
+			return left.position.top - right.position.top || left.position.left - right.position.left;
 		})[0];
 	const lead = explicitLead ?? inferredLead;
 

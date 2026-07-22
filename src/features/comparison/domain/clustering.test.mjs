@@ -66,10 +66,7 @@ test("recent persisted evidence bridges Vectorize propagation without merging di
 		}),
 		false,
 	);
-	assert.equal(
-		canJoinRecentStory({ ...candidate, capturedAt: "2026-07-21T06:05:00.000Z" }),
-		false,
-	);
+	assert.equal(canJoinRecentStory({ ...candidate, capturedAt: "2026-07-21T06:05:00.000Z" }), false);
 });
 
 test("story slugs are readable, bounded, and identity-stable", () => {

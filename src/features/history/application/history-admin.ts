@@ -15,7 +15,6 @@ import {
 	listSavedTimelines,
 	updateSavedTimeline,
 } from "../infrastructure/history-research-repository.ts";
-import { materialiseHistoryMonth } from "../infrastructure/history-trend-repository.ts";
 import { parsePageExtraction } from "../domain/extraction.ts";
 import { SITES } from "../../catalogue/domain/sites.ts";
 
@@ -332,9 +331,7 @@ function timelineInput(body: unknown): { elementKeys: string[]; name: string; si
 		elementKeys.some((key) => key.length === 0 || key.length > 4_096) ||
 		new Set(elementKeys).size !== elementKeys.length
 	) {
-		throw new InvalidInputError(
-			"Timeline requires a name, site, and 2 to 10 unique content keys",
-		);
+		throw new InvalidInputError("Timeline requires a name, site, and 2 to 10 unique content keys");
 	}
 
 	return { elementKeys, name, site };
@@ -433,30 +430,5 @@ export async function handleHistoryAdminRequest(
 			: Response.json({ message: "Timeline not found", status: "error" }, { status: 404 });
 	}
 
-	if (request.method === "POST" && url.pathname === "/api/admin/history/aggregates") {
-		const body: unknown = await request.json();
-
-		if (!body || typeof body !== "object" || Array.isArray(body)) {
-			throw new InvalidInputError("Aggregate request must be an object");
-		}
-
-		const record = body as Record<string, unknown>;
-
-		if (
-			typeof record.site !== "string" ||
-			record.site.length === 0 ||
-			record.site.length > 200 ||
-			typeof record.month !== "string"
-		) {
-			throw new InvalidInputError("Aggregate request requires a site and month");
-		}
-		if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(record.month)) {
-			throw new InvalidInputError("month must use YYYY-MM");
-		}
-
-		return Response.json(await materialiseHistoryMonth(env.HISTORY_DB, record.site, record.month), {
-			status: 201,
-		});
-	}
 	return null;
 }

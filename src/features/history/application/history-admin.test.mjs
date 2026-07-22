@@ -25,6 +25,22 @@ function timelineRequest(method, path, body) {
 
 test("reindex scans bounded R2 pages and queues only desktop history artefacts", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
+	sqlite
+		.prepare(
+			"INSERT INTO saved_timelines (timeline_id, slug, name, site, created_at) VALUES (?, ?, ?, ?, ?)",
+		)
+		.run(
+			"timeline-a",
+			"durable-timeline",
+			"Durable timeline",
+			"bbc-home",
+			"2026-07-17T08:00:00.000Z",
+		);
+	sqlite
+		.prepare(
+			"INSERT INTO history_monthly_aggregate_runs (site, month, generated_at) VALUES (?, ?, ?)",
+		)
+		.run("bbc-home", "2026-06", "2026-07-01T00:00:00.000Z");
 	const batches = [];
 	const response = await handleHistoryAdminRequest(
 		request("/api/admin/history/reindex", { limit: 100, reset: true, site: "bbc-home" }),
@@ -95,6 +111,14 @@ test("reindex scans bounded R2 pages and queues only desktop history artefacts",
 				kind: "failure",
 			},
 		],
+	);
+	assert.equal(
+		sqlite.prepare("SELECT name FROM saved_timelines WHERE timeline_id = ?").get("timeline-a").name,
+		"Durable timeline",
+	);
+	assert.equal(
+		sqlite.prepare("SELECT COUNT(*) AS count FROM history_monthly_aggregate_runs").get().count,
+		0,
 	);
 	sqlite.close();
 });
@@ -205,6 +229,17 @@ test("lists indexed extractions with bounded ordering and site filtering", async
 	sqlite.close();
 });
 
+test("does not expose monthly materialisation as an admin API", async () => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	const response = await handleHistoryAdminRequest(
+		request("/api/admin/history/aggregates", { month: "2026-07", site: "bbc-home" }),
+		{ HISTORY_DB: database },
+	);
+
+	assert.equal(response, null);
+	sqlite.close();
+});
+
 test("manages saved timelines through the admin API", async () => {
 	const { database, sqlite } = await createHistoryTestDatabase();
 	const extraction = historyExtraction("timeline-capture", "2026-07-17T09:00:00.000Z");
@@ -239,9 +274,9 @@ test("manages saved timelines through the admin API", async () => {
 
 	const updateResponse = await handleHistoryAdminRequest(
 		timelineRequest("PUT", `/api/admin/history/timelines/${created.timelineId}`, {
-		...input,
-		name: "Updated election coverage",
-	}),
+			...input,
+			name: "Updated election coverage",
+		}),
 		env,
 	);
 	assert.equal(updateResponse.status, 200);

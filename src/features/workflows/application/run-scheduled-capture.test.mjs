@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createHistoryTestDatabase } from "../../../testing/history-database.mjs";
+import { historyExtraction } from "../../history/testing/extraction-fixture.mjs";
+import { ingestExtraction } from "../../history/infrastructure/history-ingestion-repository.ts";
 import { handleScheduledCapture } from "./run-scheduled-capture.ts";
 
 test("dispatches priority one sites from the hourly schedule", async (context) => {
@@ -80,5 +82,53 @@ test("dispatches priority one sites from the hourly schedule", async (context) =
 		sqlite.prepare("SELECT expected_site_count FROM comparison_windows").get().expected_site_count,
 		12,
 	);
+	sqlite.close();
+});
+
+test("queues the previous month for every indexed site from the monthly schedule", async (context) => {
+	const { database, sqlite } = await createHistoryTestDatabase();
+	await ingestExtraction(
+		database,
+		"capture-bbc.json.gz",
+		historyExtraction("capture-bbc", "2026-07-31T22:00:00.000Z"),
+	);
+	const guardian = historyExtraction("capture-guardian", "2026-07-31T22:00:00.000Z");
+	guardian.capture.site = "guardian-uk";
+	guardian.capture.sourceUrl = "https://www.theguardian.com/uk";
+	await ingestExtraction(database, "capture-guardian.json.gz", guardian);
+	const oldSite = historyExtraction("capture-old", "2026-06-30T22:00:00.000Z");
+	oldSite.capture.site = "old-site";
+	oldSite.capture.sourceUrl = "https://old.example";
+	await ingestExtraction(database, "capture-old.json.gz", oldSite);
+	const batches = [];
+	const logs = [];
+	context.mock.method(console, "log", (message) => logs.push(JSON.parse(message)));
+
+	await handleScheduledCapture(
+		{
+			cron: "15 3 2,7,14 * *",
+			scheduledTime: Date.UTC(2026, 7, 2, 3, 15),
+		},
+		{
+			HISTORY_DB: database,
+			HISTORY_INDEX_QUEUE: { sendBatch: async (batch) => batches.push(batch) },
+		},
+	);
+
+	assert.deepEqual(
+		batches.flat().map(({ body }) => body),
+		[
+			{ kind: "materialise-history-month", month: "2026-07", site: "bbc-home" },
+			{ kind: "materialise-history-month", month: "2026-07", site: "guardian-uk" },
+		],
+	);
+	assert.deepEqual(logs, [
+		{
+			event: "history-month-materialisation-enqueued",
+			month: "2026-07",
+			siteCount: 2,
+			triggeredAt: "2026-08-02T03:15:00.000Z",
+		},
+	]);
 	sqlite.close();
 });

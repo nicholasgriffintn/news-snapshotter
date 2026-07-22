@@ -73,7 +73,8 @@ export function HistorySearchPanel({
 				{query && !loading && results.length > 0 ? (
 					<div className="research-results__status">
 						<strong>
-							{results.length} {results.length === 1 ? "result" : "results"} {hasMore ? "loaded" : ""}
+							{results.length} {results.length === 1 ? "result" : "results"}{" "}
+							{hasMore ? "loaded" : ""}
 						</strong>
 						<span>Select two or more items to compare how their position changed.</span>
 					</div>
@@ -90,31 +91,34 @@ export function HistorySearchPanel({
 						title="No matching observations"
 					/>
 				) : null}
-				<ul aria-busy={loading} className={`research-results ${results?.length || loading ? "research-results--content" : ""}`}>
+				<ul
+					aria-busy={loading}
+					className={`research-results ${results?.length || loading ? "research-results--content" : ""}`}
+				>
 					{!loading
 						? results.map((result) => (
-							<li key={`${result.captureId}:${result.elementKey}`}>
-								<a href={contentHistoryPath(site, result.elementKey)}>
-									<strong>{result.headline ?? `Untitled ${result.kind}`}</strong>
-									{result.summary ? <p>{result.summary}</p> : null}
-									<div className="research-result__meta">
-										<time dateTime={result.capturedAt}>{dateTimeLabel(result.capturedAt)}</time>
-										<span>{displayName(result.kind)}</span>
-										<span>{result.category ?? "Front page"}</span>
-										<span>Page position {result.rank}</span>
-									</div>
-								</a>
-								<label className="research-result__selection">
-									<input
-										aria-label={`Compare ${result.headline ?? `untitled ${result.kind}`}`}
-										checked={selectedContent.has(result.elementKey)}
-										onChange={() => onToggleContent(result.elementKey)}
-										type="checkbox"
-									/>
-									<span>Compare</span>
-								</label>
-							</li>
-						))
+								<li key={`${result.captureId}:${result.elementKey}`}>
+									<a href={contentHistoryPath(site, result.elementKey)}>
+										<strong>{result.headline ?? `Untitled ${result.kind}`}</strong>
+										{result.summary ? <p>{result.summary}</p> : null}
+										<div className="research-result__meta">
+											<time dateTime={result.capturedAt}>{dateTimeLabel(result.capturedAt)}</time>
+											<span>{displayName(result.kind)}</span>
+											<span>{result.category ?? "Front page"}</span>
+											<span>Page position {result.rank}</span>
+										</div>
+									</a>
+									<label className="research-result__selection">
+										<input
+											aria-label={`Compare ${result.headline ?? `untitled ${result.kind}`}`}
+											checked={selectedContent.has(result.elementKey)}
+											onChange={() => onToggleContent(result.elementKey)}
+											type="checkbox"
+										/>
+										<span>Compare</span>
+									</label>
+								</li>
+							))
 						: null}
 				</ul>
 				{hasMore ? (

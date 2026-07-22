@@ -405,11 +405,7 @@ async function publisherResponse(url: URL, env: Env, site: string): Promise<Resp
 	const cohort = comparisonCohortId(url);
 	const configuredSite = comparisonSites(SITES, cohort).find(({ name }) => name === site);
 	if (!configuredSite) {
-		return errorResponse(
-			"publisher_not_found",
-			"Publisher is not in this comparison cohort",
-			404,
-		);
+		return errorResponse("publisher_not_found", "Publisher is not in this comparison cohort", 404);
 	}
 	const period = publisherComparisonPeriod(url);
 

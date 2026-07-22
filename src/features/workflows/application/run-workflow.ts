@@ -63,13 +63,9 @@ export async function runSnapshotWorkflow(
 				const duration: `${number} seconds` = `${site.interDeviceDelaySeconds} seconds`;
 				await step.sleep(`wait between ${site.name} devices`, duration);
 			}
-			const result = await step.do(
-				`screenshot-${site.name}-${device}`,
-				CAPTURE_STEP_CONFIG,
-				() => {
-					return capture(env, site, device, triggeredAt);
-				},
-			);
+			const result = await step.do(`screenshot-${site.name}-${device}`, CAPTURE_STEP_CONFIG, () => {
+				return capture(env, site, device, triggeredAt);
+			});
 			results.push(result);
 		}
 	}
